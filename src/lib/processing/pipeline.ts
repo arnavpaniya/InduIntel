@@ -3,6 +3,7 @@ import { DocumentChunk, Product, ProductCategory, ProductAttribute, Evidence, Do
 import { getAIProvider } from '@/lib/ai';
 import { parsePDF, parseCSV, validatePDFBuffer, validateCSVBuffer } from '@/lib/pdf';
 import { validateAndScore, mergeAttributesFromSources } from '@/lib/validation';
+import { normalizeValue } from '@/lib/normalization/units';
 import { enrichProduct } from '@/lib/enrichment';
 import { saveProductRecord, updateProductRecord } from '@/lib/db/store';
 
@@ -88,21 +89,24 @@ export async function processDocument(
     // Stage 4: Normalize & Validate
     stages[3] = { stage: 'Validating', status: 'processing', message: 'Normalizing units & validating...' };
 
-    const attributes: ProductAttribute[] = extraction.attributes.map(attr => ({
-      key: attr.key,
-      label: attr.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-      value: attr.value,
-      unit: attr.unit,
-      normalizedValue: attr.value,
-      normalizedUnit: attr.unit,
-      status: attr.evidence.length > 0 ? 'VERIFIED' : 'INFERRED',
-      confidence: attr.confidence,
-      evidence: attr.evidence.map(e => ({
-        ...e,
-        documentId: context.documentId,
-        documentName: context.documentName,
-      })),
-    }));
+    const attributes: ProductAttribute[] = extraction.attributes.map(attr => {
+      const norm = normalizeValue(attr.value, attr.unit);
+      return {
+        key: attr.key,
+        label: attr.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        value: attr.value,
+        unit: attr.unit,
+        normalizedValue: norm.value,
+        normalizedUnit: norm.unit,
+        status: attr.evidence.length > 0 ? 'VERIFIED' : 'INFERRED',
+        confidence: attr.confidence,
+        evidence: attr.evidence.map(e => ({
+          ...e,
+          documentId: context.documentId,
+          documentName: context.documentName,
+        })),
+      };
+    });
 
     const evidenceMap = new Map<string, Evidence[]>();
     attributes.forEach(attr => {
