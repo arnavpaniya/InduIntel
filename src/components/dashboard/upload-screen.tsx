@@ -124,12 +124,22 @@ export function UploadScreen({ onUpload, isProcessing, stages = [], onClose }: U
               textClass = 'text-status-conflict font-medium';
             }
 
+            const stageObj = stages.find(s => s.stage === item.key);
+            const message = stageObj?.message;
+
             return (
-              <div key={item.key} className="flex items-center gap-2">
-                <span className={isProcessing ? 'text-accent animate-pulse' : isComplete ? 'text-status-verified' : 'text-text-muted'}>
-                  [{bracketContent}]
-                </span>
-                <span className={textClass}>{item.label}</span>
+              <div key={item.key} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className={isProcessing ? 'text-accent animate-pulse' : isComplete ? 'text-status-verified' : isFailed ? 'text-status-conflict' : 'text-text-muted'}>
+                    [{bracketContent}]
+                  </span>
+                  <span className={textClass}>{item.label}</span>
+                </div>
+                {isFailed && message && (
+                  <div className="pl-6 text-[11px] text-status-conflict font-sans">
+                    {message}
+                  </div>
+                )}
               </div>
             );
           })}

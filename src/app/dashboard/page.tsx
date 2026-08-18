@@ -71,10 +71,12 @@ export default function DashboardPage() {
         { stage: 'Ready', status: 'pending' },
       ]);
 
+      const docId = uploadData.documentId || uploadData.id;
+
       const analyzeRes = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId: uploadData.id }),
+        body: JSON.stringify({ documentId: docId }),
       });
 
       const analyzeData = await analyzeRes.json();

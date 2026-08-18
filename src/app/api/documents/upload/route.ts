@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     await saveDocumentBuffer(documentId, buffer);
 
     return NextResponse.json({
+      id: documentId,
       documentId,
       name: sanitizeFilename(file.name),
       type: extension.slice(1),
