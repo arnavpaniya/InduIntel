@@ -1,0 +1,2 @@
+manufacturer,model,bearing_type,inner_diameter,outer_diameter,width,dynamic_load_rating,static_load_rating,limiting_speed,seal_type,material
+SKF,6205-2RSH,Deep Groove Ball Bearing,25 mm,52 mm,15 mm,14.8 kN,7.8 kN,12000 RPM,Contact Seal (2RSH),Stainless Steel

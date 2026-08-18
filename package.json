@@ -9,6 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "npx tsx tests/pipeline.test.ts",
+    "test:integration": "npx tsx tests/integration-upload.test.ts",
+    "generate:samples": "node scripts/create-test-files.js",
     "db:push": "supabase db push",
     "db:generate": "supabase gen types typescript --local > src/types/supabase.ts"
   },
@@ -22,6 +24,7 @@
     "framer-motion": "^11.11.7",
     "lucide-react": "^0.453.0",
     "next": "14.2.15",
+    "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^4.7.76",
     "react": "^18.3.1",
