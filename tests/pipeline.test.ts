@@ -1,6 +1,6 @@
 import { normalizeUnit, normalizeValue, convertToStandardUnit } from '../src/lib/normalization/units';
 import { sanitizeCSVValue } from '../src/lib/pdf/csv-parser';
-import { getRequiredAttributes, getAllAttributes } from '../src/schemas';
+import { getRequiredAttributes } from '../src/schemas';
 import { getAIProvider } from '../src/lib/ai';
 
 async function runTests() {
@@ -49,16 +49,15 @@ async function runTests() {
   const pumpReqs = getRequiredAttributes('industrial_pump');
   assert(pumpReqs.includes('flow_rate') && pumpReqs.includes('head'), 'Pump required attributes present');
 
-  // 4. AI Provider Fail-Fast Configuration Error Test
-  delete process.env.OLLAMA_HOST;
-  delete process.env.OLLAMA_MODEL;
+  // 4. Gemini AI Provider Fail-Fast Configuration Error Test
+  delete process.env.GEMINI_API_KEY;
   delete process.env.USE_MOCK_AI;
 
   try {
     getAIProvider();
-    assert(false, 'Should throw error when Ollama config is absent and USE_MOCK_AI is not set');
+    assert(false, 'Should throw error when GEMINI_API_KEY is absent and USE_MOCK_AI is not set');
   } catch (err: any) {
-    assert(err.message.includes('AI Provider Initialization Failed'), 'Throws explicit setup error when Ollama config is missing');
+    assert(err.message.includes('AI Provider Initialization Failed') && err.message.includes('GEMINI_API_KEY'), 'Throws explicit setup error when GEMINI_API_KEY is missing');
   }
 
   console.log(`\nTest Suite Summary: ${passed} passed, ${failed} failed.`);

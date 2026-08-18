@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductRecord, updateProductRecord } from '@/lib/db/store';
+import { getAIProvider } from '@/lib/ai';
 import { Product, ProductAttribute, CommerceOutput } from '@/types';
 
 export async function POST(
@@ -14,7 +15,20 @@ export async function POST(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    const commerce = generateCommerceOutput(product);
+    const aiProvider = getAIProvider();
+    let commerce: CommerceOutput;
+
+    if (typeof aiProvider.generateCommerceOutput === 'function') {
+      try {
+        commerce = await aiProvider.generateCommerceOutput(product);
+      } catch (aiErr) {
+        console.warn('AI commerce generation failed, falling back to deterministic template:', aiErr);
+        commerce = generateCommerceOutput(product);
+      }
+    } else {
+      commerce = generateCommerceOutput(product);
+    }
+
     const updatedProduct = {
       ...product,
       commerce,

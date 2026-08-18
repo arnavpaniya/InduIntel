@@ -13,6 +13,7 @@
     "db:generate": "supabase gen types typescript --local > src/types/supabase.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.17.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.112.3",
     "clsx": "^2.1.1",
