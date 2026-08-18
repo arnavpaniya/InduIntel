@@ -28,10 +28,11 @@ class MemoryStore {
 const memoryStore = new MemoryStore();
 
 function hasSupabaseCredentials(): boolean {
-  return Boolean(
-    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return false;
+  if (url.includes('placeholder') || url.includes('your-project') || key.includes('placeholder') || key.includes('your-supabase')) return false;
+  return true;
 }
 
 export async function saveDocumentBuffer(documentId: string, buffer: Buffer): Promise<void> {
