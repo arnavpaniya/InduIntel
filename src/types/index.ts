@@ -1,8 +1,16 @@
 export type ProductCategory =
+  | 'faucets'
+  | 'fittings'
+  | 'Bathroom Sink Faucets'
+  | 'Kitchen Faucets'
+  | 'Pipe Fittings'
+  | 'Nipples'
   | 'electric_motor'
   | 'bearing'
   | 'industrial_pump'
-  | 'unknown';
+  | 'unclassified / needs manual mapping'
+  | 'unknown'
+  | string;
 
 export type EvidenceStatus =
   | 'VERIFIED'
@@ -20,6 +28,7 @@ export interface Evidence {
 }
 
 export interface ProductAttribute {
+  id?: string;
   key: string;
   label: string;
   value: string | number | null;
@@ -82,6 +91,7 @@ export interface Product {
   manufacturer: string | null;
   model: string | null;
   category: ProductCategory;
+  status?: string;
   attributes: ProductAttribute[];
   completeness: number;
   confidence: number;
@@ -91,6 +101,7 @@ export interface Product {
   commerce: CommerceOutput | null;
   createdAt: string;
   updatedAt: string;
+  rawText?: string;
 }
 
 export interface DocumentChunk {
