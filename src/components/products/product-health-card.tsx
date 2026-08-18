@@ -11,12 +11,15 @@ interface ProductHealthCardProps {
 }
 
 export function ProductHealthCard({ product, className }: ProductHealthCardProps) {
-  const verifiedCount = product.attributes.filter(a => a.status === 'VERIFIED').length;
-  const inferredCount = product.attributes.filter(a => a.status === 'INFERRED').length;
-  const conflictCount = product.attributes.filter(a => a.status === 'CONFLICT').length;
-  const missingCount = product.missingAttributes.length;
+  const attributes = product.attributes || [];
+  const missingAttributes = product.missingAttributes || [];
 
-  const totalAttrs = product.attributes.length;
+  const verifiedCount = attributes.filter(a => a?.status === 'VERIFIED').length;
+  const inferredCount = attributes.filter(a => a?.status === 'INFERRED').length;
+  const conflictCount = attributes.filter(a => a?.status === 'CONFLICT').length;
+  const missingCount = missingAttributes.length;
+
+  const totalAttrs = attributes.length;
   const completeness = product.completeness || (totalAttrs > 0 ? Math.round(((verifiedCount + inferredCount) / totalAttrs) * 100) : 0);
 
   return (
