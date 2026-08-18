@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 import { generateSafeFilename, sanitizeFilename } from '@/lib/pdf';
-import { saveDocumentRecord } from '@/lib/db/store';
+import { saveDocumentRecord, saveDocumentBuffer } from '@/lib/db/store';
 
 const ALLOWED_TYPES = ['application/pdf', 'text/csv', 'text/plain'];
 const ALLOWED_EXTENSIONS = ['.pdf', '.csv', '.txt'];
@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid file type. Allowed: PDF, CSV, TXT' }, { status: 400 });
     }
 
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
     const documentId = uuidv4();
     const safeFilename = generateSafeFilename(file.name);
     const storagePath = `${userId}/${documentId}${extension}`;
@@ -51,8 +54,9 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     };
 
-    // Save using unified database / memory store
+    // Save metadata and file buffer in store
     await saveDocumentRecord(docRecord);
+    await saveDocumentBuffer(documentId, buffer);
 
     return NextResponse.json({
       documentId,

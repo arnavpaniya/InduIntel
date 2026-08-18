@@ -17,10 +17,10 @@ export interface StoredDocument {
   updatedAt: string;
 }
 
-// In-Memory store fallback when Supabase credentials are not supplied
 class MemoryStore {
   products: Map<string, Product> = new Map();
   documents: Map<string, StoredDocument> = new Map();
+  buffers: Map<string, Buffer> = new Map();
   productDocuments: Array<{ productId: string; documentId: string }> = [];
   evidence: Array<{ id: string; productId: string; documentId: string; attributeKey: string; page: number; quote: string }> = [];
 }
@@ -32,6 +32,14 @@ function hasSupabaseCredentials(): boolean {
     (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) &&
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
+}
+
+export async function saveDocumentBuffer(documentId: string, buffer: Buffer): Promise<void> {
+  memoryStore.buffers.set(documentId, buffer);
+}
+
+export async function getDocumentBuffer(documentId: string): Promise<Buffer | null> {
+  return memoryStore.buffers.get(documentId) || null;
 }
 
 export async function saveDocumentRecord(doc: StoredDocument): Promise<void> {
@@ -100,7 +108,7 @@ export async function getDocumentRecord(documentId: string): Promise<StoredDocum
 export async function saveProductRecord(userId: string, product: Product, documentId: string): Promise<void> {
   if (hasSupabaseCredentials()) {
     try {
-      const { error: productError } = await (supabaseAdmin as any).from('products').insert({
+      const { error: prodErr } = await (supabaseAdmin as any).from('products').insert({
         id: product.id,
         user_id: userId,
         name: product.name,
@@ -109,59 +117,39 @@ export async function saveProductRecord(userId: string, product: Product, docume
         category: product.category,
         completeness: product.completeness,
         confidence: product.confidence,
-        attributes: product.attributes,
-        conflicts: product.conflicts,
         missing_attributes: product.missingAttributes,
         commerce: product.commerce,
         created_at: product.createdAt,
         updated_at: product.updatedAt,
       });
 
-      if (!productError) {
+      if (!prodErr) {
         await (supabaseAdmin as any).from('product_documents').insert({
           product_id: product.id,
           document_id: documentId,
         });
 
-        if (product.attributes.length > 0) {
-          const evidenceRows = product.attributes.flatMap((attr) =>
-            attr.evidence.map((e) => ({
+        for (const attr of product.attributes) {
+          for (const ev of attr.evidence) {
+            await (supabaseAdmin as any).from('attribute_evidence').insert({
               product_id: product.id,
-              document_id: e.documentId,
+              document_id: ev.documentId,
               attribute_key: attr.key,
-              page: e.page,
-              quote: e.quote,
-            }))
-          );
-
-          if (evidenceRows.length > 0) {
-            await (supabaseAdmin as any).from('evidence').insert(evidenceRows);
+              page: ev.page,
+              quote: ev.quote,
+            });
           }
         }
         return;
       }
-      console.warn('Supabase product insert failed, using memory store:', productError.message);
+      console.warn('Supabase product save failed, saving to memory store:', prodErr.message);
     } catch (e: any) {
-      console.warn('Supabase product insert error:', e.message);
+      console.warn('Supabase product save error:', e.message);
     }
   }
 
-  // Memory store fallback
   memoryStore.products.set(product.id, product);
   memoryStore.productDocuments.push({ productId: product.id, documentId });
-
-  product.attributes.forEach((attr) => {
-    attr.evidence.forEach((e) => {
-      memoryStore.evidence.push({
-        id: `${product.id}-${attr.key}-${e.page}`,
-        productId: product.id,
-        documentId: e.documentId,
-        attributeKey: attr.key,
-        page: e.page,
-        quote: e.quote,
-      });
-    });
-  });
 }
 
 export async function getProductRecord(productId: string): Promise<Product | null> {
@@ -174,107 +162,68 @@ export async function getProductRecord(productId: string): Promise<Product | nul
         .single();
 
       if (!error && data) {
-        const d = data as any;
+        const p = data as any;
         return {
-          id: d.id,
-          name: d.name,
-          manufacturer: d.manufacturer,
-          model: d.model,
-          category: d.category,
-          attributes: d.attributes || [],
-          completeness: Number(d.completeness || 0),
-          confidence: Number(d.confidence || 0),
-          conflicts: d.conflicts || [],
-          missingAttributes: d.missing_attributes || [],
-          documents: d.documents || [],
-          commerce: d.commerce || null,
-          createdAt: d.created_at,
-          updatedAt: d.updated_at,
+          id: p.id,
+          name: p.name,
+          manufacturer: p.manufacturer,
+          model: p.model,
+          category: p.category,
+          attributes: [],
+          completeness: p.completeness,
+          confidence: p.confidence,
+          conflicts: [],
+          missingAttributes: p.missing_attributes || [],
+          documents: [],
+          commerce: p.commerce,
+          createdAt: p.created_at,
+          updatedAt: p.updated_at,
         };
       }
     } catch (e: any) {
-      console.warn('Supabase getProduct failed:', e.message);
+      console.warn('Supabase product query failed:', e.message);
     }
   }
 
   return memoryStore.products.get(productId) || null;
 }
 
-export async function updateProductRecord(product: Product): Promise<void> {
+export async function getAllProducts(): Promise<Product[]> {
   if (hasSupabaseCredentials()) {
     try {
-      const { error } = await (supabaseAdmin as any)
-        .from('products')
-        .update({
-          name: product.name,
-          manufacturer: product.manufacturer,
-          model: product.model,
-          category: product.category,
-          attributes: product.attributes,
-          conflicts: product.conflicts,
-          missing_attributes: product.missingAttributes,
-          completeness: product.completeness,
-          confidence: product.confidence,
-          commerce: product.commerce,
-          updated_at: product.updatedAt,
-        })
-        .eq('id', product.id);
-
-      if (!error) return;
-    } catch (e: any) {
-      console.warn('Supabase updateProduct failed:', e.message);
-    }
-  }
-
-  memoryStore.products.set(product.id, product);
-}
-
-export async function listProductsRecords(): Promise<Product[]> {
-  if (hasSupabaseCredentials()) {
-    try {
-      const { data, error } = await (supabaseAdmin as any)
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        return (data as any[]).map((d: any) => ({
-          id: d.id,
-          name: d.name,
-          manufacturer: d.manufacturer,
-          model: d.model,
-          category: d.category,
-          attributes: d.attributes || [],
-          completeness: Number(d.completeness || 0),
-          confidence: Number(d.confidence || 0),
-          conflicts: d.conflicts || [],
-          missingAttributes: d.missing_attributes || [],
-          documents: d.documents || [],
-          commerce: d.commerce || null,
-          createdAt: d.created_at,
-          updatedAt: d.updated_at,
+      const { data, error } = await (supabaseAdmin as any).from('products').select('*');
+      if (!error && Array.isArray(data)) {
+        return data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          manufacturer: p.manufacturer,
+          model: p.model,
+          category: p.category,
+          attributes: [],
+          completeness: p.completeness,
+          confidence: p.confidence,
+          conflicts: [],
+          missingAttributes: p.missing_attributes || [],
+          documents: [],
+          commerce: p.commerce,
+          createdAt: p.created_at,
+          updatedAt: p.updated_at,
         }));
       }
     } catch (e: any) {
-      console.warn('Supabase listProducts failed:', e.message);
+      console.warn('Supabase query all products failed:', e.message);
     }
   }
 
-  return Array.from(memoryStore.products.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  return Array.from(memoryStore.products.values());
 }
 
-export async function listDocumentsRecords(): Promise<StoredDocument[]> {
+export async function getAllDocuments(): Promise<StoredDocument[]> {
   if (hasSupabaseCredentials()) {
     try {
-      const { data, error } = await (supabaseAdmin as any)
-        .from('documents')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        return (data as any[]).map((d: any) => ({
+      const { data, error } = await (supabaseAdmin as any).from('documents').select('*');
+      if (!error && Array.isArray(data)) {
+        return data.map((d: any) => ({
           id: d.id,
           userId: d.user_id,
           name: d.name,
@@ -291,11 +240,37 @@ export async function listDocumentsRecords(): Promise<StoredDocument[]> {
         }));
       }
     } catch (e: any) {
-      console.warn('Supabase listDocuments failed:', e.message);
+      console.warn('Supabase query all documents failed:', e.message);
     }
   }
 
-  return Array.from(memoryStore.documents.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  return Array.from(memoryStore.documents.values());
+}
+
+export const listProductsRecords = getAllProducts;
+export const listDocumentsRecords = getAllDocuments;
+
+export async function updateProductRecord(product: Product): Promise<void> {
+  if (hasSupabaseCredentials()) {
+    try {
+      await (supabaseAdmin as any)
+        .from('products')
+        .update({
+          name: product.name,
+          manufacturer: product.manufacturer,
+          model: product.model,
+          category: product.category,
+          completeness: product.completeness,
+          confidence: product.confidence,
+          missing_attributes: product.missingAttributes,
+          commerce: product.commerce,
+          updated_at: product.updatedAt,
+        })
+        .eq('id', product.id);
+    } catch (e: any) {
+      console.warn('Supabase update product error:', e.message);
+    }
+  }
+
+  memoryStore.products.set(product.id, product);
 }

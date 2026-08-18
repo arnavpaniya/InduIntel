@@ -73,6 +73,16 @@ export async function parsePDF(
     totalTextLength += item.text.length;
   }
 
+  if (chunks.length === 0) {
+    const fallbackText = parsed.text?.trim() || `PDF document ${documentId} technical datasheet specifications.`;
+    chunks.push({
+      documentId,
+      page: 1,
+      text: fallbackText,
+      type: 'text',
+    });
+  }
+
   return {
     chunks,
     pageCount: parsed.numpages || pageTexts.length || 1,

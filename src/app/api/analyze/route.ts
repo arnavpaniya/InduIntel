@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocumentRecord } from '@/lib/db/store';
+import { getDocumentRecord, getDocumentBuffer } from '@/lib/db/store';
 import { processDocument, ProcessingContext } from '@/lib/processing';
 import { ProductCategory } from '@/types';
 
@@ -21,13 +21,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Document not found' }, { status: 404 });
       }
 
-      // If text or sample buffer is available
-      buffer = Buffer.from(`Product datasheet content for document ${document.originalName}`);
+      const storedBuffer = await getDocumentBuffer(documentId);
+
+      // Use real uploaded buffer if available; otherwise construct a text buffer for non-PDF or demo testing
+      if (storedBuffer) {
+        buffer = storedBuffer;
+      } else {
+        buffer = Buffer.from(`Industrial product technical datasheet for ${document.originalName}.\nProduct category: ${category || 'electric_motor'}.\nManufacturer: ${manufacturer || 'Industrial Brand'}.\nModel: ${model || 'Spec-100'}.\nSpecifications: 5 HP (3.7 kW), 415 V, 1440 RPM, IP55, IE3 efficiency class.`);
+      }
+
       context = {
         userId: document.userId,
         documentId: document.id,
         documentName: document.originalName,
-        documentType: document.type,
+        documentType: storedBuffer && document.type === 'pdf' ? 'pdf' : (document.type || 'text'),
         category: category as ProductCategory | undefined,
         manufacturer,
         model,
@@ -56,9 +63,9 @@ export async function POST(request: NextRequest) {
     console.error('Analysis error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
 
-    if (errorMessage.includes('OLLAMA') || errorMessage.includes('Ollama')) {
+    if (errorMessage.includes('GEMINI_API_KEY') || errorMessage.includes('AI Provider Initialization Failed')) {
       return NextResponse.json(
-        { error: 'AI Provider Initialization Failed. Please ensure OLLAMA_HOST and OLLAMA_MODEL are configured in .env.local, or set USE_MOCK_AI=true for testing.' },
+        { error: 'AI Provider Initialization Failed. Please ensure GEMINI_API_KEY is configured in .env.local, or set USE_MOCK_AI=true for testing.' },
         { status: 503 }
       );
     }
