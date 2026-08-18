@@ -87,8 +87,6 @@ const UNIT_ALIASES: Record<string, string> = {
   'millimeter': 'mm',
   'cm': 'cm',
   'centimeter': 'cm',
-  'm': 'm',
-  'meter': 'm',
   'in': 'in',
   'inch': 'in',
   'inches': 'in',
@@ -109,7 +107,14 @@ const UNIT_ALIASES: Record<string, string> = {
   'newton': 'N',
 };
 
-const UNIT_CONVERSIONS: Record<string, { to: string; factor: number }[]> = {
+interface ConversionRule {
+  to: string;
+  factor: number;
+  offset?: number;
+  multiply?: number;
+}
+
+const UNIT_CONVERSIONS: Record<string, ConversionRule[]> = {
   // Power conversions to kW
   'HP': [{ to: 'kW', factor: 0.7457 }],
   'W': [{ to: 'kW', factor: 0.001 }],
@@ -127,7 +132,7 @@ const UNIT_CONVERSIONS: Record<string, { to: string; factor: number }[]> = {
 
   // Temperature conversions to °C
   '°C': [],
-  '°F': [{ to: '°C', factor: 1, offset: -32, multiply: 5/9 }],
+  '°F': [{ to: '°C', factor: 1, offset: -32, multiply: 5 / 9 }],
   'K': [{ to: '°C', factor: 1, offset: -273.15 }],
 
   // Torque conversions to Nm
@@ -153,7 +158,6 @@ const UNIT_CONVERSIONS: Record<string, { to: string; factor: number }[]> = {
   // Dimensions conversions to mm
   'mm': [],
   'cm': [{ to: 'mm', factor: 10 }],
-  'm': [{ to: 'mm', factor: 1000 }],
   'in': [{ to: 'mm', factor: 25.4 }],
 
   // Weight conversions to kg
@@ -206,7 +210,7 @@ export function normalizeValue(
       const conversion = conversions[0];
       let converted = numericValue * conversion.factor;
 
-      if ('offset' in conversion && conversion.offset !== undefined) {
+      if (conversion.offset !== undefined) {
         converted = (numericValue + conversion.offset) * (conversion.multiply ?? 1);
       }
 
@@ -235,6 +239,7 @@ export function convertToStandardUnit(
   const normalizedFrom = normalizeUnit(fromUnit);
   const normalizedTo = normalizeUnit(toUnit);
 
+  if (!normalizedFrom || !normalizedTo) return null;
   if (normalizedFrom === normalizedTo) return value;
 
   const conversions = UNIT_CONVERSIONS[normalizedFrom];
@@ -244,7 +249,7 @@ export function convertToStandardUnit(
   if (!conversion) return null;
 
   let converted = value * conversion.factor;
-  if ('offset' in conversion && conversion.offset !== undefined) {
+  if (conversion.offset !== undefined) {
     converted = (value + conversion.offset) * (conversion.multiply ?? 1);
   }
 

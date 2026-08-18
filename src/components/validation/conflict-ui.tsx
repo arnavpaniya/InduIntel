@@ -160,3 +160,5 @@ export function ConflictList({ conflicts, onResolve }: { conflicts: Conflict[]; 
     </div>
   );
 }
+
+export const ConflictUI = ConflictList;

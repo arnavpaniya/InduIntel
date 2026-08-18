@@ -5,6 +5,7 @@ import { cn, formatNumber, getStatusChip } from '@/lib/utils';
 import { StatusChip, WhyButton } from '@/components/ui/status-chip';
 import { EvidenceDrawer } from '@/components/evidence/evidence-drawer';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Hash, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SpecificationTableProps {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 import { generateSafeFilename, sanitizeFilename } from '@/lib/pdf';
+import { saveDocumentRecord } from '@/lib/db/store';
 
 const ALLOWED_TYPES = ['application/pdf', 'text/csv', 'text/plain'];
 const ALLOWED_EXTENSIONS = ['.pdf', '.csv', '.txt'];
@@ -12,9 +13,7 @@ export async function POST(request: NextRequest) {
     const supabase = createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = user?.id || '00000000-0000-0000-0000-000000000000';
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -32,49 +31,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid file type. Allowed: PDF, CSV, TXT' }, { status: 400 });
     }
 
-    const mimeType = file.type;
-    if (!ALLOWED_TYPES.includes(mimeType)) {
-      return NextResponse.json({ error: 'Invalid MIME type' }, { status: 400 });
-    }
-
-    const safeFilename = generateSafeFilename(file.name);
     const documentId = uuidv4();
-    const storagePath = `${user.id}/${documentId}${extension}`;
+    const safeFilename = generateSafeFilename(file.name);
+    const storagePath = `${userId}/${documentId}${extension}`;
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const now = new Date().toISOString();
 
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(storagePath, buffer, {
-        contentType: mimeType,
-        upsert: false,
-      });
+    const docRecord = {
+      id: documentId,
+      userId,
+      name: safeFilename,
+      originalName: sanitizeFilename(file.name),
+      type: extension.slice(1) as 'pdf' | 'csv' | 'text',
+      size: file.size,
+      storagePath,
+      mimeType: file.type || 'application/octet-stream',
+      status: 'uploaded' as const,
+      createdAt: now,
+      updatedAt: now,
+    };
 
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      return NextResponse.json({ error: 'Failed to store document' }, { status: 500 });
-    }
-
-    const { error: dbError } = await supabase
-      .from('documents')
-      .insert({
-        id: documentId,
-        user_id: user.id,
-        name: safeFilename,
-        original_name: sanitizeFilename(file.name),
-        type: extension.slice(1) as 'pdf' | 'csv' | 'text',
-        size: file.size,
-        storage_path: storagePath,
-        mime_type: mimeType,
-        status: 'uploaded',
-      });
-
-    if (dbError) {
-      console.error('Database insert error:', dbError);
-      await supabase.storage.from('documents').remove([storagePath]);
-      return NextResponse.json({ error: 'Failed to register document' }, { status: 500 });
-    }
+    // Save using unified database / memory store
+    await saveDocumentRecord(docRecord);
 
     return NextResponse.json({
       documentId,

@@ -58,7 +58,6 @@ function attemptInference(
     rated_torque: inferRatedTorque,
     flow_rate: inferFlowRate,
     head: inferHead,
-    power: inferPower,
   };
 
   const inferFn = inferences[key];

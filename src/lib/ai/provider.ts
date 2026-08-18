@@ -71,7 +71,7 @@ CRITICAL RULES:
 9. Return a 0-1 application confidence score for each attribute.
 10. Attribute status must be one of: VERIFIED, INFERRED, UNKNOWN, CONFLICT.
 
-${schema ? `PRODUCT CATEGORY: ${category.toUpperCase()}\n${schema}` : ''}
+${category ? `PRODUCT CATEGORY: ${category.toUpperCase()}\n${schema}` : ''}
 
 OUTPUT SCHEMA:
 {

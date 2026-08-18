@@ -1,8 +1,5 @@
 import { DocumentChunk } from '@/types';
-import * as pdfjsLib from 'pdfjs-dist';
-import { createCanvas } from 'canvas';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import pdfParse from 'pdf-parse';
 
 export interface ParseResult {
   chunks: DocumentChunk[];
@@ -10,18 +7,13 @@ export interface ParseResult {
   metadata: {
     title?: string;
     author?: string;
-    subject?: string;
-    creator?: string;
-    producer?: string;
-    creationDate?: string;
-    modificationDate?: string;
+    info?: any;
   };
 }
 
 export interface ParseOptions {
   maxPages?: number;
   maxTextLength?: number;
-  includeImages?: boolean;
 }
 
 const DEFAULT_MAX_PAGES = 50;
@@ -35,75 +27,60 @@ export async function parsePDF(
   const maxPages = options.maxPages ?? DEFAULT_MAX_PAGES;
   const maxTextLength = options.maxTextLength ?? DEFAULT_MAX_TEXT_LENGTH;
 
-  const data = new Uint8Array(buffer);
-  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const pageTexts: { page: number; text: string }[] = [];
 
-  const pageCount = Math.min(pdf.numPages, maxPages);
+  const parsed = await pdfParse(buffer, {
+    max: maxPages,
+    pagerender: async (pageData: any) => {
+      const textContent = await pageData.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const pageNum = pageData.pageIndex + 1;
+      pageTexts.push({ page: pageNum, text: pageText });
+      return pageText;
+    },
+  });
+
   const chunks: DocumentChunk[] = [];
   let totalTextLength = 0;
 
-  for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-    const page = await pdf.getPage(pageNum);
+  for (const item of pageTexts) {
+    if (!item.text) continue;
 
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (pageText.length > 0) {
-      if (totalTextLength + pageText.length > maxTextLength) {
-        const remaining = maxTextLength - totalTextLength;
-        if (remaining > 100) {
-          chunks.push({
-            documentId,
-            page: pageNum,
-            text: pageText.slice(0, remaining),
-            type: 'text',
-          });
-        }
-        break;
-      }
-
-      chunks.push({
-        documentId,
-        page: pageNum,
-        text: pageText,
-        type: 'text',
-      });
-      totalTextLength += pageText.length;
-    }
-
-    if (options.includeImages) {
-      try {
-        const viewport = page.getViewport({ scale: 1.5 });
-        const canvas = createCanvas(viewport.width, viewport.height);
-        const context = canvas.getContext('2d');
-
-        await page.render({
-          canvasContext: context,
-          viewport,
-        }).promise;
-
+    if (totalTextLength + item.text.length > maxTextLength) {
+      const remaining = maxTextLength - totalTextLength;
+      if (remaining > 100) {
         chunks.push({
           documentId,
-          page: pageNum,
-          text: '',
-          type: 'image',
+          page: item.page,
+          text: item.text.slice(0, remaining),
+          type: 'text',
         });
-      } catch {
-        // Ignore image rendering errors
       }
+      break;
     }
-  }
 
-  const metadata = await pdf.getMetadata().catch(() => ({ info: {} }));
+    chunks.push({
+      documentId,
+      page: item.page,
+      text: item.text,
+      type: 'text',
+    });
+    totalTextLength += item.text.length;
+  }
 
   return {
     chunks,
-    pageCount: pdf.numPages,
-    metadata: metadata.info || {},
+    pageCount: parsed.numpages || pageTexts.length || 1,
+    metadata: {
+      title: parsed.info?.Title || undefined,
+      author: parsed.info?.Author || undefined,
+      info: parsed.info || {},
+    },
   };
 }
 

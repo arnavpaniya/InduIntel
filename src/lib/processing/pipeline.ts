@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { DocumentChunk, Product, ProductCategory, ProductAttribute, Evidence, DocumentReference, ProcessingStage } from '@/types';
 import { getAIProvider } from '@/lib/ai';
-import { parsePDF, parseCSV, validatePDFBuffer, validateCSVBuffer, generateSafeFilename } from '@/lib/pdf';
+import { parsePDF, parseCSV, validatePDFBuffer, validateCSVBuffer } from '@/lib/pdf';
 import { validateAndScore, mergeAttributesFromSources } from '@/lib/validation';
 import { enrichProduct } from '@/lib/enrichment';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { saveProductRecord, updateProductRecord } from '@/lib/db/store';
 
 export interface ProcessingContext {
   userId: string;
@@ -32,8 +32,6 @@ export async function processDocument(
     { stage: 'Validating', status: 'pending', message: 'Normalization & validation' },
     { stage: 'Ready', status: 'pending', message: 'Finalizing product' },
   ];
-
-  const supabase = createSupabaseAdminClient();
 
   try {
     // Stage 2: Parse
@@ -149,8 +147,8 @@ export async function processDocument(
       updatedAt: now,
     };
 
-    // Store in database
-    await storeProduct(supabase, context.userId, product, context.documentId);
+    // Store product using unified store
+    await saveProductRecord(context.userId, product, context.documentId);
 
     stages[4] = { stage: 'Ready', status: 'completed', message: 'Product intelligence ready' };
 
@@ -161,63 +159,6 @@ export async function processDocument(
       if (s.status === 'processing') s.status = 'failed';
     });
     throw new Error(`Processing failed: ${errorMessage}`);
-  }
-}
-
-async function storeProduct(
-  supabase: ReturnType<typeof createSupabaseAdminClient>,
-  userId: string,
-  product: Product,
-  documentId: string
-) {
-  const { error: productError } = await supabase
-    .from('products')
-    .insert({
-      id: product.id,
-      user_id: userId,
-      name: product.name,
-      manufacturer: product.manufacturer,
-      model: product.model,
-      category: product.category,
-      completeness: product.completeness,
-      confidence: product.confidence,
-      attributes: product.attributes,
-      conflicts: product.conflicts,
-      missing_attributes: product.missingAttributes,
-      commerce: product.commerce,
-      created_at: product.createdAt,
-      updated_at: product.updatedAt,
-    });
-
-  if (productError) throw productError;
-
-  const { error: linkError } = await supabase
-    .from('product_documents')
-    .insert({
-      product_id: product.id,
-      document_id: documentId,
-    });
-
-  if (linkError) throw linkError;
-
-  if (product.attributes.length > 0) {
-    const evidenceRows = product.attributes.flatMap(attr =>
-      attr.evidence.map(e => ({
-        product_id: product.id,
-        document_id: e.documentId,
-        attribute_key: attr.key,
-        page: e.page,
-        quote: e.quote,
-      }))
-    );
-
-    if (evidenceRows.length > 0) {
-      const { error: evidenceError } = await supabase
-        .from('evidence')
-        .insert(evidenceRows);
-
-      if (evidenceError) throw evidenceError;
-    }
   }
 }
 
@@ -234,8 +175,6 @@ export async function processMultipleDocuments(
   );
 
   const primary = results[0];
-  const allAttributes = results.flatMap(r => r.product.attributes);
-  const allConflicts = results.flatMap(r => r.product.conflicts);
   const allDocuments = results.flatMap(r => r.product.documents);
 
   const mergedAttributes = mergeAttributesFromSources(
@@ -243,7 +182,6 @@ export async function processMultipleDocuments(
     primary.product.category
   );
 
-  const supabase = createSupabaseAdminClient();
   const evidenceMap = new Map<string, Evidence[]>();
   mergedAttributes.forEach(attr => {
     attr.evidence.forEach(e => {
@@ -266,30 +204,10 @@ export async function processMultipleDocuments(
     updatedAt: new Date().toISOString(),
   };
 
-  await updateProduct(supabase, primary.product.id, mergedProduct);
+  await updateProductRecord(mergedProduct);
 
   return {
     product: mergedProduct,
     stages: primary.stages,
   };
-}
-
-async function updateProduct(
-  supabase: ReturnType<typeof createSupabaseAdminClient>,
-  productId: string,
-  product: Product
-) {
-  const { error } = await supabase
-    .from('products')
-    .update({
-      attributes: product.attributes,
-      conflicts: product.conflicts,
-      missing_attributes: product.missingAttributes,
-      completeness: product.completeness,
-      confidence: product.confidence,
-      updated_at: product.updatedAt,
-    })
-    .eq('id', productId);
-
-  if (error) throw error;
 }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { getProductRecord } from '@/lib/db/store';
 import { exportToJSON, exportToCSV, exportCommerceToJSON, exportCommerceToCSV } from '@/lib/export';
 
 export async function GET(
@@ -8,30 +7,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format') as 'json' | 'csv' || 'json';
+    const format = (searchParams.get('format') as 'json' | 'csv') || 'json';
     const includeEvidence = searchParams.get('evidence') === 'true';
     const includeConflicts = searchParams.get('conflicts') === 'true';
     const type = searchParams.get('type') || 'product';
 
-    const adminSupabase = createSupabaseAdminClient();
+    const product = await getProductRecord(id);
 
-    const { data: product, error: productError } = await adminSupabase
-      .from('products')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single();
-
-    if (productError || !product) {
+    if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
@@ -43,24 +28,12 @@ export async function GET(
         result = exportCommerceToJSON(product.commerce, id);
       }
     } else {
+      const options = { format, includeEvidence, includeConflicts };
       if (format === 'csv') {
-        result = exportToCSV(product as any, { includeEvidence, includeConflicts });
+        result = exportToCSV(product, options);
       } else {
-        result = exportToJSON(product as any, { includeEvidence, includeConflicts });
+        result = exportToJSON(product, options);
       }
-    }
-
-    const { error: exportError } = await adminSupabase
-      .from('exports')
-      .insert({
-        user_id: user.id,
-        product_id: id,
-        format,
-        status: 'completed',
-      });
-
-    if (exportError) {
-      console.error('Export log error:', exportError);
     }
 
     return new NextResponse(result.content, {

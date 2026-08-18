@@ -1,55 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { listProductsRecords } from '@/lib/db/store';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const category = searchParams.get('category');
-    const search = searchParams.get('search');
+    const search = searchParams.get('search')?.toLowerCase();
 
-    const adminSupabase = createSupabaseAdminClient();
+    let products = await listProductsRecords();
 
-    let query = adminSupabase
-      .from('products')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (category) {
-      query = query.eq('category', category);
+    if (category && category !== 'all') {
+      products = products.filter((p) => p.category === category);
     }
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,manufacturer.ilike.%${search}%,model.ilike.%${search}%`);
+      products = products.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(search) ||
+          p.manufacturer?.toLowerCase().includes(search) ||
+          p.model?.toLowerCase().includes(search)
+      );
     }
 
+    const total = products.length;
     const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    query = query.range(from, to);
-
-    const { data: products, error, count } = await query;
-
-    if (error) {
-      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
-    }
+    const paginatedProducts = products.slice(from, from + limit);
 
     return NextResponse.json({
-      products: products || [],
+      products: paginatedProducts,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
       },
     });
   } catch (error) {

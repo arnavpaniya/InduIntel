@@ -45,7 +45,7 @@ export function parseCSV(
     columns: true,
     skip_empty_lines: true,
     trim: true,
-    max_records: maxRows,
+    to: maxRows,
   });
 
   const headers = records.length > 0 ? Object.keys(records[0]) : [];

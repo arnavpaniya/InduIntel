@@ -12,20 +12,21 @@ export function getAIProvider(): AIProvider {
     return aiProviderInstance;
   }
 
-  const useMock = process.env.USE_MOCK_AI === 'true' || process.env.NODE_ENV === 'test';
+  const useMock = process.env.USE_MOCK_AI === 'true';
 
   if (useMock) {
     aiProviderInstance = createMockProvider();
     return aiProviderInstance;
   }
 
+  // Real production path: Ollama must be configured
   try {
     aiProviderInstance = createOllamaProviderFromEnv();
     return aiProviderInstance;
-  } catch (error) {
-    console.warn('Failed to initialize Ollama provider, falling back to mock:', error);
-    aiProviderInstance = createMockProvider();
-    return aiProviderInstance;
+  } catch (error: any) {
+    throw new Error(
+      `AI Provider Initialization Failed: ${error.message || error}. Please ensure OLLAMA_HOST and OLLAMA_MODEL are configured in .env.local, or set USE_MOCK_AI=true for testing.`
+    );
   }
 }
 

@@ -61,11 +61,15 @@ function detectConflicts(attributes: ProductAttribute[]): Conflict[] {
     const verifiedAttrs = group.filter(a => a.status === 'VERIFIED' && a.value !== null);
     if (verifiedAttrs.length <= 1) return;
 
-    const values = verifiedAttrs.map(a => ({
-      value: a.value,
-      unit: a.unit,
-      source: a.evidence[0] || { documentId: '', documentName: '', page: 0, quote: '' },
-    }));
+    const values: Conflict['values'] = verifiedAttrs
+      .filter((a): a is ProductAttribute & { value: string | number } => a.value !== null)
+      .map(a => ({
+        value: a.value,
+        unit: a.unit,
+        source: a.evidence[0] || { documentId: '', documentName: '', page: 0, quote: '' },
+      }));
+
+    if (values.length <= 1) return;
 
     const baseValue = values[0];
     let hasConflict = false;
@@ -144,7 +148,7 @@ function calculateConflictConfidence(values: Conflict['values']): number {
     valueCounts.set(key, (valueCounts.get(key) || 0) + 1);
   });
 
-  const maxCount = Math.max(...valueCounts.values());
+  const maxCount = Math.max(...Array.from(valueCounts.values()));
   return maxCount / values.length;
 }
 

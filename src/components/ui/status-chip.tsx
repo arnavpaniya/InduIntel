@@ -83,3 +83,16 @@ export function CircularProgress({
     </div>
   );
 }
+
+export function WhyButton({ attribute, onClick }: { attribute: any; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-clay-secondary hover:bg-clay-deep text-text-primary transition-all shadow-sm border border-clay-deep/30 cursor-pointer"
+      title="View evidence & provenance"
+    >
+      Why?
+    </button>
+  );
+}

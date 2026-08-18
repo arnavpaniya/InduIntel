@@ -53,6 +53,17 @@ export interface DocumentReference {
   pageCount?: number;
 }
 
+export interface Document {
+  id: string;
+  originalName: string;
+  type: 'pdf' | 'csv' | 'text';
+  size: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  createdAt: string;
+  userId?: string;
+  storagePath?: string;
+}
+
 export interface CommerceOutput {
   title: string;
   shortDescription: string;

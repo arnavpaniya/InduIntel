@@ -1,4 +1,5 @@
-import { AIProvider, AIInput, ProductExtraction, Evidence } from '@/types';
+import { AIInput, ProductExtraction, Evidence, ProductCategory } from '@/types';
+import { AIProvider } from './provider';
 
 export class MockProvider implements AIProvider {
   private delay: number;
@@ -23,7 +24,7 @@ export class MockProvider implements AIProvider {
     return this.generateMockExtraction(category, input.documentChunks);
   }
 
-  private detectCategory(chunks: AIInput['documentChunks']): 'electric_motor' | 'bearing' | 'industrial_pump' {
+  private detectCategory(chunks: AIInput['documentChunks']): ProductCategory {
     const text = chunks.map((c) => c.text.toLowerCase()).join(' ');
 
     if (text.includes('bearing') || text.includes('inner diameter') || text.includes('outer diameter') || text.includes('dynamic load')) {
@@ -36,7 +37,7 @@ export class MockProvider implements AIProvider {
   }
 
   private generateMockExtraction(
-    category: 'electric_motor' | 'bearing' | 'industrial_pump',
+    category: ProductCategory,
     chunks: AIInput['documentChunks']
   ): ProductExtraction {
     const docId = chunks[0]?.documentId || 'doc_001';
@@ -120,6 +121,14 @@ export class MockProvider implements AIProvider {
             { key: 'inlet_size', value: 80, unit: 'mm', confidence: 0.88, evidence: baseEvidence(1, 'Inlet: DN 80') },
             { key: 'outlet_size', value: 65, unit: 'mm', confidence: 0.88, evidence: baseEvidence(1, 'Outlet: DN 65') },
           ],
+        };
+
+      default:
+        return {
+          category: 'unknown',
+          manufacturer: 'Generic',
+          model: 'Product-001',
+          attributes: [],
         };
     }
   }

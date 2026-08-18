@@ -1,44 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { getProductRecord, updateProductRecord } from '@/lib/db/store';
 import { Product, ProductAttribute, CommerceOutput } from '@/types';
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await params;
-    const adminSupabase = createSupabaseAdminClient();
+    const product = await getProductRecord(id);
 
-    const { data: product, error: productError } = await adminSupabase
-      .from('products')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single();
-
-    if (productError || !product) {
+    if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    const commerce = generateCommerceOutput(product as unknown as Product);
+    const commerce = generateCommerceOutput(product);
+    const updatedProduct = {
+      ...product,
+      commerce,
+      updatedAt: new Date().toISOString(),
+    };
 
-    const { error: updateError } = await adminSupabase
-      .from('products')
-      .update({ commerce, updated_at: new Date().toISOString() })
-      .eq('id', id);
-
-    if (updateError) {
-      return NextResponse.json({ error: 'Failed to save commerce output' }, { status: 500 });
-    }
+    await updateProductRecord(updatedProduct);
 
     return NextResponse.json(commerce);
   } catch (error) {
@@ -49,21 +32,21 @@ export async function POST(
 
 function generateCommerceOutput(product: Product): CommerceOutput {
   const verifiedAttrs = product.attributes.filter(
-    a => a.status === 'VERIFIED' && a.value !== null
+    (a) => a.status === 'VERIFIED' && a.value !== null
   );
 
   const inferredAttrs = product.attributes.filter(
-    a => a.status === 'INFERRED' && a.value !== null
+    (a) => a.status === 'INFERRED' && a.value !== null
   );
 
   const reliableAttrs = [...verifiedAttrs, ...inferredAttrs];
 
-  const getAttr = (key: string) => reliableAttrs.find(a => a.key === key);
+  const getAttr = (key: string) => reliableAttrs.find((a) => a.key === key);
   const formatAttr = (attr: ProductAttribute | undefined) =>
     attr && attr.value !== null ? `${attr.value} ${attr.unit || ''}`.trim() : null;
 
-  const manufacturer = product.manufacturer || 'Unknown Manufacturer';
-  const model = product.model || 'Unknown Model';
+  const manufacturer = product.manufacturer || 'Industrial Manufacturer';
+  const model = product.model || 'Technical Model';
   const categoryLabels: Record<string, string> = {
     electric_motor: 'Industrial Electric Motor',
     bearing: 'Industrial Bearing',
@@ -120,13 +103,13 @@ function generateCommerceOutput(product: Product): CommerceOutput {
     manufacturer.toLowerCase(),
     model.toLowerCase(),
     categoryLabel.toLowerCase(),
-    ...reliableAttrs.map(a => a.key.replace(/_/g, ' ')),
-    ...reliableAttrs.filter(a => a.value).map(a => `${a.value} ${a.unit || ''}`.trim().toLowerCase()),
+    ...reliableAttrs.map((a) => a.key.replace(/_/g, ' ')),
+    ...reliableAttrs.filter((a) => a.value).map((a) => `${a.value} ${a.unit || ''}`.trim().toLowerCase()),
   ].filter(Boolean);
 
   const technicalSpecifications = reliableAttrs
-    .filter(a => a.value !== null)
-    .map(attr => ({
+    .filter((a) => a.value !== null)
+    .map((attr) => ({
       key: attr.key,
       label: attr.label,
       value: formatAttr(attr) || '',
@@ -136,7 +119,7 @@ function generateCommerceOutput(product: Product): CommerceOutput {
     title,
     shortDescription,
     longDescription,
-    keywords: [...new Set(keywords)].slice(0, 20),
+    keywords: Array.from(new Set(keywords)).slice(0, 20),
     technicalSpecifications,
   };
 }

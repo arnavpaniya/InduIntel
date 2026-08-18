@@ -3,26 +3,26 @@ export * from './bearing';
 export * from './pump';
 
 import { ProductCategory } from '@/types';
-import { MOTOR_ALL_ATTRIBUTES, MOTOR_REQUIRED_ATTRIBUTES } from './motor';
-import { BEARING_ALL_ATTRIBUTES, BEARING_REQUIRED_ATTRIBUTES } from './bearing';
-import { PUMP_ALL_ATTRIBUTES, PUMP_REQUIRED_ATTRIBUTES } from './pump';
+import { MOTOR_ALL_ATTRIBUTES, MOTOR_REQUIRED_ATTRIBUTES, MOTOR_ATTRIBUTE_LABELS, MOTOR_ATTRIBUTE_UNITS } from './motor';
+import { BEARING_ALL_ATTRIBUTES, BEARING_REQUIRED_ATTRIBUTES, BEARING_ATTRIBUTE_LABELS, BEARING_ATTRIBUTE_UNITS } from './bearing';
+import { PUMP_ALL_ATTRIBUTES, PUMP_REQUIRED_ATTRIBUTES, PUMP_ATTRIBUTE_LABELS, PUMP_ATTRIBUTE_UNITS } from './pump';
 
 export function getSchemaForCategory(category: ProductCategory) {
   switch (category) {
     case 'electric_motor':
       return {
-        required: MOTOR_REQUIRED_ATTRIBUTES,
-        all: MOTOR_ALL_ATTRIBUTES,
+        required: Array.from(MOTOR_REQUIRED_ATTRIBUTES),
+        all: Array.from(MOTOR_ALL_ATTRIBUTES),
       };
     case 'bearing':
       return {
-        required: BEARING_REQUIRED_ATTRIBUTES,
-        all: BEARING_ALL_ATTRIBUTES,
+        required: Array.from(BEARING_REQUIRED_ATTRIBUTES),
+        all: Array.from(BEARING_ALL_ATTRIBUTES),
       };
     case 'industrial_pump':
       return {
-        required: PUMP_REQUIRED_ATTRIBUTES,
-        all: PUMP_ALL_ATTRIBUTES,
+        required: Array.from(PUMP_REQUIRED_ATTRIBUTES),
+        all: Array.from(PUMP_ALL_ATTRIBUTES),
       };
     default:
       return {
@@ -43,11 +43,11 @@ export function getAllAttributes(category: ProductCategory): string[] {
 export function getAttributeLabel(category: ProductCategory, key: string): string {
   switch (category) {
     case 'electric_motor':
-      return (await import('./motor')).MOTOR_ATTRIBUTE_LABELS[key as any] || key;
+      return (MOTOR_ATTRIBUTE_LABELS as Record<string, string>)[key] || key;
     case 'bearing':
-      return (await import('./bearing')).BEARING_ATTRIBUTE_LABELS[key as any] || key;
+      return (BEARING_ATTRIBUTE_LABELS as Record<string, string>)[key] || key;
     case 'industrial_pump':
-      return (await import('./pump')).PUMP_ATTRIBUTE_LABELS[key as any] || key;
+      return (PUMP_ATTRIBUTE_LABELS as Record<string, string>)[key] || key;
     default:
       return key;
   }
@@ -56,11 +56,11 @@ export function getAttributeLabel(category: ProductCategory, key: string): strin
 export function getAttributeUnit(category: ProductCategory, key: string): string | null {
   switch (category) {
     case 'electric_motor':
-      return (await import('./motor')).MOTOR_ATTRIBUTE_UNITS[key as any] || null;
+      return (MOTOR_ATTRIBUTE_UNITS as Record<string, string | null>)[key] ?? null;
     case 'bearing':
-      return (await import('./bearing')).BEARING_ATTRIBUTE_UNITS[key as any] || null;
+      return (BEARING_ATTRIBUTE_UNITS as Record<string, string | null>)[key] ?? null;
     case 'industrial_pump':
-      return (await import('./pump')).PUMP_ATTRIBUTE_UNITS[key as any] || null;
+      return (PUMP_ATTRIBUTE_UNITS as Record<string, string | null>)[key] ?? null;
     default:
       return null;
   }
