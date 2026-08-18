@@ -11,13 +11,13 @@ interface ClayCardProps {
 }
 
 export function ClayCard({ children, className, variant = 'default', onClick }: ClayCardProps) {
-  const baseClasses = 'transition-all duration-300';
+  const baseClasses = 'command-panel transition-colors duration-150';
   const variantClasses = {
-    default: 'bg-clay rounded-clay-xl shadow-clay',
-    secondary: 'bg-clay-secondary rounded-clay-xl shadow-clay',
-    sm: 'bg-clay rounded-clay-lg shadow-clay-sm',
+    default: 'bg-surface border border-border rounded',
+    secondary: 'bg-surface-raised border border-border rounded',
+    sm: 'bg-surface border border-border rounded-sm',
   };
-  const interactiveClasses = onClick ? 'cursor-pointer hover:shadow-clay-lg active:shadow-clay-inset' : '';
+  const interactiveClasses = onClick ? 'cursor-pointer hover:border-accent' : '';
 
   return (
     <div
@@ -34,7 +34,7 @@ export function ClayCard({ children, className, variant = 'default', onClick }: 
 
 export function ClaySurface({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('bg-clay rounded-clay-xl shadow-clay', className)}>
+    <div className={cn('bg-surface border border-border rounded', className)}>
       {children}
     </div>
   );

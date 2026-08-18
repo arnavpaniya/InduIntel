@@ -4,11 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, AlertTriangle, FileText, Download, Share2, Layers } from 'lucide-react';
+import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { SpecificationTable } from '@/components/products/specification-table';
 import { CommerceScreen } from '@/components/products/commerce-screen';
 import { ConflictUI } from '@/components/validation/conflict-ui';
-import { CircularProgress } from '@/components/ui/status-chip';
 import { Product } from '@/types';
 
 export default function ProductDetailPage() {
@@ -35,10 +34,10 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-text-primary flex items-center justify-center">
+      <div className="min-h-screen bg-background text-text-primary flex items-center justify-center font-mono text-xs">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-4 border-text-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-text-secondary font-medium">Loading product profile...</p>
+          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-text-secondary uppercase">LOADING PRODUCT PROFILE...</p>
         </div>
       </div>
     );
@@ -46,14 +45,14 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background text-text-primary flex items-center justify-center p-6">
-        <div className="clay-surface p-12 text-center max-w-md w-full space-y-4">
-          <FileText className="w-12 h-12 text-text-secondary mx-auto" />
-          <h2 className="text-2xl font-bold text-text-primary">Product Not Found</h2>
-          <p className="text-text-secondary text-sm">The product record you requested could not be located.</p>
-          <Link href="/dashboard" className="clay-button inline-flex items-center gap-2">
+      <div className="min-h-screen bg-background text-text-primary flex items-center justify-center p-6 font-sans">
+        <div className="command-panel p-12 text-center max-w-md w-full space-y-4">
+          <FileText className="w-10 h-10 text-text-muted mx-auto" />
+          <h2 className="text-xl font-medium text-text-primary">PRODUCT RECORD NOT FOUND</h2>
+          <p className="text-text-secondary text-xs font-mono">The requested product record could not be located in database.</p>
+          <Link href="/dashboard" className="clay-button inline-flex items-center gap-2 text-xs font-mono uppercase">
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            RETURN TO DASHBOARD
           </Link>
         </div>
       </div>
@@ -63,146 +62,121 @@ export default function ProductDetailPage() {
   const conflictCount = product.conflicts?.length || 0;
 
   return (
-    <div className="min-h-screen bg-background text-text-primary">
-      {/* Header Bar */}
-      <header className="border-b border-clay-deep/30 bg-background/80 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background text-text-primary font-sans flex flex-col">
+      {/* Header Bar (Section 9) */}
+      <header className="border-b border-border bg-background px-8 py-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
             <Link
               href="/dashboard"
-              className="p-2 clay-surface-sm rounded-lg hover:bg-clay-deep transition-colors text-text-secondary"
+              className="text-xs font-mono text-text-secondary hover:text-accent inline-flex items-center gap-1.5 transition-colors uppercase"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-3.5 h-3.5" />
+              PRODUCTS
             </Link>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-text-primary tracking-tight">{product.name}</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-clay-deep text-text-primary">
-                  {product.category.replace(/_/g, ' ')}
-                </span>
-              </div>
-              <p className="text-xs text-text-secondary">
-                {product.manufacturer} · {product.model}
+              <h1 className="text-2xl font-mono font-medium text-text-primary tracking-tight">
+                {product.name || `${product.manufacturer} ${product.model}`}
+              </h1>
+              <p className="text-xs font-mono text-text-secondary uppercase mt-0.5">
+                {product.category.replace(/_/g, ' ')} · {product.manufacturer || 'Unknown Manufacturer'} · {product.model || 'Model N/A'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <a
-              href={`/api/products/${product.id}/export?format=json`}
-              download
-              className="clay-button-secondary inline-flex items-center gap-2 text-sm"
-            >
-              <Download className="w-4 h-4" />
-              Export JSON
-            </a>
-            <a
-              href={`/api/products/${product.id}/export?format=csv`}
-              download
-              className="clay-button inline-flex items-center gap-2 text-sm"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </a>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 font-mono text-xs">
+              <div className="command-panel px-3 py-1.5 border border-border">
+                <span className="text-text-secondary">COMPLETENESS: </span>
+                <span className="text-status-verified font-medium">{product.completeness}%</span>
+              </div>
+              <div className="command-panel px-3 py-1.5 border border-border">
+                <span className="text-text-secondary">CONFIDENCE: </span>
+                <span className="text-text-primary font-medium">{product.confidence}%</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={`/api/products/${product.id}/export?format=json`}
+                download
+                className="clay-button-secondary text-xs font-mono uppercase inline-flex items-center gap-1.5 px-3 py-2"
+              >
+                <Download className="w-3.5 h-3.5" />
+                JSON
+              </a>
+              <a
+                href={`/api/products/${product.id}/export?format=csv`}
+                download
+                className="clay-button text-xs font-mono uppercase inline-flex items-center gap-1.5 px-3 py-2"
+              >
+                <Download className="w-3.5 h-3.5" />
+                CSV
+              </a>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Health & Completeness Banner */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="clay-surface p-6 flex items-center gap-6">
-            <CircularProgress value={product.completeness} size={76} strokeWidth={7} />
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">Completeness Score</div>
-              <div className="text-2xl font-bold text-text-primary">{product.completeness}%</div>
-              <p className="text-xs text-text-secondary">Required schema attributes populated</p>
-            </div>
-          </div>
-
-          <div className="clay-surface p-6 flex items-center gap-6">
-            <CircularProgress value={product.confidence} size={76} strokeWidth={7} />
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">Confidence Score</div>
-              <div className="text-2xl font-bold text-text-primary">{product.confidence}%</div>
-              <p className="text-xs text-text-secondary">AI evidence & page provenance rating</p>
-            </div>
-          </div>
-
-          <div className="clay-surface p-6 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">Cross-Source Conflicts</div>
-              <div className={`text-2xl font-bold ${conflictCount > 0 ? 'text-status-conflict' : 'text-status-verified'}`}>
-                {conflictCount} {conflictCount === 1 ? 'Conflict' : 'Conflicts'}
-              </div>
-              <p className="text-xs text-text-secondary">Discrepancies across datasheets</p>
-            </div>
-            {conflictCount > 0 && (
-              <span className="p-3 bg-status-conflict/10 text-status-conflict rounded-full">
-                <AlertTriangle className="w-6 h-6" />
-              </span>
-            )}
-          </div>
-        </section>
-
-        {/* Tab Navigation */}
+      <main className="max-w-7xl mx-auto px-8 py-8 space-y-8 flex-1 w-full">
+        {/* Tabs (Section 9: Underline style, not pill) */}
         <section className="space-y-6">
-          <div className="flex border-b border-clay-deep/30 gap-8">
+          <div className="flex border-b border-border gap-8 font-mono text-xs uppercase tracking-wider">
             <button
               onClick={() => setActiveTab('specifications')}
-              className={`pb-4 font-semibold text-sm transition-all border-b-2 ${
+              className={`pb-3 font-medium transition-colors ${
                 activeTab === 'specifications'
-                  ? 'border-text-primary text-text-primary'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              Specifications & Provenance ({product.attributes.length})
+              SPECIFICATIONS ({product.attributes.length})
             </button>
 
             <button
               onClick={() => setActiveTab('conflicts')}
-              className={`pb-4 font-semibold text-sm transition-all border-b-2 flex items-center gap-2 ${
+              className={`pb-3 font-medium transition-colors flex items-center gap-2 ${
                 activeTab === 'conflicts'
-                  ? 'border-text-primary text-text-primary'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              Cross-Source Conflicts
+              CONFLICTS
               {conflictCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-status-conflict text-white">
-                  {conflictCount}
+                <span className="px-1.5 py-0.5 text-[10px] bg-status-conflict text-background font-bold rounded">
+                  {String(conflictCount).padStart(2, '0')}
                 </span>
               )}
             </button>
 
             <button
               onClick={() => setActiveTab('commerce')}
-              className={`pb-4 font-semibold text-sm transition-all border-b-2 ${
+              className={`pb-3 font-medium transition-colors ${
                 activeTab === 'commerce'
-                  ? 'border-text-primary text-text-primary'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              Commerce Listing Output
+              COMMERCE LISTING
             </button>
           </div>
 
-          {/* Active Tab Panel */}
+          {/* Active Tab Content */}
           {activeTab === 'specifications' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
               <SpecificationTable attributes={product.attributes} />
             </motion.div>
           )}
 
           {activeTab === 'conflicts' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
               <ConflictUI conflicts={product.conflicts || []} />
             </motion.div>
           )}
 
           {activeTab === 'commerce' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
               <CommerceScreen commerce={product.commerce} productId={product.id} />
             </motion.div>
           )}

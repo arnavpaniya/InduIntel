@@ -1,10 +1,9 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle, X, Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Upload, FileText, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ClayCard } from '@/components/ui/clay-card';
 
 interface ProcessingStage {
   stage: string;
@@ -19,7 +18,13 @@ interface UploadScreenProps {
   onClose?: () => void;
 }
 
-const STAGE_ORDER = ['Upload', 'Reading', 'Understanding', 'Validating', 'Ready'];
+const STAGE_ORDER = [
+  { key: 'Upload', label: 'UPLOADED' },
+  { key: 'Reading', label: 'EXTRACTED' },
+  { key: 'Understanding', label: 'UNDERSTANDING' },
+  { key: 'Validating', label: 'VALIDATING' },
+  { key: 'Ready', label: 'READY' },
+];
 
 export function UploadScreen({ onUpload, isProcessing, stages = [], onClose }: UploadScreenProps) {
   const [dragActive, setDragActive] = useState(false);
@@ -81,109 +86,61 @@ export function UploadScreen({ onUpload, isProcessing, stages = [], onClose }: U
     return stage?.status || 'pending';
   };
 
-  const getStageMessage = (stageName: string) => {
-    const stage = stages.find(s => s.stage === stageName);
-    return stage?.message;
-  };
-
+  // Section 14 Processing timeline: plain list
   if (isProcessing || stages.length > 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
+      <div className="space-y-6 font-mono text-xs">
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 clay-surface-sm rounded-full hover:bg-clay-deep transition-colors text-text-secondary"
+            className="absolute top-4 right-4 p-1 border border-border rounded hover:border-accent text-text-secondary"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         )}
 
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="inline-flex items-center justify-center w-16 h-16 clay-surface rounded-2xl mb-4"
-          >
-            <Loader2 className="w-8 h-8 text-text-primary animate-spin" />
-          </motion.div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">Processing Document</h2>
-          <p className="text-text-secondary">Analyzing and extracting product intelligence</p>
+        <div className="border-b border-border pb-3">
+          <div className="text-[11px] uppercase tracking-wider text-text-secondary">DOCUMENT PROCESSING TIMELINE</div>
         </div>
 
-        <div className="space-y-3">
-          {STAGE_ORDER.map((stageName, index) => {
-            const status = getStageStatus(stageName);
-            const message = getStageMessage(stageName);
-            const isCurrent = status === 'processing';
+        <div className="space-y-2 py-2">
+          {STAGE_ORDER.map((item) => {
+            const status = getStageStatus(item.key);
             const isComplete = status === 'completed';
+            const isProcessing = status === 'processing';
             const isFailed = status === 'failed';
 
+            let bracketContent = ' ';
+            let textClass = 'text-text-muted';
+
+            if (isComplete) {
+              bracketContent = '✓';
+              textClass = 'text-status-verified font-medium';
+            } else if (isProcessing) {
+              bracketContent = '●';
+              textClass = 'text-accent font-medium';
+            } else if (isFailed) {
+              bracketContent = '✕';
+              textClass = 'text-status-conflict font-medium';
+            }
+
             return (
-              <motion.div
-                key={stageName}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={cn('flex items-center gap-4 p-4 clay-surface-sm rounded-clay', isCurrent && 'ring-2 ring-status-verified')}
-              >
-                <div className={cn('flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center', isComplete ? 'bg-status-verified' : isCurrent ? 'bg-status-warning animate-pulse' : isFailed ? 'bg-status-conflict' : 'bg-clay-deep')}>
-                  {isComplete ? (
-                    <CheckCircle className="w-5 h-5 text-background" />
-                  ) : isFailed ? (
-                    <AlertCircle className="w-5 h-5 text-background" />
-                  ) : isCurrent ? (
-                    <Loader2 className="w-5 h-5 text-background animate-spin" />
-                  ) : (
-                    <span className="text-text-secondary font-bold">{index + 1}</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={cn('font-medium', isComplete ? 'text-text-primary' : isCurrent ? 'text-status-warning' : isFailed ? 'text-status-conflict' : 'text-text-secondary')}>
-                      {stageName}
-                    </span>
-                    {isCurrent && <span className="text-xs text-status-warning animate-pulse">●</span>}
-                  </div>
-                  {message && <p className="text-sm text-text-secondary mt-1">{message}</p>}
-                </div>
-                {isFailed && (
-                  <AlertCircle className="w-5 h-5 text-status-conflict" />
-                )}
-              </motion.div>
+              <div key={item.key} className="flex items-center gap-2">
+                <span className={isProcessing ? 'text-accent animate-pulse' : isComplete ? 'text-status-verified' : 'text-text-muted'}>
+                  [{bracketContent}]
+                </span>
+                <span className={textClass}>{item.label}</span>
+              </div>
             );
           })}
         </div>
-
-        {stages.some(s => s.status === 'failed') && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="clay-surface p-4 border-l-4 border-status-conflict"
-          >
-            <div className="flex items-center gap-3 text-status-conflict">
-              <AlertCircle className="w-5 h-5" />
-              <div>
-                <p className="font-medium">Processing Failed</p>
-                <p className="text-sm text-text-secondary">
-                  {stages.find(s => s.status === 'failed')?.message || 'An error occurred during processing.'}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+    <div
+      className="space-y-6 font-sans"
       onDragEnter={handleDrag}
       onDragLeave={handleDrag}
       onDragOver={handleDrag}
@@ -192,14 +149,18 @@ export function UploadScreen({ onUpload, isProcessing, stages = [], onClose }: U
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 clay-surface-sm rounded-full hover:bg-clay-deep transition-colors text-text-secondary"
+          className="absolute top-4 right-4 p-1 border border-border rounded hover:border-accent text-text-secondary"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       )}
 
-      <ClayCard
-        className={cn('p-12 text-center relative overflow-hidden', dragActive && 'ring-2 ring-status-verified bg-clay-secondary/50')}
+      {/* Section 14 Dropzone */}
+      <div
+        className={cn(
+          'p-8 text-center relative border border-dashed rounded-md bg-surface-raised transition-colors cursor-pointer',
+          dragActive ? 'border-accent bg-surface-hover' : 'border-border hover:border-accent/50'
+        )}
         onClick={() => fileInputRef.current?.click()}
       >
         <input
@@ -212,92 +173,60 @@ export function UploadScreen({ onUpload, isProcessing, stages = [], onClose }: U
           aria-label="Upload product documents"
         />
 
-        <div className="relative z-10">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="inline-flex items-center justify-center w-16 h-16 clay-surface-secondary rounded-2xl mb-6"
-          >
-            <Plus className="w-8 h-8 text-text-secondary" />
-          </motion.div>
+        <div className="space-y-3">
+          <div className="inline-flex items-center justify-center w-10 h-10 border border-border bg-background rounded-md text-text-secondary">
+            <Plus className="w-5 h-5 text-accent" />
+          </div>
 
-          <h2 className="text-2xl font-bold text-text-primary mb-2">Drop product documents here</h2>
-          <p className="text-text-secondary mb-6">PDF / CSV / TXT · Up to 50MB each</p>
+          <div className="text-sm font-mono font-medium text-text-primary uppercase tracking-wider">
+            DROP PRODUCT DOCUMENTS HERE
+          </div>
 
-          <button
-            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-            className="clay-button-secondary inline-flex items-center gap-2"
-          >
-            <Upload className="w-4 h-4" />
-            Browse files
-          </button>
+          <div className="text-xs font-mono text-text-secondary">
+            PDF / CSV / TXT
+          </div>
 
-          <p className="mt-4 text-xs text-text-secondary">Or click to select files</p>
+          <div className="pt-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              className="clay-button-secondary text-xs font-mono uppercase inline-flex items-center gap-2 px-4 py-2"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              BROWSE FILES
+            </button>
+          </div>
         </div>
-
-        {dragActive && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-status-verified/10 flex items-center justify-center pointer-events-none"
-          >
-            <span className="text-status-verified font-medium">Drop to upload</span>
-          </motion.div>
-        )}
-      </ClayCard>
+      </div>
 
       {selectedFiles.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
-        >
-          <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider">Selected Files ({selectedFiles.length})</h3>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+        <div className="space-y-3 font-mono text-xs">
+          <div className="text-text-secondary uppercase">SELECTED FILES ({selectedFiles.length})</div>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
             {selectedFiles.map((file, index) => (
-              <motion.div
-                key={`${file.name}-${index}`}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="clay-surface-sm p-4 flex items-center gap-4"
-              >
-                <FileText className="w-8 h-8 text-text-secondary flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-text-primary truncate">{file.name}</p>
-                  <p className="text-sm text-text-secondary">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB · {file.type}
-                  </p>
+              <div key={`${file.name}-${index}`} className="command-panel-raised p-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 truncate">
+                  <FileText className="w-4 h-4 text-accent shrink-0" />
+                  <span className="text-text-primary truncate">{file.name}</span>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeFile(index); }}
-                  className="p-2 clay-surface rounded-full hover:bg-clay-deep transition-colors text-text-secondary"
-                  aria-label={`Remove ${file.name}`}
+                  className="text-text-secondary hover:text-status-conflict p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </motion.div>
+              </div>
             ))}
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={isProcessing}
-            className="clay-button w-full mt-4 py-4 text-lg"
+            className="clay-button w-full text-xs font-mono uppercase py-3"
           >
-            {isProcessing ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Upload className="w-5 h-5 mr-2" />
-                Upload & Analyze {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''}
-              </>
-            )}
+            UPLOAD & ANALYZE {selectedFiles.length} FILE{selectedFiles.length > 1 ? 'S' : ''}
           </button>
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 }

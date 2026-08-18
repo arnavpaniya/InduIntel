@@ -10,18 +10,18 @@ interface StatusChipProps {
 
 export function StatusChip({ status, size = 'md', showIcon = true }: StatusChipProps) {
   const configs = {
-    VERIFIED: { className: 'status-verified', icon: '✓', label: 'VERIFIED' },
-    INFERRED: { className: 'status-inferred', icon: '~', label: 'INFERRED' },
-    CONFLICT: { className: 'status-conflict', icon: '!', label: 'CONFLICT' },
-    UNKNOWN: { className: 'status-unknown', icon: '—', label: 'UNKNOWN' },
+    VERIFIED: { className: 'status-verified', icon: '●', label: 'VERIFIED' },
+    INFERRED: { className: 'status-inferred', icon: '◐', label: 'INFERRED' },
+    CONFLICT: { className: 'status-conflict', icon: '▲', label: 'CONFLICT' },
+    UNKNOWN: { className: 'status-unknown', icon: '○', label: 'UNKNOWN' },
   };
 
-  const config = configs[status];
-  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-xs';
+  const config = configs[status] || configs.UNKNOWN;
+  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs';
 
   return (
-    <span className={cn('status-chip inline-flex items-center gap-1', config.className, sizeClasses)}>
-      {showIcon && <span className="font-bold">{config.icon}</span>}
+    <span className={cn('status-chip font-mono inline-flex items-center gap-1.5 rounded border uppercase font-medium', config.className, sizeClasses)}>
+      {showIcon && <span>{config.icon}</span>}
       <span>{config.label}</span>
     </span>
   );
@@ -29,9 +29,9 @@ export function StatusChip({ status, size = 'md', showIcon = true }: StatusChipP
 
 export function ConfidenceBar({ confidence, className }: { confidence: number; className?: string }) {
   return (
-    <div className={cn('w-full h-2 bg-clay-deep rounded-full overflow-hidden', className)}>
+    <div className={cn('w-full h-2 bg-surface-raised border border-border rounded overflow-hidden', className)}>
       <div
-        className="h-full bg-status-verified rounded-full transition-all duration-500"
+        className="h-full bg-status-verified transition-all duration-300"
         style={{ width: `${Math.max(0, Math.min(100, confidence))}%` }}
       />
     </div>
@@ -41,7 +41,7 @@ export function ConfidenceBar({ confidence, className }: { confidence: number; c
 export function CircularProgress({
   value,
   size = 80,
-  strokeWidth = 8,
+  strokeWidth = 6,
   className,
 }: {
   value: number;
@@ -54,14 +54,14 @@ export function CircularProgress({
   const offset = circumference - (value / 100) * circumference;
 
   return (
-    <div className={cn('relative inline-flex items-center justify-center', className)} style={{ width: size, height: size }}>
+    <div className={cn('relative inline-flex items-center justify-center font-mono', className)} style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#C7C1B7"
+          stroke="#262B33"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -69,16 +69,15 @@ export function CircularProgress({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#849783"
+          stroke="#4CAF7D"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-500"
+          className="transition-all duration-300"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold text-text-primary">{Math.round(value)}%</span>
+        <span className="text-xl font-bold text-text-primary">{Math.round(value)}%</span>
       </div>
     </div>
   );
@@ -89,7 +88,7 @@ export function WhyButton({ attribute, onClick }: { attribute: any; onClick?: ()
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-clay-secondary hover:bg-clay-deep text-text-primary transition-all shadow-sm border border-clay-deep/30 cursor-pointer"
+      className="text-accent hover:underline font-mono text-xs font-medium cursor-pointer transition-colors"
       title="View evidence & provenance"
     >
       Why?
