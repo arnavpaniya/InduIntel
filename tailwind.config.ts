@@ -42,7 +42,10 @@ const config: Config = {
         'clay-lg': '12px 12px 24px #b7b0a5, -12px -12px 24px #f9f6ed',
       },
       fontFamily: {
-        sans: ['Space Grotesk', 'Sora', 'DM Sans', 'system-ui', 'sans-serif'],
+        heading: ['Syne', 'Space Grotesk', 'sans-serif'],
+        display: ['Space Grotesk', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'Space Grotesk', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       fontSize: {
         'kpi': ['48px', { lineHeight: '1', fontWeight: '600' }],
