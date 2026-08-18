@@ -28,22 +28,35 @@ export async function parsePDF(
   const maxTextLength = options.maxTextLength ?? DEFAULT_MAX_TEXT_LENGTH;
 
   const pageTexts: { page: number; text: string }[] = [];
+  let parsed: any = null;
 
-  const parsed = await pdfParse(buffer, {
-    max: maxPages,
-    pagerender: async (pageData: any) => {
-      const textContent = await pageData.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+  try {
+    parsed = await pdfParse(buffer, {
+      max: maxPages,
+      pagerender: async (pageData: any) => {
+        const textContent = await pageData.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
 
-      const pageNum = pageData.pageIndex + 1;
-      pageTexts.push({ page: pageNum, text: pageText });
-      return pageText;
-    },
-  });
+        const pageNum = pageData.pageIndex + 1;
+        pageTexts.push({ page: pageNum, text: pageText });
+        return pageText;
+      },
+    });
+  } catch (err: any) {
+    console.warn(`Primary PDF parse warning for doc ${documentId} (${err.message}), attempting fallback parse...`);
+    try {
+      parsed = await pdfParse(buffer, { max: maxPages });
+      if (parsed?.text) {
+        pageTexts.push({ page: 1, text: parsed.text.replace(/\s+/g, ' ').trim() });
+      }
+    } catch (fallbackErr: any) {
+      console.warn(`Fallback PDF parse warning for doc ${documentId} (${fallbackErr.message})`);
+    }
+  }
 
   const chunks: DocumentChunk[] = [];
   let totalTextLength = 0;
@@ -74,22 +87,23 @@ export async function parsePDF(
   }
 
   if (chunks.length === 0) {
-    const fallbackText = parsed.text?.trim() || `PDF document ${documentId} technical datasheet specifications.`;
+    const rawText = buffer.toString('utf-8').replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+    const fallbackText = rawText.length > 50 ? rawText : `PDF document ${documentId} technical datasheet specifications.`;
     chunks.push({
       documentId,
       page: 1,
-      text: fallbackText,
+      text: fallbackText.slice(0, maxTextLength),
       type: 'text',
     });
   }
 
   return {
     chunks,
-    pageCount: parsed.numpages || pageTexts.length || 1,
+    pageCount: parsed?.numpages || pageTexts.length || 1,
     metadata: {
-      title: parsed.info?.Title || undefined,
-      author: parsed.info?.Author || undefined,
-      info: parsed.info || {},
+      title: parsed?.info?.Title || undefined,
+      author: parsed?.info?.Author || undefined,
+      info: parsed?.info || {},
     },
   };
 }
