@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const status = searchParams.get('status');
+    const search = searchParams.get('search');
+    
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    
+    let query = supabase
+      .from('items')
+      .select('id, mfg_part_num, part_desc, status, manufacturer_name, brand_name, classpath, created_at', { count: 'exact' })
+      .range(from, to)
+      .order('created_at', { ascending: false });
+    
+    if (status) {
+      query = query.eq('status', status);
+    }
+    
+    if (search) {
+      query = query.or(`mfg_part_num.ilike.%${search}%,part_desc.ilike.%${search}%,manufacturer_name.ilike.%${search}%`);
+    }
+    
+    const { data, error, count } = await query;
+    
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json({
+      items: data || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    });
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
