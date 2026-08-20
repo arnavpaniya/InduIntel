@@ -400,11 +400,11 @@ export default async function LandingPage() {
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-sm text-cyan-50/75 sm:gap-6">
               <div className="flex items-center gap-1">
                 <Shield className="h-4 w-4" />
-                <span>Ground-truth validation</span>
+                <span>Checked against real answers</span>
               </div>
               <div className="flex items-center gap-1">
                 <Target className="h-4 w-4" />
-                <span>Confidence-accuracy correlation</span>
+                <span>Knows when it's unsure</span>
               </div>
               <div className="flex items-center gap-1">
                 <Sparkles className="h-4 w-4" />
@@ -504,8 +504,8 @@ export default async function LandingPage() {
             <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-4">
               Real validation results from the pipeline
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              These numbers come from <strong>/api/score/batch</strong> at page load — no hardcoded placeholders. 
+<p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              These are live results from testing on real data. 
               Low accuracy on sparse-input items is expected; the key is that <strong>confidence scoring flags exactly which fields need review</strong>.
             </p>
           </div>
@@ -525,21 +525,21 @@ export default async function LandingPage() {
                       trend={`${metrics.items_scored} items validated`}
                     />
                     <MetricCard 
-                      label="Overall Field Accuracy" 
+                      label="Accuracy" 
                       value={`${metrics.avg_accuracy_pct}%`} 
                       icon={Target} 
                       variant={metrics.avg_accuracy_pct >= 70 ? 'success' : metrics.avg_accuracy_pct >= 40 ? 'warning' : 'destructive'}
                       trend={metrics.avg_accuracy_pct >= 70 ? 'Strong' : metrics.avg_accuracy_pct >= 40 ? 'Moderate' : 'Sparse input baseline'}
                     />
                     <MetricCard 
-                      label="Attribute LOV Compliance" 
+                      label="Matches Approved Values" 
                       value={`${metrics.attribute_lov_compliance_pct}%`} 
                       icon={Settings} 
                       variant={metrics.attribute_lov_compliance_pct >= 70 ? 'success' : metrics.attribute_lov_compliance_pct >= 40 ? 'warning' : 'destructive'}
-                      trend="Values matching ground truth LOV"
+                      trend="Values matching approved lists"
                     />
                     <MetricCard 
-                      label="Char-Limit Compliance" 
+                      label="Formatting Rules Followed" 
                       value={metrics.char_limit_compliance && Object.values(metrics.char_limit_compliance).length > 0 
                         ? `${Math.round(Object.values(metrics.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(metrics.char_limit_compliance).length)}%` 
                         : 'N/A'} 
@@ -563,21 +563,21 @@ export default async function LandingPage() {
                       trend="Historical snapshot — live scoring paused"
                     />
                     <MetricCard 
-                      label="Overall Field Accuracy" 
+                      label="Accuracy" 
                       value={`${HISTORICAL_FALLBACK.avg_accuracy_pct}%`} 
                       icon={Target} 
                       variant="destructive"
                       trend="Sparse input baseline (34%)"
                     />
                     <MetricCard 
-                      label="Attribute LOV Compliance" 
+                      label="Matches Approved Values" 
                       value={`${HISTORICAL_FALLBACK.attribute_lov_compliance_pct}%`} 
                       icon={Settings} 
                       variant="destructive"
                       trend="Requires external catalog data"
                     />
                     <MetricCard 
-                      label="Char-Limit Compliance" 
+                      label="Formatting Rules Followed" 
                       value={HISTORICAL_FALLBACK.char_limit_compliance && Object.values(HISTORICAL_FALLBACK.char_limit_compliance).length > 0 
                         ? `${Math.round(Object.values(HISTORICAL_FALLBACK.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(HISTORICAL_FALLBACK.char_limit_compliance).length)}%` 
                         : 'N/A'} 
@@ -593,9 +593,9 @@ export default async function LandingPage() {
               return (
                 <>
                   <MetricCard label="Items Scored" value="—" icon={CheckCircle} trend="Unavailable" />
-                  <MetricCard label="Overall Accuracy" value="—" icon={Target} trend="Unavailable" />
-                  <MetricCard label="Attr LOV Compliance" value="—" icon={Settings} trend="Unavailable" />
-                  <MetricCard label="Char-Limit Compliance" value="—" icon={FileText} trend="Unavailable" />
+                  <MetricCard label="Accuracy" value="—" icon={Target} trend="Unavailable" />
+                  <MetricCard label="Matches Approved Values" value="—" icon={Settings} trend="Unavailable" />
+                  <MetricCard label="Formatting Rules Followed" value="—" icon={FileText} trend="Unavailable" />
                 </>
               );
             })()}
@@ -613,7 +613,7 @@ export default async function LandingPage() {
                       The raw input descriptions in our test set are often minimal (e.g. "Display Only", distributor names instead of manufacturers). 
                       This is a <strong>realistic baseline</strong> — not a cherry-picked demo. 
                       The pipeline's value is the <strong>confidence scoring</strong> that correctly identifies which fields are unreliable (status: "review") 
-                      so human reviewers know exactly where to focus. That's the explainable AI advantage.
+                      so human reviewers know exactly where to focus. That's how the AI shows what it knows and what it doesn't.
                     </p>
                   </div>
                 </div>
@@ -624,7 +624,7 @@ export default async function LandingPage() {
           {/* Per-group accuracy if available */}
           {metrics && metrics.field_accuracy_breakdown && Object.keys(metrics.field_accuracy_breakdown).length > 0 && (
             <div className="mt-10 max-w-3xl mx-auto">
-              <h3 className="text-lg font-semibold mb-4 text-center">Accuracy by Field Group</h3>
+              <h3 className="text-lg font-semibold mb-4 text-center">Accuracy by Category</h3>
               <div className="space-y-3">
                 {Object.entries(metrics.field_accuracy_breakdown)
                   .sort(([,a], [,b]) => b - a)

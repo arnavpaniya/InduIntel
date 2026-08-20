@@ -16,6 +16,7 @@ export interface Item {
   confidence_score: number | null;
   field_confidence: number | null;
   is_ground_truth: boolean;
+  batch_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -157,4 +158,12 @@ export interface QuotaStatus {
   limit: number;
   remaining: number;
   near_limit: boolean;
+}
+
+export interface UploadResponse {
+  success: boolean;
+  message: string;
+  count: number;
+  batchId: string;
+  items: Array<{ id: string; mfg_part_num: string; created_at: string }>;
 }

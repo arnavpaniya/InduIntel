@@ -109,11 +109,11 @@ export default function ItemDetailPage() {
             </Badge>
             <Badge variant="outline" className="gap-1">
               <Package className="h-3 w-3" />
-              Confidence: {item.confidence_score ?? '—'}%
+              Fields Filled: {item.confidence_score ?? '—'}%
             </Badge>
             <Badge variant="outline" className="gap-1">
               <Settings className="h-3 w-3" />
-              Field Confidence: {item.field_confidence ?? '—'}
+              AI's Own Confidence: {item.field_confidence ?? '—'}
             </Badge>
           </div>
         </div>
@@ -185,18 +185,20 @@ export default function ItemDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
-                  Pipeline Info
+                  How Confident Is The AI?
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Orchestrator Completeness</p>
+                    <p className="text-muted-foreground">Fields Filled</p>
                     <p className="font-medium text-lg">{item.confidence_score ?? '—'}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">How much of the product info the AI was able to complete</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">LLM Self-Reported Confidence</p>
+                    <p className="text-muted-foreground">AI's Own Confidence</p>
                     <p className="font-medium text-lg">{item.field_confidence ?? '—'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">How sure the AI is that what it found is correct</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Status</p>

@@ -11,17 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { 
   RefreshCw, Search, Filter, ChevronLeft, ChevronRight, 
   Zap, AlertTriangle, CheckCircle, Clock, XCircle,
-  BarChart2, Settings, Package, Layers, Eye
+  BarChart2, Settings, Package, Layers, Eye,
+  Upload, FileText, Plus, X, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fetchItems, enrichItem, enrichBatch, fetchQuotaStatus } from '@/lib/api';
+import { fetchItems, enrichItem, enrichBatch, fetchQuotaStatus, uploadItems, addManualItem } from '@/lib/api';
 import { Item, ItemsResponse } from '@/lib/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const STATUS_BADGE_VARIANTS: Record<Item['status'], 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info' | 'gray'> = {
   raw: 'gray',
@@ -43,6 +45,15 @@ const STATUS_DESCRIPTIONS: Record<Item['status'], string> = {
   enriched: 'Successfully enriched',
   review: 'Low confidence, needs manual review',
 };
+
+const REQUIRED_COLUMNS = [
+  'Mfg_Part_Num',
+  'Part_Desc',
+  'E1_Brand',
+  'Unilog_Brand',
+  'DIB_Brand',
+  'Part_Manuf',
+];
 
 function StatusBadge({ status }: { status: Item['status'] }) {
   const variant = STATUS_BADGE_VARIANTS[status];
@@ -122,8 +133,10 @@ function SummaryCard({ label, value, icon: Icon, tone }: {
   );
 }
 
-export default function DashboardPage() {
+export default function DashboardClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlBatchId = searchParams.get('batch');
   const [items, setItems] = useState<Item[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -134,6 +147,22 @@ export default function DashboardPage() {
   const [batchLoading, setBatchLoading] = useState(false);
   const [quotaStatus, setQuotaStatus] = useState<{ used: number; limit: number; remaining: number; near_limit: boolean }>({ used: 0, limit: 18, remaining: 18, near_limit: false });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  
+  // Upload modal state
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadTab, setUploadTab] = useState<'csv' | 'manual' | 'pdf'>('csv');
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [manualForm, setManualForm] = useState({
+    mfg_part_num: '',
+    part_desc: '',
+    e1_brand: '',
+    unilog_brand: '',
+    dib_brand: '',
+    part_manuf: '',
+  });
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [lastBatchId, setLastBatchId] = useState<string | null>(null);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
@@ -148,6 +177,7 @@ export default function DashboardPage() {
         limit: pagination.limit,
         status: statusFilter === 'all' ? undefined : statusFilter,
         search: searchQuery || undefined,
+        batch: urlBatchId || undefined,
       });
       setItems(data.items);
       setPagination(prev => ({ ...prev, total: data.pagination.total, totalPages: data.pagination.totalPages }));
@@ -157,7 +187,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, statusFilter, searchQuery, showToast]);
+  }, [pagination.page, pagination.limit, statusFilter, searchQuery, urlBatchId, showToast]);
 
   const loadQuota = useCallback(async () => {
     try {
@@ -232,6 +262,100 @@ export default function DashboardPage() {
       showToast('Batch enrichment failed', 'error');
     } finally {
       setBatchLoading(false);
+    }
+  };
+
+  const handleCsvUpload = async () => {
+    if (!csvFile) {
+      showToast('Please select a CSV file', 'error');
+      return;
+    }
+    setUploadLoading(true);
+    try {
+      const result = await uploadItems(csvFile, 'csv');
+      showToast(result.message, 'success');
+      setLastBatchId(result.batchId);
+      setUploadOpen(false);
+      setCsvFile(null);
+      // Filter to show only the newly uploaded batch
+      router.push(`/dashboard?batch=${result.batchId}`);
+    } catch (error) {
+      console.error('CSV upload failed:', error);
+      showToast(error instanceof Error ? error.message : 'Upload failed', 'error');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handlePdfUpload = async () => {
+    if (!pdfFile) {
+      showToast('Please select a PDF file', 'error');
+      return;
+    }
+    setUploadLoading(true);
+    try {
+      const result = await uploadItems(pdfFile, 'pdf');
+      showToast(result.message, 'success');
+      setLastBatchId(result.batchId);
+      setUploadOpen(false);
+      setPdfFile(null);
+      router.push(`/dashboard?batch=${result.batchId}`);
+    } catch (error) {
+      console.error('PDF upload failed:', error);
+      showToast(error instanceof Error ? error.message : 'Upload failed', 'error');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleManualEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualForm.mfg_part_num.trim()) {
+      showToast('Mfg Part Num is required', 'error');
+      return;
+    }
+    setUploadLoading(true);
+    try {
+      const result = await addManualItem(manualForm);
+      showToast(result.message, 'success');
+      setLastBatchId(result.batchId);
+      setUploadOpen(false);
+      setManualForm({
+        mfg_part_num: '',
+        part_desc: '',
+        e1_brand: '',
+        unilog_brand: '',
+        dib_brand: '',
+        part_manuf: '',
+      });
+      router.push(`/dashboard?batch=${result.batchId}`);
+    } catch (error) {
+      console.error('Manual entry failed:', error);
+      showToast(error instanceof Error ? error.message : 'Failed to add item', 'error');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+        showToast('Please select a CSV file', 'error');
+        return;
+      }
+      setCsvFile(file);
+    }
+  };
+
+  const handlePdfFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.pdf') && file.type !== 'application/pdf') {
+        showToast('Please select a PDF file', 'error');
+        return;
+      }
+      setPdfFile(file);
     }
   };
 
@@ -313,8 +437,11 @@ export default function DashboardPage() {
             <CardContent>
               <Package className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
               <h2 className="text-xl font-semibold mb-2">No items found</h2>
-              <p className="text-muted-foreground mb-4">Run the seed script to populate the database with sample data.</p>
-              <Button onClick={() => window.location.reload()}>Refresh</Button>
+              <p className="text-muted-foreground mb-4">Upload a CSV or add a product manually to get started.</p>
+              <Button onClick={() => setUploadOpen(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Dataset
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -352,6 +479,15 @@ export default function DashboardPage() {
                     <SelectItem value="review">Needs Review</SelectItem>
                   </SelectContent>
                 </Select>
+                {urlBatchId && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm">
+                    <Filter className="h-4 w-4" />
+                    <span>Filtered by batch: {urlBatchId.slice(0, 8)}...</span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => router.push('/dashboard')}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3">
@@ -363,6 +499,14 @@ export default function DashboardPage() {
                 >
                   <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
                   Refresh
+                </Button>
+                <Button 
+                  onClick={() => setUploadOpen(true)} 
+                  disabled={uploadLoading}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Dataset
                 </Button>
                 <Button 
                   onClick={handleBatchEnrich} 
@@ -395,7 +539,7 @@ export default function DashboardPage() {
                         Status <Settings className="h-4 w-4 ml-1 opacity-50" />
                       </TableHead>
                       <TableHead className="cursor-pointer" onClick={() => handleSort('confidence_score')}>
-                        Confidence <Settings className="h-4 w-4 ml-1 opacity-50" />
+                        Fields Filled <Settings className="h-4 w-4 ml-1 opacity-50" />
                       </TableHead>
                       <TableHead>Updated</TableHead>
                       <TableHead className="w-32">Actions</TableHead>
@@ -494,6 +638,234 @@ export default function DashboardPage() {
             </Card>
             </motion.div>
           </>
+        )}
+
+        {/* Upload Modal */}
+        {uploadOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in">
+            <div className="bg-card w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-4">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-lg font-semibold">Upload Dataset</h2>
+                <Button variant="ghost" size="sm" onClick={() => setUploadOpen(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              <div className="flex border-b">
+                <Button 
+                  variant={uploadTab === 'csv' ? 'default' : 'ghost'} 
+                  className="flex-1 py-3"
+                  onClick={() => setUploadTab('csv')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  CSV Upload
+                </Button>
+                <Button 
+                  variant={uploadTab === 'manual' ? 'default' : 'ghost'} 
+                  className="flex-1 py-3"
+                  onClick={() => setUploadTab('manual')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Manual Entry
+                </Button>
+                <Button 
+                  variant={uploadTab === 'pdf' ? 'default' : 'ghost'} 
+                  className="flex-1 py-3"
+                  onClick={() => setUploadTab('pdf')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF Upload
+                </Button>
+              </div>
+
+              <div className="p-4">
+                {uploadTab === 'csv' && (
+                  <div className="space-y-4">
+                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                      <input
+                        type="file"
+                        accept=".csv,text/csv"
+                        onChange={handleCsvFileChange}
+                        className="hidden"
+                        id="csv-upload"
+                        disabled={uploadLoading}
+                      />
+                      <label htmlFor="csv-upload" className="cursor-pointer">
+                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-lg font-medium mb-1">Drag & drop CSV file or click to browse</p>
+                        <p className="text-sm text-muted-foreground">Must contain: Mfg_Part_Num, Part_Desc, E1_Brand, Unilog_Brand, DIB_Brand, Part_Manuf</p>
+                      </label>
+                    </div>
+                    {csvFile && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="font-medium">{csvFile.name}</p>
+                            <p className="text-sm text-muted-foreground">{(csvFile.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setCsvFile(null)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <div className="text-sm text-muted-foreground">
+                      <p className="font-medium mb-2">Expected columns:</p>
+                      <code className="bg-muted px-2 py-1 rounded">{REQUIRED_COLUMNS.join(', ')}</code>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      onClick={handleCsvUpload} 
+                      disabled={uploadLoading || !csvFile}
+                    >
+                      {uploadLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Upload CSV'
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {uploadTab === 'manual' && (
+                  <form onSubmit={handleManualEntry} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="mfg_part_num">Mfg Part Num *</Label>
+                        <Input
+                          id="mfg_part_num"
+                          value={manualForm.mfg_part_num}
+                          onChange={(e) => setManualForm(prev => ({ ...prev, mfg_part_num: e.target.value }))}
+                          placeholder="e.g. PDSH4816AF"
+                          required
+                          disabled={uploadLoading}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="part_desc">Part Description</Label>
+                        <Input
+                          id="part_desc"
+                          value={manualForm.part_desc}
+                          onChange={(e) => setManualForm(prev => ({ ...prev, part_desc: e.target.value }))}
+                          placeholder="Product description"
+                          disabled={uploadLoading}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="e1_brand">E1 Brand</Label>
+                        <Input
+                          id="e1_brand"
+                          value={manualForm.e1_brand}
+                          onChange={(e) => setManualForm(prev => ({ ...prev, e1_brand: e.target.value }))}
+                          disabled={uploadLoading}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="unilog_brand">Unilog Brand</Label>
+                        <Input
+                          id="unilog_brand"
+                          value={manualForm.unilog_brand}
+                          onChange={(e) => setManualForm(prev => ({ ...prev, unilog_brand: e.target.value }))}
+                          disabled={uploadLoading}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="dib_brand">DIB Brand</Label>
+                        <Input
+                          id="dib_brand"
+                          value={manualForm.dib_brand}
+                          onChange={(e) => setManualForm(prev => ({ ...prev, dib_brand: e.target.value }))}
+                          disabled={uploadLoading}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="part_manuf">Part Manufacturer</Label>
+                        <Input
+                          id="part_manuf"
+                          value={manualForm.part_manuf}
+                          onChange={(e) => setManualForm(prev => ({ ...prev, part_manuf: e.target.value }))}
+                          disabled={uploadLoading}
+                        />
+                      </div>
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={uploadLoading}
+                    >
+                      {uploadLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Adding...
+                        </>
+                      ) : (
+                        'Add Product'
+                      )}
+                    </Button>
+                  </form>
+                )}
+
+                {uploadTab === 'pdf' && (
+                  <div className="space-y-4">
+                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        onChange={handlePdfFileChange}
+                        className="hidden"
+                        id="pdf-upload"
+                        disabled={uploadLoading}
+                      />
+                      <label htmlFor="pdf-upload" className="cursor-pointer">
+                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-lg font-medium mb-1">Drag & drop PDF file or click to browse</p>
+                        <p className="text-sm text-muted-foreground">PDF should contain structured product data with MPN, description, brands, manufacturer</p>
+                      </label>
+                    </div>
+                    {pdfFile && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="font-medium">{pdfFile.name}</p>
+                            <p className="text-sm text-muted-foreground">{(pdfFile.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setPdfFile(null)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <div className="text-sm text-muted-foreground">
+                      <p>PDF parsing extracts: Mfg Part Num, Part Desc, E1 Brand, Unilog Brand, DIB Brand, Part Manuf</p>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      onClick={handlePdfUpload} 
+                      disabled={uploadLoading || !pdfFile}
+                    >
+                      {uploadLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Processing PDF...
+                        </>
+                      ) : (
+                        'Upload PDF'
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Toast */}

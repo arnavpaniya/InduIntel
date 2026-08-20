@@ -11,13 +11,14 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const status = searchParams.get('status');
     const search = searchParams.get('search');
+    const batchId = searchParams.get('batch');
     
     const from = (page - 1) * limit;
     const to = from + limit - 1;
     
     let query = supabase
       .from('items')
-      .select('id, mfg_part_num, part_desc, status, manufacturer_name, brand_name, classpath, created_at', { count: 'exact' })
+      .select('id, mfg_part_num, part_desc, status, manufacturer_name, brand_name, classpath, created_at, batch_id', { count: 'exact' })
       .range(from, to)
       .order('created_at', { ascending: false });
     
@@ -27,6 +28,10 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       query = query.or(`mfg_part_num.ilike.%${search}%,part_desc.ilike.%${search}%,manufacturer_name.ilike.%${search}%`);
+    }
+    
+    if (batchId) {
+      query = query.eq('batch_id', batchId);
     }
     
     const { data, error, count } = await query;

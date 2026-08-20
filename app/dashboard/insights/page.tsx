@@ -74,7 +74,7 @@ function GroupAccuracyChart({ data }: { data: Array<{ group: string; accuracy: n
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart2 className="h-5 w-5" />
-          Accuracy by Field Group
+          Accuracy by Category
         </CardTitle>
         <CardDescription>Percentage of fields matching ground truth per category</CardDescription>
       </CardHeader>
@@ -135,10 +135,10 @@ function ConfidenceCorrelationChart({ data }: { data: Record<string, number> }) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5" />
-          Confidence-Accuracy Correlation
+          Knows When It's Unsure
         </CardTitle>
         <CardDescription>
-          Does high confidence predict high accuracy? Bins show accuracy % for items in each confidence range.
+          Does the AI's confidence match actual accuracy? Bars show accuracy % for items in each confidence range.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -193,7 +193,7 @@ function CharLimitComplianceChart({ data }: { data: Record<string, number> }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings className="h-5 w-5" />
-          Character Limit Compliance
+          Formatting Rules Followed
         </CardTitle>
         <CardDescription>Percentage of descriptions within character limits</CardDescription>
       </CardHeader>
@@ -284,15 +284,15 @@ export default function InsightsPage() {
             <BarChart2 className="h-8 w-8 text-primary" />
             Insights
           </h1>
-          <p className="text-muted-foreground mt-2">Aggregate metrics from Stage 3 validation</p>
+          <p className="text-muted-foreground mt-2">How well the AI performs on real data</p>
         </header>
         
         <Card className="glass-panel text-center py-12 max-w-2xl mx-auto">
           <CardContent>
             <Target className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No validation data yet</h2>
+            <h2 className="text-xl font-semibold mb-2">No results yet</h2>
             <p className="text-muted-foreground mb-6">
-              Run the scoring batch to generate insights. You need at least one enriched item with matching ground truth.
+              We're still gathering results — check back after a few items are processed.
             </p>
             <Button onClick={loadInsights}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -352,7 +352,7 @@ export default function InsightsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Insights</h1>
-              <p className="text-sm text-muted-foreground">Aggregate metrics from Stage 3 validation</p>
+              <p className="text-sm text-muted-foreground">How well the AI performs on real data</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -394,19 +394,19 @@ export default function InsightsPage() {
             variant="success"
           />
           <StatCard 
-            title="Avg Accuracy" 
+            title="Accuracy" 
             value={`${summary.avg_accuracy_pct}%`} 
             icon={Target} 
             variant={summary.avg_accuracy_pct >= 70 ? 'success' : summary.avg_accuracy_pct >= 40 ? 'warning' : 'destructive'}
           />
           <StatCard 
-            title="Attr LOV Compliance" 
+            title="Matches Approved Values" 
             value={`${summary.attribute_lov_compliance_pct}%`} 
             icon={Settings} 
             variant={summary.attribute_lov_compliance_pct >= 70 ? 'success' : summary.attribute_lov_compliance_pct >= 40 ? 'warning' : 'destructive'}
           />
           <StatCard 
-            title="Char Limit Compliance" 
+            title="Formatting Rules Followed" 
             value={summary.char_limit_compliance && Object.values(summary.char_limit_compliance).length > 0 
               ? `${Math.round(Object.values(summary.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(summary.char_limit_compliance).length)}%` 
               : 'N/A'} 
@@ -437,7 +437,7 @@ export default function InsightsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Field-Level Accuracy Breakdown
+                Accuracy by Field
               </CardTitle>
               <CardDescription>Per-field accuracy across all scored items</CardDescription>
             </CardHeader>
