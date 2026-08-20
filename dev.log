@@ -96,3 +96,242 @@
  ✓ Compiled in 97ms (1280 modules)
  ✓ Compiled in 470ms (2521 modules)
  ✓ Compiled in 369ms (2535 modules)
+ ✓ Compiled in 499ms (2521 modules)
+ ✓ Compiled /api/items in 333ms (1349 modules)
+ OPTIONS /api/items?page=1&limit=20 204 in 425ms
+ OPTIONS /api/items?page=1&limit=20 204 in 409ms
+ ✓ Compiled /api/enrich/run in 160ms (1352 modules)
+ OPTIONS /api/enrich/run 204 in 182ms
+ OPTIONS /api/enrich/run 204 in 178ms
+ ⨯ Error: Cannot find module './276.js'
+Require stack:
+- /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+- /Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/run/route.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/start-server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1475:15)
+    at /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require-hook.js:55:36
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1048:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1072:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1093:12)
+    at Module._load (node:internal/modules/cjs/loader:1261:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1575:12)
+    at mod.require (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:191:16)
+    at __webpack_require__.f.require (/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:208:28)
+    at /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:116:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:115:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:167:22)
+    at /Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js:1:2985
+    at Object.<anonymous> (/Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js:1:3034)
+    at Module._compile (node:internal/modules/cjs/loader:1829:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1969:10)
+    at Module.load (node:internal/modules/cjs/loader:1552:32)
+    at Module._load (node:internal/modules/cjs/loader:1354:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1575:12)
+    at mod.require (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:191:16)
+    at requirePage (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js:109:84)
+    at /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js:98:84
+    at async loadComponentsImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js:98:26)
+    at async DevServer.findPageComponentsImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/next-server.js:710:36)
+    at async DevServer.findPageComponents (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:1905:24)
+    at async DevServer.renderToResponseImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:1957:32)
+    at async DevServer.pipeImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:915:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:811:17)
+    at async /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/arnavpaniya/InduIntel/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js',
+    '/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/run/route.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/api/items'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 718ms (2842 modules)
+ OPTIONS /api/items?page=2&limit=20 500 in 824ms
+ OPTIONS /api/items?page=2&limit=20 500 in 818ms
+ ⨯ Error: Cannot find module './276.js'
+Require stack:
+- /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+- /Users/arnavpaniya/InduIntel/.next/server/pages/_document.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js
+- /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/start-server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1475:15)
+    at /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require-hook.js:55:36
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1048:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1072:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1093:12)
+    at Module._load (node:internal/modules/cjs/loader:1261:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1575:12)
+    at mod.require (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:191:16)
+    at __webpack_require__.f.require (/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:208:28)
+    at /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:116:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:115:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js:167:22)
+    at /Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/run/route.js:7:3591
+    at Object.<anonymous> (/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/run/route.js:7:3640)
+    at Module._compile (node:internal/modules/cjs/loader:1829:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1969:10)
+    at Module.load (node:internal/modules/cjs/loader:1552:32)
+    at Module._load (node:internal/modules/cjs/loader:1354:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1575:12)
+    at mod.require (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:191:16)
+    at requirePage (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js:109:84)
+    at /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js:98:84
+    at async loadComponentsImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js:98:26)
+    at async DevServer.findPageComponentsImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/next-server.js:710:36)
+    at async DevServer.findPageComponents (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:1905:24)
+    at async DevServer.renderToResponseImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:1957:32)
+    at async DevServer.pipeImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:915:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/base-server.js:811:17)
+    at async /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/arnavpaniya/InduIntel/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js',
+    '/Users/arnavpaniya/InduIntel/.next/server/pages/_document.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/api/enrich/run'
+}
+ OPTIONS /api/enrich/run 500 in 20ms
+ OPTIONS /api/enrich/run 500 in 15ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/vendor-chunks'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/@swc' in /Users/arnavpaniya/InduIntel/.next/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/@swc.js', but to 'Error: Can't resolve './vendor-chunks/@swc' in '/Users/arnavpaniya/InduIntel/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/@swc (expected /Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/@swc.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/next' in /Users/arnavpaniya/InduIntel/.next/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/next.js', but to 'Error: Can't resolve './vendor-chunks/next' in '/Users/arnavpaniya/InduIntel/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/next (expected /Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/next.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/@swc' in /Users/arnavpaniya/InduIntel/.next/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/@swc.js', but to 'Error: Can't resolve './vendor-chunks/@swc' in '/Users/arnavpaniya/InduIntel/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/@swc (expected /Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/@swc.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/vendor-chunks'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/next' in /Users/arnavpaniya/InduIntel/.next/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/next.js', but to 'Error: Can't resolve './vendor-chunks/next' in '/Users/arnavpaniya/InduIntel/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/next (expected /Users/arnavpaniya/InduIntel/.next/server/vendor-chunks/next.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file /Users/arnavpaniya/InduIntel/.next/server/pages/_error.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js

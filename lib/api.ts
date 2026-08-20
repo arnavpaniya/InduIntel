@@ -9,7 +9,7 @@ import {
   UploadResponse
 } from '@/lib/types';
 
-const API_BASE = '';
+const API_BASE = 'http://localhost:3000';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
