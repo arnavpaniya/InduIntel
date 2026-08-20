@@ -372,6 +372,8 @@ function ConfidenceSection({
   fieldConfidence: number | null; 
   status: string;
 }) {
+  const fieldConfidenceLabel = fieldConfidence ? `${Math.round(fieldConfidence * 100)}%` : '—';
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>How Sure Is The AI?</Text>
@@ -384,7 +386,7 @@ function ConfidenceSection({
           </Text>
         </View>
         <View style={styles.confidenceBox}>
-          <Text style={styles.confidenceValue}>{fieldConfidence !== null ? `${Math.round(fieldConfidence * 100)}%` : '—'}</Text>
+          <Text style={styles.confidenceValue}>{fieldConfidenceLabel}</Text>
           <Text style={styles.confidenceLabel}>AI Confidence</Text>
           <Text style={styles.confidenceExplanation}>
             How sure our AI is that what it found is correct

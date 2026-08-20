@@ -11,88 +11,23 @@ import {
   AlertTriangle, Shield, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { scoreBatch } from '@/lib/api';
 import { BatchScoreSummary } from '@/lib/types';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { scoreBatchItems } from '@/lib/scoring/batch';
 
 export const metadata: Metadata = {
   title: 'InduIntel — AI Product Intelligence Enrichment Pipeline',
   description: 'Turn messy industrial catalog data into clean, structured, commerce-ready product records using AI.',
 };
 
-// Historical fallback data from last successful score run (before quota exhaustion)
-// Captured: 2 items scored, 34% overall accuracy, 13/38 fields matched
-const HISTORICAL_FALLBACK: BatchScoreSummary = {
-  items_scored: 2,
-  avg_accuracy_pct: 34,
-  field_accuracy_breakdown: {
-    manufacturer_name: 0,
-    brand_name: 0,
-    dept: 0,
-    class: 0,
-    fine: 50,
-    classpath: 50,
-    'description:invoice_desc': 0,
-    'description:mobile_desc': 0,
-    'description:short_desc': 0,
-    'description:long_desc1': 0,
-    'description:marketing_description': 100,
-    'attribute:Series': 0,
-    'attribute:Model': 0,
-    'attribute:Number of Wash Cycles': 0,
-    'attribute:Voltage Rating': 0,
-    'attribute:Amperage Rating': 0,
-    'attribute:Mounting Type': 0,
-    'attribute:Plug Type': 0,
-    'attribute:Size': 0,
-    'attribute:Depth With Door Open': 0,
-    'attribute:Minimum Height': 0,
-    'attribute:Maximum Height': 0,
-    'attribute:Sound Level': 0,
-    'attribute:Material': 100,
-    'attribute:Color': 0,
-    'attribute:Additional Information': 0,
-    'attribute:Product Type': 0,
-    'spec:upc': 100,
-    'spec:ean': 100,
-    'spec:gtin': 100,
-    'spec:unspsc': 100,
-    'spec:list_price': 100,
-    'spec:length': 100,
-    'spec:width': 100,
-    'spec:height': 100,
-    'spec:weight': 100,
-    'spec:country_of_origin': 100,
-    'spec:warranty': 0,
-  },
-  char_limit_compliance: {
-    invoice_desc: 100,
-    mobile_desc: 100,
-    short_desc: 100,
-    long_desc1: 100,
-    marketing_description: 100,
-  },
-  attribute_lov_compliance_pct: 12,
-  confidence_accuracy_correlation: {
-    '0-20': 100,
-    '21-40': 100,
-    '41-60': 0,
-    '61-80': 0,
-    '81-100': 0,
-  },
-};
-
 async function getLiveMetrics(): Promise<BatchScoreSummary | null> {
   try {
-    const data = await scoreBatch(20);
-    if (data.success && data.summary) {
-      // If no items scored, return null to trigger fallback
-      if (data.summary.items_scored === 0) {
-        return null;
-      }
-      return data.summary;
+    const supabase = await createServerSupabaseClient();
+    const { summary } = await scoreBatchItems(supabase, 20);
+    if (summary.items_scored === 0) {
+      return null;
     }
-    return null;
+    return summary;
   } catch {
     return null;
   }
@@ -552,50 +487,12 @@ export default async function LandingPage() {
               }
               
               // Historical fallback available (live data returned null or items_scored === 0)
-              if (HISTORICAL_FALLBACK) {
-                return (
-                  <>
-                    <MetricCard 
-                      label="Items Scored (Last Run)" 
-                      value={HISTORICAL_FALLBACK.items_scored} 
-                      icon={CheckCircle} 
-                      variant="success"
-                      trend="Historical snapshot — live scoring paused"
-                    />
-                    <MetricCard 
-                      label="Accuracy" 
-                      value={`${HISTORICAL_FALLBACK.avg_accuracy_pct}%`} 
-                      icon={Target} 
-                      variant="destructive"
-                      trend="Sparse input baseline (34%)"
-                    />
-                    <MetricCard 
-                      label="Matches Approved Values" 
-                      value={`${HISTORICAL_FALLBACK.attribute_lov_compliance_pct}%`} 
-                      icon={Settings} 
-                      variant="destructive"
-                      trend="Requires external catalog data"
-                    />
-                    <MetricCard 
-                      label="Formatting Rules Followed" 
-                      value={HISTORICAL_FALLBACK.char_limit_compliance && Object.values(HISTORICAL_FALLBACK.char_limit_compliance).length > 0 
-                        ? `${Math.round(Object.values(HISTORICAL_FALLBACK.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(HISTORICAL_FALLBACK.char_limit_compliance).length)}%` 
-                        : 'N/A'} 
-                      icon={FileText} 
-                      variant="default"
-                      trend="All descriptions within limits"
-                    />
-                  </>
-                );
-              }
-              
-              // Should never reach here, but safety fallback
               return (
                 <>
-                  <MetricCard label="Items Scored" value="—" icon={CheckCircle} trend="Unavailable" />
-                  <MetricCard label="Accuracy" value="—" icon={Target} trend="Unavailable" />
-                  <MetricCard label="Matches Approved Values" value="—" icon={Settings} trend="Unavailable" />
-                  <MetricCard label="Formatting Rules Followed" value="—" icon={FileText} trend="Unavailable" />
+                  <MetricCard label="Live Items Scored" value="0" icon={CheckCircle} trend="Awaiting enriched items with ground truth" />
+                  <MetricCard label="Accuracy" value="N/A" icon={Target} trend="No live score available" />
+                  <MetricCard label="Matches Approved Values" value="N/A" icon={Settings} trend="No live score available" />
+                  <MetricCard label="Formatting Rules Followed" value="N/A" icon={FileText} trend="No live score available" />
                 </>
               );
             })()}
