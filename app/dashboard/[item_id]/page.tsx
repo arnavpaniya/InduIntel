@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ArrowLeft, Zap, Settings, Package, CheckCircle, XCircle, AlertTriangle, FileText, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchItemDetail, enrichItem } from '@/lib/api';
@@ -115,16 +116,24 @@ export default function ItemDetailPage() {
               <Settings className="h-3 w-3" />
               AI's Own Confidence: {item.field_confidence ? `${Math.round(item.field_confidence * 100)}%` : '—'}
             </Badge>
-            <a 
-              href={`/api/report/${item.id}`}
-              download={`${item.mfg_part_num}-report.pdf`}
-              className="btn btn-outline gap-1"
-              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s' }}
-              title="Download PDF Report"
-            >
-              <FileText className="h-3 w-3" />
-              <Download className="h-3 w-3 ml-1" />
-            </a>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a 
+                    href={isRaw ? undefined : `/api/report/${item.id}`}
+                    download={isRaw ? undefined : `${item.mfg_part_num}-report.pdf`}
+                    className={cn('btn btn-outline gap-1', isRaw && 'opacity-50 pointer-events-none cursor-not-allowed')}
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s' }}
+                  >
+                    <FileText className="h-3 w-3" />
+                    <Download className="h-3 w-3 ml-1" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {isRaw ? 'Enrich this item first to generate a report' : 'Download PDF Report'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </header>

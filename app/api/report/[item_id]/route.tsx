@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { PDFDocument, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import React from 'react';
 import { renderToStream } from '@react-pdf/renderer';
-
-Font.register({
-  family: 'Helvetica',
-  fonts: [
-    { src: 'https://cdn.jsdelivr.net/npm/@react-pdf/renderer@3.1.13/fonts/Helvetica.afm', fontWeight: 'normal' },
-    { src: 'https://cdn.jsdelivr.net/npm/@react-pdf/renderer@3.1.13/fonts/Helvetica-Bold.afm', fontWeight: 'bold' },
-    { src: 'https://cdn.jsdelivr.net/npm/@react-pdf/renderer@3.1.13/fonts/Helvetica-Oblique.afm', fontStyle: 'italic' },
-    { src: 'https://cdn.jsdelivr.net/npm/@react-pdf/renderer@3.1.13/fonts/Helvetica-BoldOblique.afm', fontWeight: 'bold', fontStyle: 'italic' },
-  ],
-});
 
 const brandBlue = '#0ea5e9';
 const darkGray = '#1e293b';
@@ -461,7 +451,7 @@ function ReportDocument({ item, gtResult }: { item: any; gtResult: any | null })
   });
 
   return (
-    <PDFDocument>
+    <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.logoContainer}>
@@ -487,7 +477,7 @@ function ReportDocument({ item, gtResult }: { item: any; gtResult: any | null })
         <AttributesSection attributes={item.item_attributes || []} />
 
         <DescriptionsSection 
-          descriptions={(item.item_descriptions || []).map(d => ({
+          descriptions={(item.item_descriptions || []).map((d: any) => ({
             fieldName: d.field_name,
             value: d.value,
             charCount: d.char_count,
@@ -504,7 +494,7 @@ function ReportDocument({ item, gtResult }: { item: any; gtResult: any | null })
 
         <Footer />
       </Page>
-    </PDFDocument>
+    </Document>
   );
 }
 
@@ -549,25 +539,27 @@ export async function GET(
         .maybeSingle();
 
       if (gtItem) {
-        const { data: scoreResult } = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/score/item`, {
+        const scoreResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/score/item`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ item_id: item.id, ground_truth_id: gtItem.id }),
         });
         
-        if (scoreResult?.ok) {
-          const scoreData = await scoreResult.json();
+        if (scoreResponse?.ok) {
+          const scoreData = await scoreResponse.json();
           gtResult = scoreData;
         }
       }
     }
 
-    const doc = React.createElement(ReportDocument, { item, gtResult });
+    const doc = <ReportDocument item={item} gtResult={gtResult} />;
     const stream = await renderToStream(doc);
 
     const chunks: Uint8Array[] = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      if (chunk instanceof Uint8Array) {
+        chunks.push(chunk);
+      }
     }
     const pdfBuffer = Buffer.concat(chunks);
 
