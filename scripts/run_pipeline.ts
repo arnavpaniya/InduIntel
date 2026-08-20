@@ -1,6 +1,6 @@
 // Load env first, before any other imports
 import { config } from 'dotenv';
-config({ path: '/Users/arnavpaniya/InduIntel/.env.local' });
+config({ path: '.env.local' });
 
 // Set env vars explicitly before importing modules that use them
 process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
