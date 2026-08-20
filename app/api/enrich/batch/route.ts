@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { debugLog, debugError } from '@/lib/debug';
 
 const DAILY_QUOTA_LIMIT = parseInt(process.env.DAILY_QUOTA_LIMIT || '18', 10); // Safety margin under 20
 const DEFAULT_BATCH_LIMIT = 3; // Quota-safe default
@@ -16,14 +17,14 @@ async function checkAndIncrementQuota(supabase: any): Promise<{ allowed: boolean
     .maybeSingle();
   
   if (selectError) {
-    console.error('[QUOTA] Error checking quota:', selectError.message);
+    debugError('[QUOTA] Error checking quota:', selectError.message);
     return { allowed: true, currentCount: 0 }; // Fail open
   }
   
   const currentCount = existing?.request_count || 0;
   
   if (currentCount >= DAILY_QUOTA_LIMIT) {
-    console.log(`[QUOTA] Daily limit reached: ${currentCount}/${DAILY_QUOTA_LIMIT}`);
+    debugLog(`[QUOTA] Daily limit reached: ${currentCount}/${DAILY_QUOTA_LIMIT}`);
     return { allowed: false, currentCount };
   }
   
@@ -36,7 +37,7 @@ async function checkAndIncrementQuota(supabase: any): Promise<{ allowed: boolean
     );
   
   if (upsertError) {
-    console.error('[QUOTA] Error incrementing quota:', upsertError.message);
+    debugError('[QUOTA] Error incrementing quota:', upsertError.message);
   }
   
   return { allowed: true, currentCount: currentCount + 1 };
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    console.log('[BATCH] Starting batch enrichment with limit:', limit, 'quota limit:', DAILY_QUOTA_LIMIT);
+    debugLog('[BATCH] Starting batch enrichment with limit:', limit, 'quota limit:', DAILY_QUOTA_LIMIT);
 
     // Check quota before starting
     const quotaCheck = await checkAndIncrementQuota(supabaseAdmin);
@@ -69,16 +70,16 @@ export async function POST(request: NextRequest) {
       .limit(limit);
 
     if (error) {
-      console.error('[BATCH] Error fetching raw items:', error.message);
+      debugError('[BATCH] Error fetching raw items:', error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     if (!rawItems || rawItems.length === 0) {
-      console.log('[BATCH] No raw items to process');
+      debugLog('[BATCH] No raw items to process');
       return NextResponse.json({ message: 'No raw items to process', summary: { processed: 0, enriched: 0, needs_review: 0, avg_confidence: 0 } });
     }
 
-    console.log('[BATCH] Found items to process:', rawItems.map(i => i.mfg_part_num).join(', '));
+    debugLog('[BATCH] Found items to process:', rawItems.map(i => i.mfg_part_num).join(', '));
 
     let enriched = 0;
     let needsReview = 0;
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
       const quotaCheck = await checkAndIncrementQuota(supabaseAdmin);
       if (!quotaCheck.allowed) {
         quotaSkipped++;
-        console.log(`[BATCH] Skipping ${item.mfg_part_num} due to quota limit`);
+        debugLog(`[BATCH] Skipping ${item.mfg_part_num} due to quota limit`);
         results.push({ 
           item_id: item.id, 
           mfg_part_num: item.mfg_part_num, 
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        console.log(`[BATCH] Processing item: ${item.mfg_part_num} (${item.id})`);
+        debugLog(`[BATCH] Processing item: ${item.mfg_part_num} (${item.id})`);
         const response = await fetch(`${baseUrl}/api/enrich/run`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -118,12 +119,12 @@ export async function POST(request: NextRequest) {
           needsReview++;
         }
         totalConfidence += result.confidence_score || 0;
-        console.log(`[BATCH] Item ${item.mfg_part_num} result: status=${result.status}, confidence=${result.confidence_score}`);
+        debugLog(`[BATCH] Item ${item.mfg_part_num} result: status=${result.status}, confidence=${result.confidence_score}`);
         
         // Small delay to avoid rate limits
         await new Promise(r => setTimeout(r, 1000));
       } catch (error) {
-        console.error(`[BATCH] Item ${item.mfg_part_num} exception:`, error);
+        debugError(`[BATCH] Item ${item.mfg_part_num} exception:`, error);
         results.push({ item_id: item.id, mfg_part_num: item.mfg_part_num, success: false, error: String(error) });
       }
     }
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
       skipped_due_to_quota: quotaSkipped,
     };
 
-    console.log('[BATCH] Summary:', JSON.stringify(summary, null, 2));
+    debugLog('[BATCH] Summary:', summary);
 
     await supabaseAdmin.from('enrichment_logs').insert({
       item_id: null,
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, summary, results });
   } catch (error) {
-    console.error('Batch enrichment error:', error);
+    debugError('Batch enrichment error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

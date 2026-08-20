@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { scoreItem } from '@/lib/scoring/compare';
+import { debugError } from '@/lib/debug';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
-    console.error('Score item error:', error);
+    debugError('Score item error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

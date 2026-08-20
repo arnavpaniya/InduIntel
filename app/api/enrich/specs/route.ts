@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
+import { debugLog, debugError, debugJson } from '@/lib/debug';
 
 interface SpecsResult {
   upc: string | null;
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'item_id required' }, { status: 400 });
     }
 
-    console.log('[SPECS] Starting enrichment for item_id:', item_id);
+    debugLog('[SPECS] Starting enrichment for item_id:', item_id);
 
     const supabase = await createServerSupabaseClient();
 
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .maybeSingle();
 
-    console.log('[SPECS] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
+    debugLog('[SPECS] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
 
     if (itemError) {
       return NextResponse.json({ error: itemError.message }, { status: 500 });
@@ -165,7 +166,7 @@ export async function POST(request: NextRequest) {
     // Check cache
     const cached = await getCachedResult(supabase, item_id, 'specs', inputHash);
     if (cached) {
-      console.log('[SPECS] Cache hit - returning cached result');
+      debugLog('[SPECS] Cache hit - returning cached result');
       const duration = Date.now() - startTime;
       await logEnrichment(supabase, item_id, 'specs', 'success', null, inputData, cached, duration, inputHash);
       
@@ -200,7 +201,7 @@ Return JSON only.`;
       return NextResponse.json({ error: result.error || 'Failed to parse specs', data: result.data }, { status: 500 });
     }
 
-    console.log('[SPECS] LLM result:', JSON.stringify(result.data));
+    debugJson('[SPECS] LLM result:', result.data);
 
     const specData = result.data;
     const { confidence, reasoning, ...specFields } = specData;
@@ -210,11 +211,11 @@ Return JSON only.`;
       .upsert({ item_id, ...specFields }, { onConflict: 'item_id' })
       .select();
 
-    console.log('[SPECS] UPSERT raw result:', JSON.stringify({
+    debugJson('[SPECS] UPSERT raw result:', {
       data: upserted,
       error: specError,
       count: upserted?.length,
-    }, null, 2));
+    });
 
     if (specError) {
       await logEnrichment(supabase, item_id, 'specs', 'error', specError.message, inputData, result, duration, inputHash);
@@ -226,13 +227,13 @@ Return JSON only.`;
       return NextResponse.json({ error: 'Upsert returned no rows' }, { status: 500 });
     }
 
-    console.log('[SPECS] Upserted specs:', upserted);
+    debugLog('[SPECS] Upserted specs:', upserted);
 
     await logEnrichment(supabase, item_id, 'specs', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data });
   } catch (error) {
-    console.error('Specs enrichment error:', error);
+    debugError('Specs enrichment error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

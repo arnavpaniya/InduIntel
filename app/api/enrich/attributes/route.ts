@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { formatMeasurement, parseMeasurement } from '@/lib/ai/attributes';
 import { createHash } from 'crypto';
+import { debugLog, debugError, debugJson } from '@/lib/debug';
 
 interface AttributeItem {
   label: string;
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'item_id required' }, { status: 400 });
     }
 
-    console.log('[ATTRIBUTES] Starting enrichment for item_id:', item_id);
+    debugLog('[ATTRIBUTES] Starting enrichment for item_id:', item_id);
 
     const supabase = await createServerSupabaseClient();
 
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .maybeSingle();
 
-    console.log('[ATTRIBUTES] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
+    debugLog('[ATTRIBUTES] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
 
     if (itemError) {
       return NextResponse.json({ error: itemError.message }, { status: 500 });
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
     // Check cache
     const cached = await getCachedResult(supabase, item_id, 'attributes', inputHash);
     if (cached) {
-      console.log('[ATTRIBUTES] Cache hit - returning cached result');
+      debugLog('[ATTRIBUTES] Cache hit - returning cached result');
       const duration = Date.now() - startTime;
       await logEnrichment(supabase, item_id, 'attributes', 'success', null, inputData, cached, duration, inputHash);
       
@@ -180,7 +181,7 @@ Return JSON only.`;
       return NextResponse.json({ error: result.error || 'Failed to parse attributes', data: result.data }, { status: 500 });
     }
 
-    console.log('[ATTRIBUTES] LLM result:', JSON.stringify(result.data));
+    debugJson('[ATTRIBUTES] LLM result:', result.data);
 
     const validAttributes = (result.data.attributes || [])
       .filter((a: any) => a.label && a.value)
@@ -206,7 +207,7 @@ Return JSON only.`;
         };
       });
 
-    console.log('[ATTRIBUTES] About to INSERT attributes, item_id:', item_id, 'count:', validAttributes.length);
+    debugLog('[ATTRIBUTES] About to INSERT attributes, item_id:', item_id, 'count:', validAttributes.length);
 
     if (validAttributes.length > 0) {
       await supabaseAdmin.from('item_attributes').delete().eq('item_id', item_id);
@@ -215,11 +216,11 @@ Return JSON only.`;
         .insert(validAttributes)
         .select();
 
-      console.log('[ATTRIBUTES] INSERT raw result:', JSON.stringify({
+      debugJson('[ATTRIBUTES] INSERT raw result:', {
         data: inserted,
         error: attrError,
         count: inserted?.length,
-      }, null, 2));
+      });
 
       if (attrError) {
         await logEnrichment(supabase, item_id, 'attributes', 'error', attrError.message, inputData, result, duration, inputHash);
@@ -231,14 +232,14 @@ Return JSON only.`;
         return NextResponse.json({ error: 'Insert returned no rows' }, { status: 500 });
       }
 
-      console.log('[ATTRIBUTES] Inserted attributes:', inserted);
+      debugLog('[ATTRIBUTES] Inserted attributes:', inserted);
     }
 
     await logEnrichment(supabase, item_id, 'attributes', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data, count: validAttributes.length });
   } catch (error) {
-    console.error('Attributes enrichment error:', error);
+    debugError('Attributes enrichment error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

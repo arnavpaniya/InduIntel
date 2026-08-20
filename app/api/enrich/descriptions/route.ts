@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .maybeSingle();
 
-    console.log('[DESCRIPTIONS] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
+    debugLog('[DESCRIPTIONS] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
 
     if (itemError) {
       return NextResponse.json({ error: itemError.message }, { status: 500 });
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     // Check cache
     const cached = await getCachedResult(supabase, item_id, 'descriptions', inputHash);
     if (cached) {
-      console.log('[DESCRIPTIONS] Cache hit - returning cached result');
+      debugLog('[DESCRIPTIONS] Cache hit - returning cached result');
       const duration = Date.now() - startTime;
       await logEnrichment(supabase, item_id, 'descriptions', 'success', null, inputData, cached, duration, inputHash);
       
@@ -197,7 +197,7 @@ Return JSON only.`;
       return NextResponse.json({ error: result.error || 'Failed to parse descriptions', data: result.data }, { status: 500 });
     }
 
-    console.log('[DESCRIPTIONS] LLM result:', JSON.stringify(result.data));
+    debugJson('[DESCRIPTIONS] LLM result:', result.data);
 
     const processedDescriptions = (result.data.descriptions || [])
       .map(enforceLength)
@@ -208,9 +208,9 @@ Return JSON only.`;
         char_count: d.value.length,
       }));
 
-    console.log('[DESCRIPTIONS] Processed descriptions with char_counts:');
+    debugLog('[DESCRIPTIONS] Processed descriptions with char_counts:');
     for (const d of processedDescriptions) {
-      console.log(`  ${d.field_name}: ${d.char_count} chars - "${d.value.slice(0, 60)}..."`);
+      debugLog(`  ${d.field_name}: ${d.char_count} chars - "${d.value.slice(0, 60)}..."`);
     }
 
     if (processedDescriptions.length > 0) {
@@ -220,11 +220,11 @@ Return JSON only.`;
         .insert(processedDescriptions)
         .select();
 
-      console.log('[DESCRIPTIONS] INSERT raw result:', JSON.stringify({
+      debugJson('[DESCRIPTIONS] INSERT raw result:', {
         data: inserted,
         error: descError,
         count: inserted?.length,
-      }, null, 2));
+      });
 
       if (descError) {
         await logEnrichment(supabase, item_id, 'descriptions', 'error', descError.message, inputData, result, duration, inputHash);
@@ -236,14 +236,14 @@ Return JSON only.`;
         return NextResponse.json({ error: 'Insert returned no rows' }, { status: 500 });
       }
 
-      console.log('[DESCRIPTIONS] Inserted descriptions:', inserted);
+      debugLog('[DESCRIPTIONS] Inserted descriptions:', inserted);
     }
 
     await logEnrichment(supabase, item_id, 'descriptions', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data, count: processedDescriptions.length });
   } catch (error) {
-    console.error('Descriptions enrichment error:', error);
+    debugError('Descriptions enrichment error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { scoreItem } from '@/lib/scoring/compare';
+import { debugLog, debugError } from '@/lib/debug';
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     for (const enriched of enrichedItems) {
       const gtId = gtByPartNum.get(enriched.mfg_part_num);
       if (!gtId) {
-        console.log(`No ground truth found for ${enriched.mfg_part_num}`);
+        debugLog(`No ground truth found for ${enriched.mfg_part_num}`);
         continue;
       }
       
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.error(`Score error for ${enriched.mfg_part_num}:`, error);
+        debugError(`Score error for ${enriched.mfg_part_num}:`, error);
         results.push({ item_id: enriched.id, mfg_part_num: enriched.mfg_part_num, error: String(error) });
       }
     }
@@ -189,7 +190,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ success: true, summary, results });
   } catch (error) {
-    console.error('Batch score error:', error);
+    debugError('Batch score error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

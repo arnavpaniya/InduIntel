@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { debugError, debugLog } from '@/lib/debug';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
@@ -70,7 +71,7 @@ export async function callLLM<T = unknown>(
       const parsed = JSON.parse(cleaned) as T;
       return { data: parsed, raw: cleaned, error: null };
     } catch (parseError) {
-      console.error('[GEMINI] JSON parse failed, raw response:', rawText);
+      debugError('[GEMINI] JSON parse failed, raw response:', rawText);
       return {
         data: null,
         raw: cleaned,
@@ -79,7 +80,7 @@ export async function callLLM<T = unknown>(
     }
   } catch (error) {
     const err = error as Error & { status?: number; response?: { body?: string } };
-    console.error('[GEMINI] API error:', {
+    debugError('[GEMINI] API error:', {
       message: err.message,
       status: err.status,
       body: err.response?.body,
@@ -106,7 +107,7 @@ export async function callLLMWithRetry<T = unknown>(
       result.error?.includes('ECONNREFUSED');
 
     if (isTransient && attempt < maxRetries) {
-      console.log('[GEMINI] Transient error, waiting 3s before retry:', result.error);
+      debugLog('[GEMINI] Transient error, waiting 3s before retry:', result.error);
       await new Promise(r => setTimeout(r, 3000));
       continue;
     }
