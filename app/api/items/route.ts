@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     
     let query = supabase
       .from('items')
-      .select('id, mfg_part_num, part_desc, status, manufacturer_name, brand_name, classpath, created_at, batch_id', { count: 'exact' })
+      .select('id, mfg_part_num, part_desc, status, manufacturer_name, brand_name, classpath, confidence_score, field_confidence, created_at, batch_id', { count: 'exact' })
       .range(from, to)
       .order('created_at', { ascending: false });
     

@@ -127,7 +127,6 @@ export async function POST(request: NextRequest) {
         .update({
           manufacturer_name: cached.manufacturer_name,
           brand_name: cached.brand_name,
-          confidence_score: cached.confidence,
           updated_at: new Date().toISOString(),
         })
         .eq('id', item_id)
@@ -173,7 +172,6 @@ debugJson('[MANUFACTURER] UPDATE payload:', {
       .update({
         manufacturer_name: result.data.manufacturer_name,
         brand_name: result.data.brand_name,
-        confidence_score: result.data.confidence,
         updated_at: new Date().toISOString(),
       })
       .eq('id', item_id)

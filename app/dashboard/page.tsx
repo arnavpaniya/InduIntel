@@ -73,7 +73,7 @@ function StatusBadge({ status }: { status: Item['status'] }) {
 }
 
 function ConfidenceScore({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-muted-foreground">—</span>;
+  if (!score) return <span className="text-muted-foreground">—</span>;
   
   let variant: 'default' | 'success' | 'warning' | 'destructive' = 'default';
   if (score >= 80) variant = 'success';

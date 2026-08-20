@@ -128,7 +128,6 @@ export async function POST(request: NextRequest) {
           class: cached.class,
           fine: cached.fine,
           classpath: cached.classpath,
-          confidence_score: cached.confidence,
           updated_at: new Date().toISOString(),
         })
         .eq('id', item_id)
@@ -176,7 +175,6 @@ debugJson('[CLASSIFY] UPDATE payload:', {
         class: result.data.class,
         fine: result.data.fine,
         classpath: result.data.classpath,
-        confidence_score: result.data.confidence,
         updated_at: new Date().toISOString(),
       })
       .eq('id', item_id)

@@ -109,11 +109,11 @@ export default function ItemDetailPage() {
             </Badge>
             <Badge variant="outline" className="gap-1">
               <Package className="h-3 w-3" />
-              Fields Filled: {item.confidence_score ?? '—'}%
+              Fields Filled: {item.confidence_score ? `${item.confidence_score}%` : '—'}
             </Badge>
             <Badge variant="outline" className="gap-1">
               <Settings className="h-3 w-3" />
-              AI's Own Confidence: {item.field_confidence ?? '—'}
+              AI's Own Confidence: {item.field_confidence ? `${Math.round(item.field_confidence * 100)}%` : '—'}
             </Badge>
           </div>
         </div>
@@ -192,12 +192,12 @@ export default function ItemDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Fields Filled</p>
-                    <p className="font-medium text-lg">{item.confidence_score ?? '—'}%</p>
+                    <p className="font-medium text-lg">{item.confidence_score ? `${item.confidence_score}%` : '—'}</p>
                     <p className="text-xs text-muted-foreground mt-1">How much of the product info the AI was able to complete</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">AI's Own Confidence</p>
-                    <p className="font-medium text-lg">{item.field_confidence ?? '—'}</p>
+                    <p className="font-medium text-lg">{item.field_confidence ? `${Math.round(item.field_confidence * 100)}%` : '—'}</p>
                     <p className="text-xs text-muted-foreground mt-1">How sure the AI is that what it found is correct</p>
                   </div>
                   <div>

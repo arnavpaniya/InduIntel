@@ -97,8 +97,12 @@ export async function POST(request: NextRequest) {
           debugError(`[RUN] Step ${step} failed:`, result.error);
         } else {
           debugLog(`[RUN] Step ${step} succeeded in ${Date.now() - stepStart}ms`);
-          if (result.data?.data?.confidence !== undefined) {
-            stepConfidences.push(result.data.data.confidence);
+          // Handle different response formats:
+          // manufacturer/classify: { data: { data: { confidence, ... } } }
+          // attributes/descriptions/specs: { data: { confidence, ... } }
+          const stepConfidence = result.data?.data?.confidence ?? result.data?.confidence;
+          if (stepConfidence !== undefined && typeof stepConfidence === 'number') {
+            stepConfidences.push(stepConfidence);
           }
         }
       } catch (error) {

@@ -103,7 +103,7 @@ async function getSampleRawEnrichedPair() {
   
   const { data: enrichedItem } = await supabase
     .from('items')
-    .select('id, mfg_part_num, part_desc, manufacturer_name, brand_name, classpath, confidence_score, status')
+    .select('id, mfg_part_num, part_desc, manufacturer_name, brand_name, classpath, confidence_score, field_confidence, status')
     .eq('status', 'enriched')
     .not('manufacturer_name', 'is', null)
     .limit(1)
@@ -299,8 +299,8 @@ function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
           <div className="flex flex-wrap gap-2 mt-3">
             <Badge variant="success" className="text-xs">{enrichedItem.manufacturer_name || 'Detected'}</Badge>
             <Badge variant="success" className="text-xs">{enrichedItem.brand_name || 'Detected'}</Badge>
-            <Badge variant="outline" className="text-xs">{enrichedItem.confidence_score ?? '—'}% confidence</Badge>
-            <Badge variant="outline" className="text-xs">{enrichedItem.field_confidence ?? '—'} field confidence</Badge>
+            <Badge variant="outline" className="text-xs">{enrichedItem.confidence_score ? `${enrichedItem.confidence_score}%` : '—'} Fields Filled</Badge>
+            <Badge variant="outline" className="text-xs">{enrichedItem.field_confidence ? `${Math.round(enrichedItem.field_confidence * 100)}%` : '—'} AI Confidence</Badge>
           </div>
         </div>
         <div className="space-y-3">
