@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, type Variants } from 'motion/react';
 import { 
   Card, CardContent, CardHeader, CardTitle, CardDescription 
 } from '@/components/ui/card';
@@ -21,6 +22,16 @@ import { BatchScoreSummary, BatchScoreResponse } from '@/lib/types';
 
 const COLORS = ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 
+const panelVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: 'easeOut' } },
+};
+
+const gridVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07 } },
+};
+
 function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: { 
   title: string; 
   value: string | number; 
@@ -29,7 +40,8 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: {
   variant?: 'default' | 'success' | 'warning' | 'destructive';
 }) {
   return (
-    <Card>
+    <motion.div variants={panelVariants} layout>
+    <Card className="metric-ring overflow-hidden">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div>
@@ -41,10 +53,10 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: {
               </p>
             )}
           </div>
-          <div className={cn('p-3 rounded-lg', 
-            variant === 'success' && 'bg-green-100 text-green-600',
-            variant === 'warning' && 'bg-yellow-100 text-yellow-600',
-            variant === 'destructive' && 'bg-red-100 text-red-600',
+          <div className={cn('p-3 rounded-lg shadow-inner', 
+            variant === 'success' && 'bg-emerald-100 text-emerald-700',
+            variant === 'warning' && 'bg-amber-100 text-amber-700',
+            variant === 'destructive' && 'bg-red-100 text-red-700',
             variant === 'default' && 'bg-blue-100 text-blue-600'
           )}>
             <Icon className="h-6 w-6" />
@@ -52,12 +64,13 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: {
         </div>
       </CardContent>
     </Card>
+    </motion.div>
   );
 }
 
 function GroupAccuracyChart({ data }: { data: Array<{ group: string; accuracy: number; matched: number; total: number; reason?: string }> }) {
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart2 className="h-5 w-5" />
@@ -118,7 +131,7 @@ function ConfidenceCorrelationChart({ data }: { data: Record<string, number> }) 
   }));
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5" />
@@ -176,7 +189,7 @@ function CharLimitComplianceChart({ data }: { data: Record<string, number> }) {
   }));
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings className="h-5 w-5" />
@@ -242,7 +255,7 @@ export default function InsightsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
+      <div className="app-shell container mx-auto px-4 py-12 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
         <p className="text-muted-foreground">Loading insights...</p>
       </div>
@@ -251,7 +264,7 @@ export default function InsightsPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
+      <div className="app-shell container mx-auto px-4 py-12 text-center">
         <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-4" />
         <h2 className="text-xl font-semibold mb-2">Failed to load insights</h2>
         <p className="text-muted-foreground mb-4">{error}</p>
@@ -265,7 +278,7 @@ export default function InsightsPage() {
 
   if (!summary || summary.items_scored === 0) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="app-shell container mx-auto px-4 py-12">
         <header className="mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <BarChart2 className="h-8 w-8 text-primary" />
@@ -274,7 +287,7 @@ export default function InsightsPage() {
           <p className="text-muted-foreground mt-2">Aggregate metrics from Stage 3 validation</p>
         </header>
         
-        <Card className="text-center py-12 max-w-2xl mx-auto">
+        <Card className="glass-panel text-center py-12 max-w-2xl mx-auto">
           <CardContent>
             <Target className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">No validation data yet</h2>
@@ -329,12 +342,14 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-shell min-h-screen">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="sticky top-0 z-30 border-b bg-card/82 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BarChart2 className="h-8 w-8 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-cyan-900/15">
+              <BarChart2 className="h-6 w-6" />
+            </div>
             <div>
               <h1 className="text-2xl font-bold">Insights</h1>
               <p className="text-sm text-muted-foreground">Aggregate metrics from Stage 3 validation</p>
@@ -366,7 +381,12 @@ export default function InsightsPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div
+          variants={gridVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
+        >
           <StatCard 
             title="Items Scored" 
             value={summary.items_scored} 
@@ -393,20 +413,27 @@ export default function InsightsPage() {
             icon={TrendingUp} 
             variant="default"
           />
-        </div>
+        </motion.div>
 
         {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div variants={gridVariants} initial="hidden" animate="show" className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <motion.div variants={panelVariants}>
           <GroupAccuracyChart data={groupAccuracyData} />
+          </motion.div>
+          <motion.div variants={panelVariants}>
           <ConfidenceCorrelationChart data={summary.confidence_accuracy_correlation || {}} />
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Charts Row 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div variants={gridVariants} initial="hidden" animate="show" className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <motion.div variants={panelVariants}>
           <CharLimitComplianceChart data={summary.char_limit_compliance || {}} />
+          </motion.div>
           
           {/* Field Accuracy Breakdown Table */}
-          <Card>
+          <motion.div variants={panelVariants}>
+          <Card className="overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
@@ -446,11 +473,13 @@ export default function InsightsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Detailed Results */}
         {results.length > 0 && (
-          <Card>
+          <motion.div variants={panelVariants} initial="hidden" animate="show">
+          <Card className="overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
@@ -501,10 +530,11 @@ export default function InsightsPage() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Correlation Note */}
-        <Card className="border-primary/50 bg-primary/5">
+        <Card className="glass-panel border-primary/50 bg-primary/5">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <Target className="h-5 w-5 text-primary mt-0.5" />

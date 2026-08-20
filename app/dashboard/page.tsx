@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { motion, type Variants } from 'motion/react';
 import { 
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption 
 } from '@/components/ui/table';
@@ -15,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { 
   RefreshCw, Search, Filter, ChevronLeft, ChevronRight, 
   Zap, AlertTriangle, CheckCircle, Clock, XCircle,
-  BarChart2, Settings
+  BarChart2, Settings, Package, Layers, Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchItems, enrichItem, enrichBatch, fetchQuotaStatus } from '@/lib/api';
@@ -72,6 +73,52 @@ function ConfidenceScore({ score }: { score: number | null }) {
     <Badge variant={variant} className="text-xs">
       {score}%
     </Badge>
+  );
+}
+
+const panelVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: 'easeOut' } },
+};
+
+const gridVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
+function SummaryCard({ label, value, icon: Icon, tone }: {
+  label: string;
+  value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: 'neutral' | 'raw' | 'success' | 'review';
+}) {
+  return (
+    <motion.div variants={panelVariants} layout>
+      <Card className="metric-ring overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="truncate text-sm text-muted-foreground">{label}</p>
+              <p className={cn(
+                'mt-1 text-2xl font-bold',
+                tone === 'raw' && 'text-slate-600',
+                tone === 'success' && 'text-emerald-700',
+                tone === 'review' && 'text-amber-700'
+              )}>{value}</p>
+            </div>
+            <div className={cn(
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg shadow-inner',
+              tone === 'neutral' && 'bg-primary/10 text-primary',
+              tone === 'raw' && 'bg-slate-100 text-slate-600',
+              tone === 'success' && 'bg-emerald-100 text-emerald-700',
+              tone === 'review' && 'bg-amber-100 text-amber-700'
+            )}>
+              <Icon className="h-5 w-5" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -197,19 +244,21 @@ export default function DashboardPage() {
   const statusCounts = getStatusCounts();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-shell min-h-screen">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="sticky top-0 z-30 border-b bg-card/82 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Zap className="h-8 w-8 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-cyan-900/15">
+              <Zap className="h-6 w-6" />
+            </div>
             <div>
               <h1 className="text-2xl font-bold">InduIntel Dashboard</h1>
               <p className="text-sm text-muted-foreground">AI Product Intelligence Enrichment Pipeline</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             {/* Quota Status */}
             <TooltipProvider>
               <Tooltip>
@@ -246,58 +295,23 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Items</p>
-                  <p className="text-2xl font-bold">{pagination.total}</p>
-                </div>
-                <div className="p-2 bg-gray-100 rounded-lg">📦</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Raw (Pending)</p>
-                  <p className="text-2xl font-bold text-gray-600">{statusCounts.raw}</p>
-                </div>
-                <div className="p-2 bg-gray-100 rounded-lg">⏳</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Enriched</p>
-                  <p className="text-2xl font-bold text-green-600">{statusCounts.enriched}</p>
-                </div>
-                <div className="p-2 bg-green-100 rounded-lg">✅</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Need Review</p>
-                  <p className="text-2xl font-bold text-yellow-600">{statusCounts.review}</p>
-                </div>
-                <div className="p-2 bg-yellow-100 rounded-lg">⚠️</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <motion.div
+          variants={gridVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4"
+        >
+          <SummaryCard label="Total Items" value={pagination.total} icon={Package} tone="neutral" />
+          <SummaryCard label="Raw Pending" value={statusCounts.raw} icon={Clock} tone="raw" />
+          <SummaryCard label="Enriched" value={statusCounts.enriched} icon={CheckCircle} tone="success" />
+          <SummaryCard label="Need Review" value={statusCounts.review} icon={AlertTriangle} tone="review" />
+        </motion.div>
 
         {/* Empty State */}
         {pagination.total === 0 && (
-          <Card className="text-center py-12">
+          <Card className="glass-panel text-center py-12">
             <CardContent>
-              <div className="text-6xl mb-4">📦</div>
+              <Package className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
               <h2 className="text-xl font-semibold mb-2">No items found</h2>
               <p className="text-muted-foreground mb-4">Run the seed script to populate the database with sample data.</p>
               <Button onClick={() => window.location.reload()}>Refresh</Button>
@@ -309,7 +323,12 @@ export default function DashboardPage() {
         {pagination.total > 0 && (
           <>
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <motion.div
+              variants={panelVariants}
+              initial="hidden"
+              animate="show"
+              className="glass-panel mb-4 flex flex-col gap-4 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between"
+            >
               <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -354,10 +373,11 @@ export default function DashboardPage() {
                   {batchLoading ? 'Running...' : 'Run Batch (3)'}
                 </Button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Table */}
-            <Card>
+            <motion.div variants={panelVariants} initial="hidden" animate="show">
+            <Card className="overflow-hidden">
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
@@ -396,7 +416,7 @@ export default function DashboardPage() {
                       </TableRow>
                     ) : (
                       items.map((item) => (
-                        <TableRow key={item.id} className="hover:bg-muted/50">
+                        <TableRow key={item.id} className="hover:bg-accent/45">
                           <TableCell className="font-mono font-medium">{item.mfg_part_num}</TableCell>
                           <TableCell className="max-w-xs truncate">{item.part_desc || '—'}</TableCell>
                           <TableCell>{item.manufacturer_name || <span className="text-muted-foreground">—</span>}</TableCell>
@@ -409,7 +429,7 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-2">
                               <Link href={`/dashboard/${item.id}`}>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Settings className="h-4 w-4" />
+                                  <Eye className="h-4 w-4" />
                                 </Button>
                               </Link>
                               {item.status === 'raw' && (
@@ -472,6 +492,7 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
           </>
         )}
 

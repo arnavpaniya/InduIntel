@@ -147,7 +147,7 @@ function MetricCard({ label, value, icon: Icon, trend, variant = 'default' }: {
   variant?: 'default' | 'success' | 'warning' | 'destructive';
 }) {
   return (
-    <Card>
+    <Card className="metric-ring overflow-hidden">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="min-w-0">
@@ -164,10 +164,10 @@ function MetricCard({ label, value, icon: Icon, trend, variant = 'default' }: {
               </p>
             )}
           </div>
-          <div className={cn('p-3 rounded-lg flex-shrink-0', 
-            variant === 'success' && 'bg-green-100 text-green-600',
-            variant === 'warning' && 'bg-yellow-100 text-yellow-600',
-            variant === 'destructive' && 'bg-red-100 text-red-600',
+          <div className={cn('p-3 rounded-lg flex-shrink-0 shadow-inner', 
+            variant === 'success' && 'bg-emerald-100 text-emerald-700',
+            variant === 'warning' && 'bg-amber-100 text-amber-700',
+            variant === 'destructive' && 'bg-red-100 text-red-700',
             variant === 'default' && 'bg-primary/10 text-primary'
           )}>
             <Icon className="h-6 w-6" />
@@ -185,12 +185,12 @@ function StepCard({ step, title, description, icon: Icon }: {
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex flex-col items-center text-center p-6">
+    <div className="flex flex-col items-center text-center p-6 rounded-lg border bg-card/70 shadow-sm shadow-slate-950/5">
       <div className="relative mb-4">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-full h-0.5 bg-border" />
         </div>
-        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary border-4 border-background">
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground border-4 border-background shadow-lg shadow-cyan-900/15">
           <Icon className="h-6 w-6" />
         </div>
       </div>
@@ -208,7 +208,7 @@ function StepCard({ step, title, description, icon: Icon }: {
 function RawInputCard({ rawItem }: { rawItem: any }) {
   if (!rawItem) {
     return (
-      <Card className="border-destructive/20">
+      <Card className="glass-panel border-destructive/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
@@ -225,7 +225,7 @@ function RawInputCard({ rawItem }: { rawItem: any }) {
   }
 
   return (
-    <Card className="border-destructive/20">
+    <Card className="glass-panel border-destructive/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-destructive">
           <AlertTriangle className="h-5 w-5" />
@@ -267,7 +267,7 @@ function RawInputCard({ rawItem }: { rawItem: any }) {
 function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
   if (!enrichedItem) {
     return (
-      <Card className="border-green-500/20">
+      <Card className="glass-panel border-emerald-500/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-green-600">
             <CheckCircle className="h-5 w-5" />
@@ -284,7 +284,7 @@ function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
   }
 
   return (
-    <Card className="border-green-500/20">
+    <Card className="glass-panel border-emerald-500/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-green-600">
           <CheckCircle className="h-5 w-5" />
@@ -353,27 +353,28 @@ export default async function LandingPage() {
   const hasRealData = !!rawItem && !!enrichedItem;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-shell min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
+      <section className="hero-grid relative overflow-hidden py-20 text-white lg:py-28">
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent" />
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="mx-auto max-w-5xl text-center">
             {/* Logo/Name */}
             <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/12 text-white ring-1 ring-white/20">
                 <Zap className="h-7 w-7" />
               </div>
               <span className="text-3xl font-bold tracking-tight">InduIntel</span>
             </div>
             
             {/* Pitch */}
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-              Turn messy industrial catalog data into{' '}
-              <span className="text-primary">clean, structured, commerce-ready product records</span>{' '}
-              using AI.
+            <h1 className="text-4xl font-bold tracking-tight mb-6 sm:text-5xl lg:text-6xl">
+              <span className="masked-rise"><span>Messy catalogs.</span></span>{' '}
+              <span className="masked-rise"><span>Clean records.</span></span>{' '}
+              <span className="masked-rise"><span>Validated by AI.</span></span>
             </h1>
             
-            <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
+            <p className="mx-auto mb-10 max-w-2xl text-lg text-cyan-50/82">
               Distributors waste hours cleaning inconsistent product data. 
               InduIntel automates enrichment, classification, and validation — 
               so your catalog is always accurate, complete, and ready to sell.
@@ -388,7 +389,7 @@ export default async function LandingPage() {
                 </Button>
               </Link>
               <Link href="#metrics">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2">
+                <Button variant="outline" size="lg" className="w-full border-white/25 bg-white/10 text-white hover:bg-white hover:text-slate-950 sm:w-auto gap-2">
                   View Live Metrics
                   <ChevronRight className="h-5 w-5" />
                 </Button>
@@ -396,7 +397,7 @@ export default async function LandingPage() {
             </div>
 
             {/* Trust indicator */}
-            <div className="mt-10 flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-sm text-cyan-50/75 sm:gap-6">
               <div className="flex items-center gap-1">
                 <Shield className="h-4 w-4" />
                 <span>Ground-truth validation</span>
@@ -415,7 +416,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-16 lg:py-24 bg-muted/30">
+      <section className="py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
             <Badge variant="secondary" className="mb-3">The Problem</Badge>
@@ -443,7 +444,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Solution / How It Works */}
-      <section className="py-16 lg:py-24">
+      <section className="bg-white/42 py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <Badge variant="secondary" className="mb-3">The Solution</Badge>
@@ -496,7 +497,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Live Metrics Section */}
-      <section id="metrics" className="py-16 lg:py-24 bg-muted/30">
+      <section id="metrics" className="py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
             <Badge variant="secondary" className="mb-3">Live Metrics</Badge>
