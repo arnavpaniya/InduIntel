@@ -68,3 +68,18 @@
  ✓ Compiled in 117ms (1280 modules)
  ✓ Compiled in 103ms (1280 modules)
  ✓ Compiled in 96ms (1280 modules)
+ ✓ Compiled /api/enrich/manufacturer in 162ms (1353 modules)
+ POST /api/enrich/manufacturer 200 in 14168ms
+ POST /api/enrich/manufacturer 200 in 14157ms
+ ✓ Compiled /api/enrich/classify in 97ms (1355 modules)
+ POST /api/enrich/classify 500 in 4099ms
+ POST /api/enrich/classify 500 in 4090ms
+ ✓ Compiled /api/enrich/attributes in 100ms (1358 modules)
+ POST /api/enrich/attributes 500 in 7341ms
+ POST /api/enrich/attributes 500 in 7336ms
+ ✓ Compiled /api/enrich/descriptions in 85ms (1360 modules)
+ POST /api/enrich/descriptions 500 in 7369ms
+ POST /api/enrich/descriptions 500 in 7364ms
+ ✓ Compiled /api/enrich/specs in 80ms (1362 modules)
+ POST /api/enrich/specs 500 in 4367ms
+ POST /api/enrich/specs 500 in 4362ms
