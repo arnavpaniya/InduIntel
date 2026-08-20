@@ -5,6 +5,7 @@ import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { formatMeasurement, parseMeasurement } from '@/lib/ai/attributes';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
+import { Schema, SchemaType } from '@google/generative-ai';
 
 interface AttributeItem {
   label: string;
@@ -17,6 +18,27 @@ interface AttributesResult {
   confidence: number;
   reasoning: string;
 }
+
+const ATTRIBUTES_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    attributes: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          label: { type: SchemaType.STRING },
+          value: { type: SchemaType.STRING },
+          uom: { type: SchemaType.STRING, nullable: true },
+        },
+        required: ['label', 'value', 'uom'],
+      },
+    },
+    confidence: { type: SchemaType.NUMBER },
+    reasoning: { type: SchemaType.STRING },
+  },
+  required: ['attributes', 'confidence', 'reasoning'],
+};
 
 const ATTRIBUTES_PROMPT = `Extract structured attributes from the product description. Output an array of {label, value, uom} objects.
 
@@ -172,6 +194,7 @@ Return JSON only.`;
 
     const result = await callLLMWithRetry<AttributesResult>(prompt, {
       temperature: 0.1,
+      schema: ATTRIBUTES_SCHEMA,
     });
 
     const duration = Date.now() - startTime;

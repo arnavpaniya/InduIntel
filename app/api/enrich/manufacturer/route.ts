@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
+import { Schema, SchemaType } from '@google/generative-ai';
 
 interface ManufacturerResult {
   manufacturer_name: string | null;
@@ -11,6 +12,17 @@ interface ManufacturerResult {
   confidence: number;
   reasoning: string;
 }
+
+const MANUFACTURER_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    manufacturer_name: { type: SchemaType.STRING, nullable: true },
+    brand_name: { type: SchemaType.STRING, nullable: true },
+    confidence: { type: SchemaType.NUMBER },
+    reasoning: { type: SchemaType.STRING },
+  },
+  required: ['manufacturer_name', 'brand_name', 'confidence', 'reasoning'],
+};
 
 const MANUFACTURER_PROMPT = `You are normalizing manufacturer and brand names from industrial product data.
 
@@ -149,6 +161,7 @@ Return JSON only.`;
 
     const result = await callLLMWithRetry<ManufacturerResult>(prompt, {
       temperature: 0.1,
+      schema: MANUFACTURER_SCHEMA,
     });
 
     const duration = Date.now() - startTime;

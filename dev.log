@@ -83,3 +83,16 @@
  ✓ Compiled /api/enrich/specs in 80ms (1362 modules)
  POST /api/enrich/specs 500 in 4367ms
  POST /api/enrich/specs 500 in 4362ms
+ ✓ Compiled in 154ms (1255 modules)
+ ✓ Compiled in 199ms (1280 modules)
+ ✓ Compiled in 112ms (1280 modules)
+ ✓ Compiled in 217ms (1280 modules)
+ ✓ Compiled in 127ms (1280 modules)
+ ✓ Compiled in 102ms (1280 modules)
+ ✓ Compiled in 165ms (1280 modules)
+ ✓ Compiled in 103ms (1280 modules)
+ ✓ Compiled in 97ms (1280 modules)
+ ✓ Compiled in 95ms (1280 modules)
+ ✓ Compiled in 97ms (1280 modules)
+ ✓ Compiled in 470ms (2521 modules)
+ ✓ Compiled in 369ms (2535 modules)

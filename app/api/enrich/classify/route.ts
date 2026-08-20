@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
+import { Schema, SchemaType } from '@google/generative-ai';
 
 interface ClassifyResult {
   dept: string | null;
@@ -13,6 +14,19 @@ interface ClassifyResult {
   confidence: number;
   reasoning: string;
 }
+
+const CLASSIFY_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    dept: { type: SchemaType.STRING, nullable: true },
+    class: { type: SchemaType.STRING, nullable: true },
+    fine: { type: SchemaType.STRING, nullable: true },
+    classpath: { type: SchemaType.STRING, nullable: true },
+    confidence: { type: SchemaType.NUMBER },
+    reasoning: { type: SchemaType.STRING },
+  },
+  required: ['dept', 'class', 'fine', 'classpath', 'confidence', 'reasoning'],
+};
 
 const CLASSIFY_PROMPT = `You are classifying industrial products into a controlled taxonomy.
 
@@ -148,6 +162,7 @@ Return JSON only.`;
 
     const result = await callLLMWithRetry<ClassifyResult>(prompt, {
       temperature: 0.1,
+      schema: CLASSIFY_SCHEMA,
     });
 
     const duration = Date.now() - startTime;

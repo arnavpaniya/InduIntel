@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
+import { Schema, SchemaType } from '@google/generative-ai';
 
 interface DescriptionItem {
   field_name: string;
@@ -16,6 +17,27 @@ interface DescriptionsResult {
   confidence: number;
   reasoning: string;
 }
+
+const DESCRIPTIONS_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    descriptions: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          field_name: { type: SchemaType.STRING },
+          value: { type: SchemaType.STRING },
+          char_count: { type: SchemaType.INTEGER },
+        },
+        required: ['field_name', 'value', 'char_count'],
+      },
+    },
+    confidence: { type: SchemaType.NUMBER },
+    reasoning: { type: SchemaType.STRING },
+  },
+  required: ['descriptions', 'confidence', 'reasoning'],
+};
 
 const DESCRIPTIONS_PROMPT = `Generate 5 standardized product description variants for industrial catalog use.
 
@@ -188,6 +210,7 @@ Return JSON only.`;
 
     const result = await callLLMWithRetry<DescriptionsResult>(prompt, {
       temperature: 0.2,
+      schema: DESCRIPTIONS_SCHEMA,
     });
 
     const duration = Date.now() - startTime;

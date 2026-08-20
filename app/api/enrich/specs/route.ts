@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
+import { Schema, SchemaType } from '@google/generative-ai';
 
 interface SpecsResult {
   upc: string | null;
@@ -24,6 +25,35 @@ interface SpecsResult {
   confidence: number;
   reasoning: string;
 }
+
+const SPECS_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    upc: { type: SchemaType.STRING, nullable: true },
+    ean: { type: SchemaType.STRING, nullable: true },
+    gtin: { type: SchemaType.STRING, nullable: true },
+    unspsc: { type: SchemaType.STRING, nullable: true },
+    list_price: { type: SchemaType.NUMBER, nullable: true },
+    length: { type: SchemaType.NUMBER, nullable: true },
+    length_uom: { type: SchemaType.STRING, nullable: true },
+    width: { type: SchemaType.NUMBER, nullable: true },
+    width_uom: { type: SchemaType.STRING, nullable: true },
+    height: { type: SchemaType.NUMBER, nullable: true },
+    height_uom: { type: SchemaType.STRING, nullable: true },
+    weight: { type: SchemaType.NUMBER, nullable: true },
+    weight_uom: { type: SchemaType.STRING, nullable: true },
+    country_of_origin: { type: SchemaType.STRING, nullable: true },
+    warranty: { type: SchemaType.STRING, nullable: true },
+    confidence: { type: SchemaType.NUMBER },
+    reasoning: { type: SchemaType.STRING },
+  },
+  required: [
+    'upc', 'ean', 'gtin', 'unspsc', 'list_price',
+    'length', 'length_uom', 'width', 'width_uom',
+    'height', 'height_uom', 'weight', 'weight_uom',
+    'country_of_origin', 'warranty', 'confidence', 'reasoning'
+  ],
+};
 
 const SPECS_PROMPT = `Extract product specifications from the description and attributes. ONLY include values explicitly stated or directly inferable.
 
@@ -192,6 +222,7 @@ Return JSON only.`;
 
     const result = await callLLMWithRetry<SpecsResult>(prompt, {
       temperature: 0.1,
+      schema: SPECS_SCHEMA,
     });
 
     const duration = Date.now() - startTime;

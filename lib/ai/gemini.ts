@@ -2,7 +2,7 @@ import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { debugError, debugLog } from '@/lib/debug';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 if (!GEMINI_API_KEY) {
   throw new Error('GEMINI_API_KEY not set in environment');
