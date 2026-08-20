@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
+import { debugLog, debugError, debugJson } from '@/lib/debug';
 
 interface ManufacturerResult {
   manufacturer_name: string | null;
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'item_id required' }, { status: 400 });
     }
 
-    console.log('[MANUFACTURER] Starting enrichment for item_id:', item_id);
+    debugLog('[MANUFACTURER] Starting enrichment for item_id:', item_id);
 
     const supabase = await createServerSupabaseClient();
 
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .maybeSingle();
 
-    console.log('[MANUFACTURER] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
+    debugLog('[MANUFACTURER] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
 
     if (itemError) {
       return NextResponse.json({ error: itemError.message }, { status: 500 });
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
     // Check cache
     const cached = await getCachedResult(supabase, item_id, 'manufacturer', inputHash);
     if (cached) {
-      console.log('[MANUFACTURER] Cache hit - returning cached result');
+      debugLog('[MANUFACTURER] Cache hit - returning cached result');
       const duration = Date.now() - startTime;
       await logEnrichment(supabase, item_id, 'manufacturer', 'success', null, inputData, cached, duration, inputHash);
       
@@ -158,14 +159,14 @@ Return JSON only.`;
       return NextResponse.json({ error: result.error || 'Failed to parse manufacturer', data: result.data }, { status: 500 });
     }
 
-    console.log('[MANUFACTURER] LLM result:', JSON.stringify(result.data));
-    console.log('[MANUFACTURER] About to UPDATE items with item_id:', item_id);
-    console.log('[MANUFACTURER] UPDATE payload:', JSON.stringify({
-      manufacturer_name: result.data.manufacturer_name,
-      brand_name: result.data.brand_name,
-      confidence_score: result.data.confidence,
-      updated_at: new Date().toISOString(),
-    }, null, 2));
+debugJson('[MANUFACTURER] LLM result:', result.data);
+debugLog('[MANUFACTURER] About to UPDATE items with item_id:', item_id);
+debugJson('[MANUFACTURER] UPDATE payload:', {
+  manufacturer_name: result.data.manufacturer_name,
+  brand_name: result.data.brand_name,
+  confidence_score: result.data.confidence,
+  updated_at: new Date().toISOString(),
+});
 
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('items')
@@ -178,11 +179,11 @@ Return JSON only.`;
       .eq('id', item_id)
       .select();
 
-    console.log('[MANUFACTURER] UPDATE raw result:', JSON.stringify({
+    debugJson('[MANUFACTURER] UPDATE raw result:', {
       data: updated,
       error: updateError,
       count: updated?.length,
-    }, null, 2));
+    });
 
     if (updateError) {
       await logEnrichment(supabase, item_id, 'manufacturer', 'error', updateError.message, inputData, result, duration, inputHash);
@@ -195,13 +196,13 @@ Return JSON only.`;
     }
 
     const updatedItem = updated[0];
-    console.log('[MANUFACTURER] Updated item:', updatedItem);
+    debugLog('[MANUFACTURER] Updated item:', updatedItem);
 
     await logEnrichment(supabase, item_id, 'manufacturer', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data, item: updatedItem });
   } catch (error) {
-    console.error('Manufacturer enrichment error:', error);
+    debugError('Manufacturer enrichment error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

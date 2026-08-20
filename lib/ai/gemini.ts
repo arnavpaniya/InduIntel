@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
@@ -12,7 +12,7 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 export interface LLMOptions {
   model?: string;
   temperature?: number;
-  schema?: Record<string, unknown>;
+  schema?: Schema;
   systemPrompt?: string;
 }
 
@@ -35,7 +35,7 @@ function stripMarkdownFences(text: string): string {
   return cleaned.trim();
 }
 
-function buildSchema(schema: Record<string, unknown>) {
+function buildSchema(schema: Schema): Schema {
   return schema;
 }
 

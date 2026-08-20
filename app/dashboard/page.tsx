@@ -18,7 +18,8 @@ import {
   BarChart2, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fetchItems, enrichItem, enrichBatch, fetchQuotaStatus, Item, ItemsResponse } from '@/lib/api';
+import { fetchItems, enrichItem, enrichBatch, fetchQuotaStatus } from '@/lib/api';
+import { Item, ItemsResponse } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
 const STATUS_BADGE_VARIANTS: Record<Item['status'], 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info' | 'gray'> = {

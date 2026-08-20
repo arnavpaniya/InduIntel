@@ -339,7 +339,7 @@ Item data:
 Return JSON only.`;
 
   const startTime = Date.now();
-  const result = await callLLMWithRetry<ManufacturerResult>(prompt, { temperature: 0.1 });
+  const result = await callLLMWithRetry(prompt, { temperature: 0.1 });
   const duration = Date.now() - startTime;
 
   if (!result.data || result.error) {
@@ -395,7 +395,7 @@ Item data:
 Return JSON only.`;
 
   const startTime = Date.now();
-  const result = await callLLMWithRetry<ClassifyResult>(prompt, { temperature: 0.1 });
+  const result = await callLLMWithRetry(prompt, { temperature: 0.1 });
   const duration = Date.now() - startTime;
 
   if (!result.data || result.error) {
@@ -472,7 +472,7 @@ Item data:
 Return JSON only.`;
 
   const startTime = Date.now();
-  const result = await callLLMWithRetry<AttributesResult>(prompt, { temperature: 0.1 });
+  const result = await callLLMWithRetry(prompt, { temperature: 0.1 });
   const duration = Date.now() - startTime;
 
   if (!result.data || result.error) {
@@ -538,7 +538,7 @@ async function enrichDescriptions(itemId: string, item: any) {
     
     const processedDescriptions = (cached.descriptions || [])
       .map(enforceLength)
-      .map(d => ({
+      .map((d: { field_name: string; value: string; char_count: number }) => ({
         item_id: itemId,
         field_name: d.field_name,
         value: d.value,
@@ -565,7 +565,7 @@ Item data:
 Return JSON only.`;
 
   const startTime = Date.now();
-  const result = await callLLMWithRetry<DescriptionsResult>(prompt, { temperature: 0.2 });
+  const result = await callLLMWithRetry(prompt, { temperature: 0.2 });
   const duration = Date.now() - startTime;
 
   if (!result.data || result.error) {
@@ -577,7 +577,7 @@ Return JSON only.`;
 
   const processedDescriptions = (result.data.descriptions || [])
     .map(enforceLength)
-    .map(d => ({
+    .map((d: { field_name: string; value: string; char_count: number }) => ({
       item_id: itemId,
       field_name: d.field_name,
       value: d.value,
@@ -633,7 +633,7 @@ Item data:
 Return JSON only.`;
 
   const startTime = Date.now();
-  const result = await callLLMWithRetry<SpecsResult>(prompt, { temperature: 0.1 });
+  const result = await callLLMWithRetry(prompt, { temperature: 0.1 });
   const duration = Date.now() - startTime;
 
   if (!result.data || result.error) {
@@ -707,23 +707,23 @@ async function runFullPipeline(itemId: string) {
   let totalFilled = 0;
 
   for (const req of requiredFields) {
-    if (req.table === 'items') {
+    if (req.table === 'items' && req.fields) {
       for (const field of req.fields) {
         totalExpected++;
         if (finalItem?.[field]) totalFilled++;
       }
-    } else if (req.table === 'item_descriptions') {
+    } else if (req.table === 'item_descriptions' && req.fields) {
       const { data: descs } = await supabase.from('item_descriptions').select('field_name, value').eq('item_id', itemId);
       const descMap = new Map(descs?.map(d => [d.field_name, d.value]) || []);
       for (const field of req.fields) {
         totalExpected++;
         if (descMap.get(field)) totalFilled++;
       }
-    } else if (req.table === 'item_attributes') {
+    } else if (req.table === 'item_attributes' && req.minCount) {
       const { data: attrs } = await supabase.from('item_attributes').select('*').eq('item_id', itemId);
       totalExpected += req.minCount;
       totalFilled += Math.min(attrs?.length || 0, req.minCount);
-    } else if (req.table === 'item_specs') {
+    } else if (req.table === 'item_specs' && req.fields) {
       const { data: specs } = await supabase.from('item_specs').select('*').eq('item_id', itemId).maybeSingle();
       for (const field of req.fields) {
         totalExpected++;

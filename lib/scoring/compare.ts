@@ -261,8 +261,8 @@ export async function scoreItem(enrichedItemId: string, groundTruthItemId: strin
   
   // Compare descriptions
   const descFields = ['invoice_desc', 'mobile_desc', 'short_desc', 'long_desc1', 'marketing_description'];
-  const gtDescs = new Map(groundTruth.item_descriptions?.map((d: any) => [d.field_name, d.value]) || []);
-  const enrDescs = new Map(enriched.item_descriptions?.map((d: any) => [d.field_name, d.value]) || []);
+  const gtDescs = new Map<string, string | null>((groundTruth.item_descriptions?.map((d: any) => [d.field_name, d.value]) || []) as [string, string | null][]);
+  const enrDescs = new Map<string, string | null>((enriched.item_descriptions?.map((d: any) => [d.field_name, d.value]) || []) as [string, string | null][]);
   
   for (const field of descFields) {
     const expected = gtDescs.get(field) || null;

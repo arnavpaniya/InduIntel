@@ -11,7 +11,8 @@ import {
   AlertTriangle, Shield, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { scoreBatch, BatchScoreSummary } from '@/lib/api';
+import { scoreBatch } from '@/lib/api';
+import { BatchScoreSummary } from '@/lib/types';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
@@ -313,7 +314,7 @@ function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
             <div className="p-3 bg-muted/50 rounded">
               <p className="text-muted-foreground text-xs mb-2">Descriptions Generated</p>
               <div className="flex flex-wrap gap-2">
-                {enrichedItem.descriptions.slice(0, 3).map(d => (
+                {enrichedItem.descriptions.slice(0, 3).map((d: { field_name: string; char_count: number }) => (
                   <Badge key={d.field_name} variant="secondary" className="text-xs">
                     {d.field_name}: {d.char_count} chars
                   </Badge>
@@ -325,7 +326,7 @@ function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
             <div className="p-3 bg-muted/50 rounded">
               <p className="text-muted-foreground text-xs mb-2">Attributes Extracted: {enrichedItem.attributes.length}</p>
               <div className="flex flex-wrap gap-2">
-                {enrichedItem.attributes.slice(0, 4).map(a => (
+                {enrichedItem.attributes.slice(0, 4).map((a: { label: string; value: string | null }) => (
                   <Badge key={a.label} variant="outline" className="text-xs">
                     {a.label}: {a.value}
                   </Badge>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { debugLog, debugError, debugWarn, debugJson } from '@/lib/debug';
 
 const ENRICHMENT_STEPS = [
   'manufacturer',
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'item_id required' }, { status: 400 });
     }
 
-    console.log('[RUN] Starting orchestration for item_id:', item_id);
+    debugLog('[RUN] Starting orchestration for item_id:', item_id);
 
     const supabase = await createServerSupabaseClient();
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .maybeSingle();
 
-    console.log('[RUN] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
+    debugLog('[RUN] Initial fetch - itemError:', itemError?.message, 'item found:', !!item);
 
     if (itemError) {
       return NextResponse.json({ error: itemError.message }, { status: 500 });
@@ -71,14 +72,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Item not found', item_id }, { status: 404 });
     }
 
-    console.log('[RUN] Setting status to enriching...');
+    debugLog('[RUN] Setting status to enriching...');
     const { data: statusData, error: statusError } = await supabaseAdmin
       .from('items')
       .update({ status: 'enriching', updated_at: new Date().toISOString() })
       .eq('id', item_id)
       .select();
 
-    console.log('[RUN] Status update result:', JSON.stringify({ data: statusData, error: statusError, count: statusData?.length }, null, 2));
+    debugJson('[RUN] Status update result:', { data: statusData, error: statusError, count: statusData?.length });
 
     const stepResults: Record<string, any> = {};
     let hasErrors = false;
@@ -87,15 +88,15 @@ export async function POST(request: NextRequest) {
     for (const step of ENRICHMENT_STEPS) {
       const stepStart = Date.now();
       try {
-        console.log(`[RUN] Calling step: ${step}`);
+        debugLog(`[RUN] Calling step: ${step}`);
         const result = await callStep(step, item_id, baseUrl);
         stepResults[step] = { success: true, data: result, duration: Date.now() - stepStart };
         
         if (!result.success) {
           hasErrors = true;
-          console.error(`[RUN] Step ${step} failed:`, result.error);
+          debugError(`[RUN] Step ${step} failed:`, result.error);
         } else {
-          console.log(`[RUN] Step ${step} succeeded in ${Date.now() - stepStart}ms`);
+          debugLog(`[RUN] Step ${step} succeeded in ${Date.now() - stepStart}ms`);
           if (result.data?.data?.confidence !== undefined) {
             stepConfidences.push(result.data.data.confidence);
           }
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         hasErrors = true;
         stepResults[step] = { success: false, error: String(error), duration: Date.now() - stepStart };
-        console.error(`[RUN] Step ${step} exception:`, error);
+        debugError(`[RUN] Step ${step} exception:`, error);
       }
     }
 
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .maybeSingle();
 
-    console.log('[RUN] Final fetch - fetchError:', fetchError?.message, 'item found:', !!enrichedItem);
+    debugLog('[RUN] Final fetch - fetchError:', fetchError?.message, 'item found:', !!enrichedItem);
 
     if (fetchError) {
       await logEnrichment(supabase, item_id, 'orchestrator', 'error', fetchError.message, { item_id }, null, Date.now() - startTime);
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
         // Runtime guard with fallback and warning
         const minCount = req.minCount ?? 0;
         if (req.minCount === undefined) {
-          console.warn('[RUN] item_attributes requirement missing minCount, defaulting to 0');
+          debugWarn('[RUN] item_attributes requirement missing minCount, defaulting to 0');
         }
         totalExpected += minCount;
         const count = enrichedItem.item_attributes?.length || 0;
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
 
     const status = determineStatus(confidenceScore, enrichedItem);
 
-    console.log('[RUN] Computed confidenceScore:', confidenceScore, 'fieldConfidence:', fieldConfidence, 'status:', status);
+    debugLog('[RUN] Computed confidenceScore:', confidenceScore, 'fieldConfidence:', fieldConfidence, 'status:', status);
 
     const { data: finalUpdate, error: finalError } = await supabaseAdmin
       .from('items')
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .select();
 
-    console.log('[RUN] Final status update:', JSON.stringify({ data: finalUpdate, error: finalError, count: finalUpdate?.length }, null, 2));
+    debugJson('[RUN] Final status update:', { data: finalUpdate, error: finalError, count: finalUpdate?.length });
 
     await logEnrichment(supabase, item_id, 'orchestrator', hasErrors ? 'error' : 'success', hasErrors ? 'One or more steps failed' : null, { item_id }, { confidenceScore, fieldConfidence, status, steps: stepResults }, Date.now() - startTime);
 
@@ -207,7 +208,7 @@ export async function POST(request: NextRequest) {
       item: enrichedItem,
     });
   } catch (error) {
-    console.error('Orchestrator error:', error);
+    debugError('Orchestrator error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

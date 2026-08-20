@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
+import { debugLog, debugError, debugJson } from '@/lib/debug';
 
 interface DescriptionItem {
   field_name: string;
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'item_id required' }, { status: 400 });
     }
 
-    console.log('[DESCRIPTIONS] Starting enrichment for item_id:', item_id);
+    debugLog('[DESCRIPTIONS] Starting enrichment for item_id:', item_id);
 
     const supabase = await createServerSupabaseClient();
 
