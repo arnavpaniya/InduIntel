@@ -77,14 +77,15 @@ function computeConfidence(item: any): number {
     }
   }
 
-  return totalExpected > 0 ? Math.round((totalFilled / totalExpected) * 100) : 0;
+  // Return 0-1 scale for DB NUMERIC(3,2) column
+  return totalExpected > 0 ? Math.round((totalFilled / totalExpected) * 100) / 100 : 0;
 }
 
 function determineStatus(confidence: number, item: any): 'enriched' | 'review' {
   const criticalFields = ['manufacturer_name', 'brand_name', 'classpath'];
   const hasCritical = criticalFields.every(f => item[f]);
   if (!hasCritical) return 'review';
-  if (confidence < 60) return 'review';
+  if (confidence < 0.6) return 'review';
   return 'enriched';
 }
 
