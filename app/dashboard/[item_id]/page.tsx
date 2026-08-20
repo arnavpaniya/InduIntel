@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Zap, Settings, Package, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Zap, Settings, Package, CheckCircle, XCircle, AlertTriangle, FileText, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchItemDetail, enrichItem } from '@/lib/api';
 import { Item, EnrichedItem } from '@/lib/types';
@@ -115,6 +115,16 @@ export default function ItemDetailPage() {
               <Settings className="h-3 w-3" />
               AI's Own Confidence: {item.field_confidence ? `${Math.round(item.field_confidence * 100)}%` : '—'}
             </Badge>
+            <a 
+              href={`/api/report/${item.id}`}
+              download={`${item.mfg_part_num}-report.pdf`}
+              className="btn btn-outline gap-1"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.2s' }}
+              title="Download PDF Report"
+            >
+              <FileText className="h-3 w-3" />
+              <Download className="h-3 w-3 ml-1" />
+            </a>
           </div>
         </div>
       </header>
