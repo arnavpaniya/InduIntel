@@ -21,7 +21,17 @@ async function loadModules() {
     import('../lib/supabase/admin'),
   ]);
   callLLMWithRetry = geminiMod.callLLMWithRetry;
-  supabaseAdmin = adminMod.supabaseAdmin;
+  // Backwards-compatible resolution: admin module now exposes getSupabaseAdmin()
+  if (adminMod.getSupabaseAdmin) {
+    try {
+      supabaseAdmin = adminMod.getSupabaseAdmin();
+    } catch (err) {
+      // Fall back to local supabase client if admin factory throws (e.g., missing env during tests)
+      supabaseAdmin = supabase;
+    }
+  } else {
+    supabaseAdmin = adminMod.supabaseAdmin;
+  }
 }
 
 const supabaseUrl = process.env.SUPABASE_URL!;
