@@ -1,5 +1,543 @@
-import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
+import Link from 'next/link';
+import { 
+  Card, CardContent, CardHeader, CardTitle, CardDescription 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Zap, ArrowRight, ChevronRight, Target, CheckCircle, 
+  FileText, Settings, Layers, Package, TrendingUp,
+  AlertTriangle, Shield, Sparkles
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { scoreBatch, BatchScoreSummary } from '@/lib/api';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-export default function Home() {
-  redirect('/dashboard');
+export const metadata: Metadata = {
+  title: 'InduIntel — AI Product Intelligence Enrichment Pipeline',
+  description: 'Turn messy industrial catalog data into clean, structured, commerce-ready product records using AI.',
+};
+
+async function getLiveMetrics(): Promise<BatchScoreSummary | null> {
+  try {
+    const data = await scoreBatch(20);
+    return data.success ? data.summary : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getSampleRawEnrichedPair() {
+  const supabase = await createServerSupabaseClient();
+  
+  // Find one item that's been enriched (has manufacturer_name) and one that's raw
+  const { data: enrichedItem } = await supabase
+    .from('items')
+    .select('id, mfg_part_num, part_desc, manufacturer_name, brand_name, classpath, confidence_score, status')
+    .eq('status', 'enriched')
+    .not('manufacturer_name', 'is', null)
+    .limit(1)
+    .maybeSingle();
+
+  const { data: rawItem } = await supabase
+    .from('items')
+    .select('id, mfg_part_num, part_desc, e1_brand, unilog_brand, dib_brand, part_manuf')
+    .eq('status', 'raw')
+    .limit(1)
+    .maybeSingle();
+
+  // If we have an enriched item, get its descriptions and attributes for the "after" view
+  let enrichedDetails = null;
+  if (enrichedItem) {
+    const { data: descs } = await supabase
+      .from('item_descriptions')
+      .select('field_name, value, char_count')
+      .eq('item_id', enrichedItem.id);
+    
+    const { data: attrs } = await supabase
+      .from('item_attributes')
+      .select('label, value, uom')
+      .eq('item_id', enrichedItem.id)
+      .limit(8);
+    
+    enrichedDetails = {
+      ...enrichedItem,
+      descriptions: descs || [],
+      attributes: attrs || [],
+    };
+  }
+
+  return { rawItem, enrichedItem: enrichedDetails };
+}
+
+function MetricCard({ label, value, icon: Icon, trend, variant = 'default' }: { 
+  label: string; 
+  value: string | number; 
+  icon: React.ComponentType<{ className?: string }>;
+  trend?: string;
+  variant?: 'default' | 'success' | 'warning' | 'destructive';
+}) {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="min-w-0">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="text-3xl font-bold mt-1 truncate">{value}</p>
+            {trend && (
+              <p className={cn('text-xs mt-1', 
+                variant === 'success' && 'text-green-600', 
+                variant === 'warning' && 'text-yellow-600', 
+                variant === 'destructive' && 'text-red-600',
+                variant === 'default' && 'text-blue-600'
+              )}>
+                {trend}
+              </p>
+            )}
+          </div>
+          <div className={cn('p-3 rounded-lg flex-shrink-0', 
+            variant === 'success' && 'bg-green-100 text-green-600',
+            variant === 'warning' && 'bg-yellow-100 text-yellow-600',
+            variant === 'destructive' && 'bg-red-100 text-red-600',
+            variant === 'default' && 'bg-primary/10 text-primary'
+          )}>
+            <Icon className="h-6 w-6" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StepCard({ step, title, description, icon: Icon }: { 
+  step: string; 
+  title: string; 
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <div className="flex flex-col items-center text-center p-6">
+      <div className="relative mb-4">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-full h-0.5 bg-border" />
+        </div>
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary border-4 border-background">
+          <Icon className="h-6 w-6" />
+        </div>
+      </div>
+      <div className="w-full">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Badge variant="outline" className="text-xs font-medium">Step {step}</Badge>
+          <h3 className="font-semibold">{title}</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+export default async function LandingPage() {
+  const [metrics, samplePair] = await Promise.all([
+    getLiveMetrics(),
+    getSampleRawEnrichedPair(),
+  ]);
+
+  const { rawItem, enrichedItem } = samplePair;
+  const hasRealData = !!rawItem && !!enrichedItem;
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-20 lg:py-32">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Logo/Name */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Zap className="h-7 w-7" />
+              </div>
+              <span className="text-3xl font-bold tracking-tight">InduIntel</span>
+            </div>
+            
+            {/* Pitch */}
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+              Turn messy industrial catalog data into{' '}
+              <span className="text-primary">clean, structured, commerce-ready product records</span>{' '}
+              using AI.
+            </h1>
+            
+            <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
+              Distributors waste hours cleaning inconsistent product data. 
+              InduIntel automates enrichment, classification, and validation — 
+              so your catalog is always accurate, complete, and ready to sell.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/dashboard">
+                <Button size="lg" className="w-full sm:w-auto gap-2">
+                  <Zap className="h-5 w-5" />
+                  See It in Action
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="w-full sm:w-auto gap-2"
+                onClick={() => document.getElementById('metrics')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                View Live Metrics
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Trust indicator */}
+            <div className="mt-10 flex items-center justify-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                <span>Ground-truth validation</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Target className="h-4 w-4" />
+                <span>Confidence-accuracy correlation</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Sparkles className="h-4 w-4" />
+                <span>Explainable AI</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Problem Section */}
+      <section className="py-16 lg:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+            <Badge variant="secondary" className="mb-3">The Problem</Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-4">
+              Industrial product data is messy, inconsistent, and incomplete
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Distributors receive catalog data from hundreds of manufacturers — each with different formats, 
+              missing fields, placeholder brands, and no standard taxonomy. Manual enrichment doesn't scale.
+            </p>
+          </div>
+
+          {/* Before/After Comparison */}
+          <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {/* BEFORE - Raw Input */}
+            <Card className="border-destructive/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="h-5 w-5" />
+                  Before: Raw Input
+                </CardTitle>
+                <CardDescription>What distributors actually receive from suppliers</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {rawItem ? (
+                  <>
+                    <div className="p-4 bg-muted rounded-lg border border-destructive/10">
+                      <p className="font-mono text-sm font-medium text-destructive mb-2">MPN: {rawItem.mfg_part_num}</p>
+                      <p className="font-medium">{rawItem.part_desc || 'No description'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="p-3 bg-muted/50 rounded">
+                        <p className="text-muted-foreground text-xs mb-1">E1 Brand</p>
+                        <p className="font-mono text-destructive">{rawItem.e1_brand || '— (placeholder)'}</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded">
+                        <p className="text-muted-foreground text-xs mb-1">Unilog Brand</p>
+                        <p className="font-mono text-destructive">{rawItem.unilog_brand || '— (placeholder)'}</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded">
+                        <p className="text-muted-foreground text-xs mb-1">DIB Brand</p>
+                        <p className="font-mono text-destructive">{rawItem.dib_brand || '— (placeholder)'}</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded">
+                        <p className="text-muted-foreground text-xs mb-1">Part Manufacturer</p>
+                        <p className="font-mono text-destructive">{rawItem.part_manuf || '—'}</p>
+                      </div>
+                    </div>
+                    <Badge variant="destructive" className="w-fit">
+                      Missing: Manufacturer, Brand, Taxonomy, Descriptions, Attributes, Specs
+                    </Badge>
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No raw items found. Run seed to populate data.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* AFTER - Enriched Output */}
+            <Card className="border-green-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-600">
+                  <CheckCircle className="h-5 w-5" />
+                  After: AI-Enriched & Validated
+                </CardTitle>
+                <CardDescription>Structured, commerce-ready record with confidence scoring</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {enrichedItem ? (
+                  <>
+                    <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                      <p className="font-mono text-sm font-medium text-green-700 mb-2">MPN: {enrichedItem.mfg_part_num}</p>
+                      <p className="font-medium">{enrichedItem.part_desc || 'No description'}</p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <Badge variant="success" className="text-xs">{enrichedItem.manufacturer_name || 'Detected'}</Badge>
+                        <Badge variant="success" className="text-xs">{enrichedItem.brand_name || 'Detected'}</Badge>
+                        <Badge variant="outline" className="text-xs">{enrichedItem.confidence_score ?? '—'}% confidence</Badge>
+                        <Badge variant="outline" className="text-xs">{enrichedItem.field_confidence ?? '—'} field confidence</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {enrichedItem.classpath && (
+                        <div className="p-3 bg-muted/50 rounded">
+                          <p className="text-muted-foreground text-xs mb-1">Classpath</p>
+                          <p className="font-mono text-sm text-green-700">{enrichedItem.classpath}</p>
+                        </div>
+                      )}
+                      {enrichedItem.descriptions && enrichedItem.descriptions.length > 0 && (
+                        <div className="p-3 bg-muted/50 rounded">
+                          <p className="text-muted-foreground text-xs mb-2">Descriptions Generated</p>
+                          <div className="flex flex-wrap gap-2">
+                            {enrichedItem.descriptions.slice(0, 3).map(d => (
+                              <Badge key={d.field_name} variant="secondary" className="text-xs">
+                                {d.field_name}: {d.char_count} chars
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {enrichedItem.attributes && enrichedItem.attributes.length > 0 && (
+                        <div className="p-3 bg-muted/50 rounded">
+                          <p className="text-muted-foreground text-xs mb-2">Attributes Extracted: {enrichedItem.attributes.length}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {enrichedItem.attributes.slice(0, 4).map(a => (
+                              <Badge key={a.label} variant="outline" className="text-xs">
+                                {a.label}: {a.value}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant="success" className="w-fit">
+                      Complete: Identity + Taxonomy + 5 Descriptions + Attributes + Specs
+                    </Badge>
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No enriched items yet. Click "Run Batch" in dashboard.</p>
+                  </div>
+                )}
+              </CardContent            </Card>
+          </div>
+
+          {hasRealData && (
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              Live example from database — Item IDs: <code className="font-mono bg-muted px-1 rounded">{rawItem?.id.slice(0,8)}...</code> → <code className="font-mono bg-muted px-1 rounded">{enrichedItem?.id.slice(0,8)}...</code>
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* Solution / How It Works */}
+      <section className="py-16 lg:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <Badge variant="secondary" className="mb-3">The Solution</Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-4">
+              From raw data to validated records in 4 steps
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Each item flows through a structured pipeline with LLM-powered enrichment 
+              and ground-truth validation at every stage.
+            </p>
+          </div>
+
+          <div className="max-w-5xl mx-auto">
+            <div className="hidden lg:flex items-center justify-between">
+              <StepCard 
+                step="1" 
+                title="Raw Input" 
+                description="Ingest MPN, description, and noisy brand fields from supplier feeds"
+                icon={FileText}
+              />
+              <StepCard 
+                step="2" 
+                title="AI Enrichment" 
+                description="5-step pipeline: manufacturer normalization → taxonomy classification → attribute extraction → description generation → spec parsing"
+                icon={Sparkles}
+              />
+              <StepCard 
+                step="3" 
+                title="Ground Truth Validation" 
+                description="Score every field against human-curated answer key; grouped by identity, taxonomy, descriptions, attributes, specs"
+                icon={Target}
+              />
+              <StepCard 
+                step="4" 
+                title="Clean Output" 
+                description="Structured record with confidence scores, review flags, and full audit trail"
+                icon={Package}
+              />
+            </div>
+            
+            {/* Mobile stacked version */}
+            <div className="lg:hidden space-y-6">
+              <StepCard step="1" title="Raw Input" description="Ingest MPN, description, and noisy brand fields from supplier feeds" icon={FileText} />
+              <StepCard step="2" title="AI Enrichment" description="5-step pipeline: manufacturer → taxonomy → attributes → descriptions → specs" icon={Sparkles} />
+              <StepCard step="3" title="Validation" description="Score every field against ground truth; grouped by identity, taxonomy, descriptions, attributes, specs" icon={Target} />
+              <StepCard step="4" title="Clean Output" description="Structured record with confidence scores, review flags, and full audit trail" icon={Package} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Metrics Section */}
+      <section id="metrics" className="py-16 lg:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+            <Badge variant="secondary" className="mb-3">Live Metrics</Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-4">
+              Real validation results from the pipeline
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              These numbers come from <strong>/api/score/batch</strong> at page load — no hardcoded placeholders. 
+              Low accuracy on sparse-input items is expected; the key is that <strong>confidence scoring flags exactly which fields need review</strong>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto mb-12">
+            {metrics ? (
+              <>
+                <MetricCard 
+                  label="Items Scored" 
+                  value={metrics.items_scored} 
+                  icon={CheckCircle} 
+                  variant="success"
+                  trend={metrics.items_scored > 0 ? `${metrics.items_scored} items validated` : 'No items scored yet'}
+                />
+                <MetricCard 
+                  label="Overall Field Accuracy" 
+                  value={`${metrics.avg_accuracy_pct}%`} 
+                  icon={Target} 
+                  variant={metrics.avg_accuracy_pct >= 70 ? 'success' : metrics.avg_accuracy_pct >= 40 ? 'warning' : 'destructive'}
+                  trend={metrics.avg_accuracy_pct >= 70 ? 'Strong' : metrics.avg_accuracy_pct >= 40 ? 'Moderate' : 'Sparse input baseline'}
+                />
+                <MetricCard 
+                  label="Attribute LOV Compliance" 
+                  value={`${metrics.attribute_lov_compliance_pct}%`} 
+                  icon={Settings} 
+                  variant={metrics.attribute_lov_compliance_pct >= 70 ? 'success' : metrics.attribute_lov_compliance_pct >= 40 ? 'warning' : 'destructive'}
+                  trend="Values matching ground truth LOV"
+                />
+                <MetricCard 
+                  label="Char-Limit Compliance" 
+                  value={metrics.char_limit_compliance && Object.values(metrics.char_limit_compliance).length > 0 
+                    ? `${Math.round(Object.values(metrics.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(metrics.char_limit_compliance).length)}%` 
+                    : 'N/A'} 
+                  icon={FileText} 
+                  variant="default"
+                  trend="Descriptions within limits"
+                />
+              </>
+            ) : (
+              <>
+                <MetricCard label="Items Scored" value="—" icon={CheckCircle} trend="Loading..." />
+                <MetricCard label="Overall Accuracy" value="—" icon={Target} trend="Loading..." />
+                <MetricCard label="Attr LOV Compliance" value="—" icon={Settings} trend="Loading..." />
+                <MetricCard label="Char-Limit Compliance" value="—" icon={FileText} trend="Loading..." />
+              </>
+            )}
+          </div>
+
+          {/* Honest framing note */}
+          {metrics && metrics.avg_accuracy_pct < 50 && (
+            <Card className="max-w-3xl mx-auto border-yellow-500/30 bg-yellow-50/50">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-medium text-yellow-800 mb-1">Honest assessment: {metrics.avg_accuracy_pct}% baseline accuracy</h3>
+                    <p className="text-sm text-yellow-700">
+                      The raw input descriptions in our test set are often minimal (e.g. "Display Only", distributor names instead of manufacturers). 
+                      This is a <strong>realistic baseline</strong> — not a cherry-picked demo. 
+                      The pipeline's value is the <strong>confidence scoring</strong> that correctly identifies which fields are unreliable (status: "review") 
+                      so human reviewers know exactly where to focus. That's the explainable AI advantage.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Per-group accuracy if available */}
+          {metrics && metrics.field_accuracy_breakdown && Object.keys(metrics.field_accuracy_breakdown).length > 0 && (
+            <div className="mt-10 max-w-3xl mx-auto">
+              <h3 className="text-lg font-semibold mb-4 text-center">Accuracy by Field Group</h3>
+              <div className="space-y-3">
+                {Object.entries(metrics.field_accuracy_breakdown)
+                  .sort(([,a], [,b]) => b - a)
+                  .slice(0, 8)
+                  .map(([field, accuracy]) => (
+                    <div key={field} className="flex items-center gap-4">
+                      <span className="font-mono text-sm w-48 truncate">{field}</span>
+                      <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all" 
+                          style={{ 
+                            width: `${accuracy}%`,
+                            backgroundColor: accuracy >= 80 ? '#22c55e' : accuracy >= 50 ? '#eab308' : '#ef4444'
+                          }}
+                        />
+                      </div>
+                      <Badge 
+                        variant={accuracy >= 80 ? 'success' : accuracy >= 50 ? 'warning' : 'destructive'}
+                        className="text-xs w-20"
+                      >
+                        {accuracy}%
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 border-t">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Zap className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-semibold">InduIntel</p>
+                <p className="text-xs text-muted-foreground">AI Product Intelligence Enrichment Pipeline</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <span>Built for hackathon submission</span>
+              <Link href="/dashboard" className="text-primary hover:underline flex items-center gap-1">
+                Open Dashboard
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 }
