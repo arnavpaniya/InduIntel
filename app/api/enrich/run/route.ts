@@ -42,52 +42,6 @@ async function logEnrichment(
   });
 }
 
-function computeConfidence(item: any): number {
-  const requiredFields = [
-    { table: 'items', fields: ['manufacturer_name', 'brand_name', 'dept', 'class', 'fine', 'classpath'] },
-    { table: 'item_descriptions', fields: ['invoice_desc', 'mobile_desc', 'short_desc', 'long_desc1'] },
-    { table: 'item_attributes', minCount: 5 },
-    { table: 'item_specs', fields: ['upc', 'length', 'width', 'height', 'weight', 'warranty'] },
-  ];
-
-  let totalExpected = 0;
-  let totalFilled = 0;
-
-  for (const req of requiredFields) {
-    if (req.table === 'items') {
-      for (const field of req.fields) {
-        totalExpected++;
-        if (item[field]) totalFilled++;
-      }
-    } else if (req.table === 'item_descriptions') {
-      for (const field of req.fields) {
-        totalExpected++;
-        const desc = item.item_descriptions?.find((d: any) => d.field_name === field);
-        if (desc?.value) totalFilled++;
-      }
-    } else if (req.table === 'item_attributes') {
-      totalExpected += req.minCount;
-      const count = item.item_attributes?.length || 0;
-      totalFilled += Math.min(count, req.minCount);
-    } else if (req.table === 'item_specs') {
-      for (const field of req.fields) {
-        totalExpected++;
-        if (item.item_specs?.[field]) totalFilled++;
-      }
-    }
-  }
-
-  // Return 0-1 scale for DB NUMERIC(3,2) column
-  return totalExpected > 0 ? Math.round((totalFilled / totalExpected) * 100) / 100 : 0;
-}
-
-function determineStatus(confidence: number, item: any): 'enriched' | 'review' {
-  const criticalFields = ['manufacturer_name', 'brand_name', 'classpath'];
-  const hasCritical = criticalFields.every(f => item[f]);
-  if (!hasCritical) return 'review';
-  if (confidence < 0.6) return 'review';
-  return 'enriched';
-}
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -128,6 +82,7 @@ export async function POST(request: NextRequest) {
 
     const stepResults: Record<string, any> = {};
     let hasErrors = false;
+    const stepConfidences: number[] = [];
 
     for (const step of ENRICHMENT_STEPS) {
       const stepStart = Date.now();
@@ -141,6 +96,9 @@ export async function POST(request: NextRequest) {
           console.error(`[RUN] Step ${step} failed:`, result.error);
         } else {
           console.log(`[RUN] Step ${step} succeeded in ${Date.now() - stepStart}ms`);
+          if (result.data?.data?.confidence !== undefined) {
+            stepConfidences.push(result.data.data.confidence);
+          }
         }
       } catch (error) {
         hasErrors = true;
@@ -172,16 +130,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Item not found after enrichment', item_id }, { status: 404 });
     }
 
-    const confidence = computeConfidence(enrichedItem);
-    const status = determineStatus(confidence, enrichedItem);
+    // Compute confidenceScore (0-100)
+    const requiredFields = [
+      { table: 'items', fields: ['manufacturer_name', 'brand_name', 'dept', 'class', 'fine', 'classpath'] },
+      { table: 'item_descriptions', fields: ['invoice_desc', 'mobile_desc', 'short_desc', 'long_desc1'] },
+      { table: 'item_attributes', minCount: 5 },
+      { table: 'item_specs', fields: ['upc', 'length', 'width', 'height', 'weight', 'warranty'] },
+    ];
 
-    console.log('[RUN] Computed confidence:', confidence, 'status:', status);
+    let totalExpected = 0;
+    let totalFilled = 0;
+
+    for (const req of requiredFields) {
+      if (req.table === 'items') {
+        for (const field of req.fields) {
+          totalExpected++;
+          if (enrichedItem[field]) totalFilled++;
+        }
+      } else if (req.table === 'item_descriptions') {
+        for (const field of req.fields) {
+          totalExpected++;
+          const desc = enrichedItem.item_descriptions?.find((d: any) => d.field_name === field);
+          if (desc?.value) totalFilled++;
+        }
+      } else if (req.table === 'item_attributes') {
+        totalExpected += req.minCount;
+        const count = enrichedItem.item_attributes?.length || 0;
+        totalFilled += Math.min(count, req.minCount);
+      } else if (req.table === 'item_specs') {
+        for (const field of req.fields) {
+          totalExpected++;
+          if (enrichedItem.item_specs?.[field]) totalFilled++;
+        }
+      }
+    }
+
+    const confidenceScore = totalExpected > 0 ? Math.round((totalFilled / totalExpected) * 100) : 0;
+    
+    // fieldConfidence: average of per-step LLM self-reported confidence (0-1)
+    const fieldConfidence = stepConfidences.length > 0 
+      ? Math.round((stepConfidences.reduce((a, b) => a + b, 0) / stepConfidences.length) * 100) / 100 
+      : 0;
+
+    const status = determineStatus(confidenceScore, enrichedItem);
+
+    console.log('[RUN] Computed confidenceScore:', confidenceScore, 'fieldConfidence:', fieldConfidence, 'status:', status);
 
     const { data: finalUpdate, error: finalError } = await supabaseAdmin
       .from('items')
       .update({
         status,
-        confidence_score: confidence,
+        confidence_score: confidenceScore,
+        field_confidence: fieldConfidence,
         updated_at: new Date().toISOString(),
       })
       .eq('id', item_id)
@@ -189,13 +189,14 @@ export async function POST(request: NextRequest) {
 
     console.log('[RUN] Final status update:', JSON.stringify({ data: finalUpdate, error: finalError, count: finalUpdate?.length }, null, 2));
 
-    await logEnrichment(supabase, item_id, 'orchestrator', hasErrors ? 'error' : 'success', hasErrors ? 'One or more steps failed' : null, { item_id }, { confidence, status, steps: stepResults }, Date.now() - startTime);
+    await logEnrichment(supabase, item_id, 'orchestrator', hasErrors ? 'error' : 'success', hasErrors ? 'One or more steps failed' : null, { item_id }, { confidenceScore, fieldConfidence, status, steps: stepResults }, Date.now() - startTime);
 
     return NextResponse.json({
       success: !hasErrors,
       item_id,
       status,
-      confidence_score: confidence,
+      confidence_score: confidenceScore,
+      field_confidence: fieldConfidence,
       step_results: stepResults,
       item: enrichedItem,
     });
@@ -203,4 +204,13 @@ export async function POST(request: NextRequest) {
     console.error('Orchestrator error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+
+function determineStatus(confidenceScore: number, item: any): 'enriched' | 'review' {
+  const criticalFields = ['manufacturer_name', 'brand_name', 'classpath'];
+  const hasCritical = criticalFields.every(f => item[f]);
+  if (!hasCritical) return 'review';
+  if (confidenceScore < 60) return 'review';
+  return 'enriched';
 }
