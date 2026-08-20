@@ -5,7 +5,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { 
   Zap, ArrowRight, ChevronRight, Target, CheckCircle, 
   FileText, Settings, Layers, Package, TrendingUp,
@@ -32,7 +31,6 @@ async function getLiveMetrics(): Promise<BatchScoreSummary | null> {
 async function getSampleRawEnrichedPair() {
   const supabase = await createServerSupabaseClient();
   
-  // Find one item that's been enriched (has manufacturer_name) and one that's raw
   const { data: enrichedItem } = await supabase
     .from('items')
     .select('id, mfg_part_num, part_desc, manufacturer_name, brand_name, classpath, confidence_score, status')
@@ -48,7 +46,6 @@ async function getSampleRawEnrichedPair() {
     .limit(1)
     .maybeSingle();
 
-  // If we have an enriched item, get its descriptions and attributes for the "after" view
   let enrichedDetails = null;
   if (enrichedItem) {
     const { data: descs } = await supabase
@@ -138,6 +135,144 @@ function StepCard({ step, title, description, icon: Icon }: {
   );
 }
 
+function RawInputCard({ rawItem }: { rawItem: any }) {
+  if (!rawItem) {
+    return (
+      <Card className="border-destructive/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Before: Raw Input
+          </CardTitle>
+          <CardDescription>What distributors actually receive from suppliers</CardDescription>
+        </CardHeader>
+        <CardContent className="text-center py-8 text-muted-foreground">
+          <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <p>No raw items found. Run seed to populate data.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-destructive/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-destructive">
+          <AlertTriangle className="h-5 w-5" />
+          Before: Raw Input
+        </CardTitle>
+        <CardDescription>What distributors actually receive from suppliers</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="p-4 bg-muted rounded-lg border border-destructive/10">
+          <p className="font-mono text-sm font-medium text-destructive mb-2">MPN: {rawItem.mfg_part_num}</p>
+          <p className="font-medium">{rawItem.part_desc || 'No description'}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="p-3 bg-muted/50 rounded">
+            <p className="text-muted-foreground text-xs mb-1">E1 Brand</p>
+            <p className="font-mono text-destructive">{rawItem.e1_brand || '— (placeholder)'}</p>
+          </div>
+          <div className="p-3 bg-muted/50 rounded">
+            <p className="text-muted-foreground text-xs mb-1">Unilog Brand</p>
+            <p className="font-mono text-destructive">{rawItem.unilog_brand || '— (placeholder)'}</p>
+          </div>
+          <div className="p-3 bg-muted/50 rounded">
+            <p className="text-muted-foreground text-xs mb-1">DIB Brand</p>
+            <p className="font-mono text-destructive">{rawItem.dib_brand || '— (placeholder)'}</p>
+          </div>
+          <div className="p-3 bg-muted/50 rounded">
+            <p className="text-muted-foreground text-xs mb-1">Part Manufacturer</p>
+            <p className="font-mono text-destructive">{rawItem.part_manuf || '—'}</p>
+          </div>
+        </div>
+        <Badge variant="destructive" className="w-fit">
+          Missing: Manufacturer, Brand, Taxonomy, Descriptions, Attributes, Specs
+        </Badge>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
+  if (!enrichedItem) {
+    return (
+      <Card className="border-green-500/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-green-600">
+            <CheckCircle className="h-5 w-5" />
+            After: AI-Enriched & Validated
+          </CardTitle>
+          <CardDescription>Structured, commerce-ready record with confidence scoring</CardDescription>
+        </CardHeader>
+        <CardContent className="text-center py-8 text-muted-foreground">
+          <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <p>No enriched items yet. Click "Run Batch" in dashboard.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-green-500/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-green-600">
+          <CheckCircle className="h-5 w-5" />
+          After: AI-Enriched & Validated
+        </CardTitle>
+        <CardDescription>Structured, commerce-ready record with confidence scoring</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+          <p className="font-mono text-sm font-medium text-green-700 mb-2">MPN: {enrichedItem.mfg_part_num}</p>
+          <p className="font-medium">{enrichedItem.part_desc || 'No description'}</p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Badge variant="success" className="text-xs">{enrichedItem.manufacturer_name || 'Detected'}</Badge>
+            <Badge variant="success" className="text-xs">{enrichedItem.brand_name || 'Detected'}</Badge>
+            <Badge variant="outline" className="text-xs">{enrichedItem.confidence_score ?? '—'}% confidence</Badge>
+            <Badge variant="outline" className="text-xs">{enrichedItem.field_confidence ?? '—'} field confidence</Badge>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {enrichedItem.classpath && (
+            <div className="p-3 bg-muted/50 rounded">
+              <p className="text-muted-foreground text-xs mb-1">Classpath</p>
+              <p className="font-mono text-sm text-green-700">{enrichedItem.classpath}</p>
+            </div>
+          )}
+          {enrichedItem.descriptions && enrichedItem.descriptions.length > 0 && (
+            <div className="p-3 bg-muted/50 rounded">
+              <p className="text-muted-foreground text-xs mb-2">Descriptions Generated</p>
+              <div className="flex flex-wrap gap-2">
+                {enrichedItem.descriptions.slice(0, 3).map(d => (
+                  <Badge key={d.field_name} variant="secondary" className="text-xs">
+                    {d.field_name}: {d.char_count} chars
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {enrichedItem.attributes && enrichedItem.attributes.length > 0 && (
+            <div className="p-3 bg-muted/50 rounded">
+              <p className="text-muted-foreground text-xs mb-2">Attributes Extracted: {enrichedItem.attributes.length}</p>
+              <div className="flex flex-wrap gap-2">
+                {enrichedItem.attributes.slice(0, 4).map(a => (
+                  <Badge key={a.label} variant="outline" className="text-xs">
+                    {a.label}: {a.value}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <Badge variant="success" className="w-fit">
+          Complete: Identity + Taxonomy + 5 Descriptions + Attributes + Specs
+        </Badge>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function LandingPage() {
   const [metrics, samplePair] = await Promise.all([
     getLiveMetrics(),
@@ -182,15 +317,12 @@ export default async function LandingPage() {
                   See It in Action
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="w-full sm:w-auto gap-2"
-                onClick={() => document.getElementById('metrics')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                View Live Metrics
-                <ChevronRight className="h-5 w-5" />
-              </Button>
+              <Link href="#metrics">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2">
+                  View Live Metrics
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
 
             {/* Trust indicator */}
@@ -228,118 +360,8 @@ export default async function LandingPage() {
 
           {/* Before/After Comparison */}
           <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {/* BEFORE - Raw Input */}
-            <Card className="border-destructive/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <AlertTriangle className="h-5 w-5" />
-                  Before: Raw Input
-                </CardTitle>
-                <CardDescription>What distributors actually receive from suppliers</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {rawItem ? (
-                  <>
-                    <div className="p-4 bg-muted rounded-lg border border-destructive/10">
-                      <p className="font-mono text-sm font-medium text-destructive mb-2">MPN: {rawItem.mfg_part_num}</p>
-                      <p className="font-medium">{rawItem.part_desc || 'No description'}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="p-3 bg-muted/50 rounded">
-                        <p className="text-muted-foreground text-xs mb-1">E1 Brand</p>
-                        <p className="font-mono text-destructive">{rawItem.e1_brand || '— (placeholder)'}</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded">
-                        <p className="text-muted-foreground text-xs mb-1">Unilog Brand</p>
-                        <p className="font-mono text-destructive">{rawItem.unilog_brand || '— (placeholder)'}</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded">
-                        <p className="text-muted-foreground text-xs mb-1">DIB Brand</p>
-                        <p className="font-mono text-destructive">{rawItem.dib_brand || '— (placeholder)'}</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded">
-                        <p className="text-muted-foreground text-xs mb-1">Part Manufacturer</p>
-                        <p className="font-mono text-destructive">{rawItem.part_manuf || '—'}</p>
-                      </div>
-                    </div>
-                    <Badge variant="destructive" className="w-fit">
-                      Missing: Manufacturer, Brand, Taxonomy, Descriptions, Attributes, Specs
-                    </Badge>
-                  </>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No raw items found. Run seed to populate data.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* AFTER - Enriched Output */}
-            <Card className="border-green-500/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" />
-                  After: AI-Enriched & Validated
-                </CardTitle>
-                <CardDescription>Structured, commerce-ready record with confidence scoring</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {enrichedItem ? (
-                  <>
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                      <p className="font-mono text-sm font-medium text-green-700 mb-2">MPN: {enrichedItem.mfg_part_num}</p>
-                      <p className="font-medium">{enrichedItem.part_desc || 'No description'}</p>
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        <Badge variant="success" className="text-xs">{enrichedItem.manufacturer_name || 'Detected'}</Badge>
-                        <Badge variant="success" className="text-xs">{enrichedItem.brand_name || 'Detected'}</Badge>
-                        <Badge variant="outline" className="text-xs">{enrichedItem.confidence_score ?? '—'}% confidence</Badge>
-                        <Badge variant="outline" className="text-xs">{enrichedItem.field_confidence ?? '—'} field confidence</Badge>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      {enrichedItem.classpath && (
-                        <div className="p-3 bg-muted/50 rounded">
-                          <p className="text-muted-foreground text-xs mb-1">Classpath</p>
-                          <p className="font-mono text-sm text-green-700">{enrichedItem.classpath}</p>
-                        </div>
-                      )}
-                      {enrichedItem.descriptions && enrichedItem.descriptions.length > 0 && (
-                        <div className="p-3 bg-muted/50 rounded">
-                          <p className="text-muted-foreground text-xs mb-2">Descriptions Generated</p>
-                          <div className="flex flex-wrap gap-2">
-                            {enrichedItem.descriptions.slice(0, 3).map(d => (
-                              <Badge key={d.field_name} variant="secondary" className="text-xs">
-                                {d.field_name}: {d.char_count} chars
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {enrichedItem.attributes && enrichedItem.attributes.length > 0 && (
-                        <div className="p-3 bg-muted/50 rounded">
-                          <p className="text-muted-foreground text-xs mb-2">Attributes Extracted: {enrichedItem.attributes.length}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {enrichedItem.attributes.slice(0, 4).map(a => (
-                              <Badge key={a.label} variant="outline" className="text-xs">
-                                {a.label}: {a.value}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <Badge variant="success" className="w-fit">
-                      Complete: Identity + Taxonomy + 5 Descriptions + Attributes + Specs
-                    </Badge>
-                  </>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No enriched items yet. Click "Run Batch" in dashboard.</p>
-                  </div>
-                )}
-              </CardContent            </Card>
+            <RawInputCard rawItem={rawItem} />
+            <EnrichedOutputCard enrichedItem={enrichedItem} />
           </div>
 
           {hasRealData && (
