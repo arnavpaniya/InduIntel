@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Compute confidenceScore (0-100)
-    const requiredFields = [
+    const requiredFields: Array<{ table: string; fields?: string[]; minCount?: number }> = [
       { table: 'items', fields: ['manufacturer_name', 'brand_name', 'dept', 'class', 'fine', 'classpath'] },
       { table: 'item_descriptions', fields: ['invoice_desc', 'mobile_desc', 'short_desc', 'long_desc1'] },
       { table: 'item_attributes', minCount: 5 },
@@ -142,22 +142,28 @@ export async function POST(request: NextRequest) {
     let totalFilled = 0;
 
     for (const req of requiredFields) {
-      if (req.table === 'items') {
+      if (req.table === 'items' && req.fields) {
         for (const field of req.fields) {
           totalExpected++;
           if (enrichedItem[field]) totalFilled++;
         }
-      } else if (req.table === 'item_descriptions') {
+      } else if (req.table === 'item_descriptions' && req.fields) {
         for (const field of req.fields) {
           totalExpected++;
           const desc = enrichedItem.item_descriptions?.find((d: any) => d.field_name === field);
           if (desc?.value) totalFilled++;
         }
       } else if (req.table === 'item_attributes') {
-        totalExpected += req.minCount;
+        // minCount is required in config for item_attributes, but type allows optional
+        // Runtime guard with fallback and warning
+        const minCount = req.minCount ?? 0;
+        if (req.minCount === undefined) {
+          console.warn('[RUN] item_attributes requirement missing minCount, defaulting to 0');
+        }
+        totalExpected += minCount;
         const count = enrichedItem.item_attributes?.length || 0;
-        totalFilled += Math.min(count, req.minCount);
-      } else if (req.table === 'item_specs') {
+        totalFilled += Math.min(count, minCount);
+      } else if (req.table === 'item_specs' && req.fields) {
         for (const field of req.fields) {
           totalExpected++;
           if (enrichedItem.item_specs?.[field]) totalFilled++;

@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       
       try {
         const result = await scoreItem(enriched.id, gtId);
-        results.push({ item_id: enriched.id, mfg_part_num: enriched.mfg_part_num, ...result });
+        results.push({ mfg_part_num: enriched.mfg_part_num, ...result });
         
         // Aggregate field accuracy
         for (const fs of result.field_scores) {

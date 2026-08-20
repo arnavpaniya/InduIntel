@@ -16,7 +16,8 @@ import {
   Zap, RefreshCw, Download, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { scoreBatch, BatchScoreResponse, BatchScoreSummary } from '@/lib/api';
+import { scoreBatch } from '@/lib/api';
+import { BatchScoreSummary, BatchScoreResponse } from '@/lib/types';
 
 const COLORS = ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 
@@ -72,10 +73,11 @@ function GroupAccuracyChart({ data }: { data: Array<{ group: string; accuracy: n
               <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="group" width={120} tick={{ fontSize: 12 }} />
               <Tooltip 
-                formatter={(value: number) => [`${value}%`, 'Accuracy']}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(value: any) => value !== undefined ? [`${value}%`, 'Accuracy'] : ['', '']}
                 labelFormatter={(group) => group}
               />
-              <Bar dataKey="accuracy" fill="#3b82f6" radius={[0, 4, 4, 0]} maxBarWidth={40}>
+              <Bar dataKey="accuracy" fill="#3b82f6" radius={[0, 4, 4, 0]}>
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
@@ -133,8 +135,8 @@ function ConfidenceCorrelationChart({ data }: { data: Record<string, number> }) 
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="bin" width={80} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value: number) => [`${value}%`, 'Accuracy']} />
-              <Bar dataKey="accuracy" fill="#8b5cf6" radius={[0, 4, 4, 0]} maxBarWidth={40}>
+              <Tooltip formatter={(value: any) => value !== undefined ? [`${value}%`, 'Accuracy'] : ['', '']} />
+              <Bar dataKey="accuracy" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.accuracy >= 70 ? '#22c55e' : entry.accuracy >= 40 ? '#eab308' : '#ef4444'} />
                 ))}
@@ -189,8 +191,8 @@ function CharLimitComplianceChart({ data }: { data: Record<string, number> }) {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="field" width={100} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value: number) => [`${value}%`, 'Compliance']} />
-              <Bar dataKey="compliance" fill="#06b6d4" radius={[0, 4, 4, 0]} maxBarWidth={30}>
+              <Tooltip formatter={(value: any) => value !== undefined ? [`${value}%`, 'Compliance'] : ['', '']} />
+              <Bar dataKey="compliance" fill="#06b6d4" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.compliance === 100 ? '#22c55e' : entry.compliance >= 50 ? '#eab308' : '#ef4444'} />
                 ))}

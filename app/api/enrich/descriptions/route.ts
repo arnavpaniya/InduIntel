@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       
       const processedDescriptions = (cached.descriptions || [])
         .map(enforceLength)
-        .map(d => ({
+        .map((d: { field_name: string; value: string; char_count: number }) => ({
           item_id,
           field_name: d.field_name,
           value: d.value,

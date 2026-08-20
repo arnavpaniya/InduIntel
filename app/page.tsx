@@ -19,10 +19,79 @@ export const metadata: Metadata = {
   description: 'Turn messy industrial catalog data into clean, structured, commerce-ready product records using AI.',
 };
 
+// Historical fallback data from last successful score run (before quota exhaustion)
+// Captured: 2 items scored, 34% overall accuracy, 13/38 fields matched
+const HISTORICAL_FALLBACK: BatchScoreSummary = {
+  items_scored: 2,
+  avg_accuracy_pct: 34,
+  field_accuracy_breakdown: {
+    manufacturer_name: 0,
+    brand_name: 0,
+    dept: 0,
+    class: 0,
+    fine: 50,
+    classpath: 50,
+    'description:invoice_desc': 0,
+    'description:mobile_desc': 0,
+    'description:short_desc': 0,
+    'description:long_desc1': 0,
+    'description:marketing_description': 100,
+    'attribute:Series': 0,
+    'attribute:Model': 0,
+    'attribute:Number of Wash Cycles': 0,
+    'attribute:Voltage Rating': 0,
+    'attribute:Amperage Rating': 0,
+    'attribute:Mounting Type': 0,
+    'attribute:Plug Type': 0,
+    'attribute:Size': 0,
+    'attribute:Depth With Door Open': 0,
+    'attribute:Minimum Height': 0,
+    'attribute:Maximum Height': 0,
+    'attribute:Sound Level': 0,
+    'attribute:Material': 100,
+    'attribute:Color': 0,
+    'attribute:Additional Information': 0,
+    'attribute:Product Type': 0,
+    'spec:upc': 100,
+    'spec:ean': 100,
+    'spec:gtin': 100,
+    'spec:unspsc': 100,
+    'spec:list_price': 100,
+    'spec:length': 100,
+    'spec:width': 100,
+    'spec:height': 100,
+    'spec:weight': 100,
+    'spec:country_of_origin': 100,
+    'spec:warranty': 0,
+  },
+  char_limit_compliance: {
+    invoice_desc: 100,
+    mobile_desc: 100,
+    short_desc: 100,
+    long_desc1: 100,
+    marketing_description: 100,
+  },
+  attribute_lov_compliance_pct: 12,
+  confidence_accuracy_correlation: {
+    '0-20': 100,
+    '21-40': 100,
+    '41-60': 0,
+    '61-80': 0,
+    '81-100': 0,
+  },
+};
+
 async function getLiveMetrics(): Promise<BatchScoreSummary | null> {
   try {
     const data = await scoreBatch(20);
-    return data.success ? data.summary : null;
+    if (data.success && data.summary) {
+      // If no items scored, return null to trigger fallback
+      if (data.summary.items_scored === 0) {
+        return null;
+      }
+      return data.summary;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -440,47 +509,94 @@ export default async function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto mb-12">
-            {metrics ? (
-              <>
-                <MetricCard 
-                  label="Items Scored" 
-                  value={metrics.items_scored} 
-                  icon={CheckCircle} 
-                  variant="success"
-                  trend={metrics.items_scored > 0 ? `${metrics.items_scored} items validated` : 'No items scored yet'}
-                />
-                <MetricCard 
-                  label="Overall Field Accuracy" 
-                  value={`${metrics.avg_accuracy_pct}%`} 
-                  icon={Target} 
-                  variant={metrics.avg_accuracy_pct >= 70 ? 'success' : metrics.avg_accuracy_pct >= 40 ? 'warning' : 'destructive'}
-                  trend={metrics.avg_accuracy_pct >= 70 ? 'Strong' : metrics.avg_accuracy_pct >= 40 ? 'Moderate' : 'Sparse input baseline'}
-                />
-                <MetricCard 
-                  label="Attribute LOV Compliance" 
-                  value={`${metrics.attribute_lov_compliance_pct}%`} 
-                  icon={Settings} 
-                  variant={metrics.attribute_lov_compliance_pct >= 70 ? 'success' : metrics.attribute_lov_compliance_pct >= 40 ? 'warning' : 'destructive'}
-                  trend="Values matching ground truth LOV"
-                />
-                <MetricCard 
-                  label="Char-Limit Compliance" 
-                  value={metrics.char_limit_compliance && Object.values(metrics.char_limit_compliance).length > 0 
-                    ? `${Math.round(Object.values(metrics.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(metrics.char_limit_compliance).length)}%` 
-                    : 'N/A'} 
-                  icon={FileText} 
-                  variant="default"
-                  trend="Descriptions within limits"
-                />
-              </>
-            ) : (
-              <>
-                <MetricCard label="Items Scored" value="—" icon={CheckCircle} trend="Loading..." />
-                <MetricCard label="Overall Accuracy" value="—" icon={Target} trend="Loading..." />
-                <MetricCard label="Attr LOV Compliance" value="—" icon={Settings} trend="Loading..." />
-                <MetricCard label="Char-Limit Compliance" value="—" icon={FileText} trend="Loading..." />
-              </>
-            )}
+            {/* Determine what to show: live data, historical fallback, or loading */}
+            {(() => {
+              // Live data available and items scored
+              if (metrics && metrics.items_scored > 0) {
+                return (
+                  <>
+                    <MetricCard 
+                      label="Items Scored" 
+                      value={metrics.items_scored} 
+                      icon={CheckCircle} 
+                      variant="success"
+                      trend={`${metrics.items_scored} items validated`}
+                    />
+                    <MetricCard 
+                      label="Overall Field Accuracy" 
+                      value={`${metrics.avg_accuracy_pct}%`} 
+                      icon={Target} 
+                      variant={metrics.avg_accuracy_pct >= 70 ? 'success' : metrics.avg_accuracy_pct >= 40 ? 'warning' : 'destructive'}
+                      trend={metrics.avg_accuracy_pct >= 70 ? 'Strong' : metrics.avg_accuracy_pct >= 40 ? 'Moderate' : 'Sparse input baseline'}
+                    />
+                    <MetricCard 
+                      label="Attribute LOV Compliance" 
+                      value={`${metrics.attribute_lov_compliance_pct}%`} 
+                      icon={Settings} 
+                      variant={metrics.attribute_lov_compliance_pct >= 70 ? 'success' : metrics.attribute_lov_compliance_pct >= 40 ? 'warning' : 'destructive'}
+                      trend="Values matching ground truth LOV"
+                    />
+                    <MetricCard 
+                      label="Char-Limit Compliance" 
+                      value={metrics.char_limit_compliance && Object.values(metrics.char_limit_compliance).length > 0 
+                        ? `${Math.round(Object.values(metrics.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(metrics.char_limit_compliance).length)}%` 
+                        : 'N/A'} 
+                      icon={FileText} 
+                      variant="default"
+                      trend="Descriptions within limits"
+                    />
+                  </>
+                );
+              }
+              
+              // Historical fallback available (live data returned null or items_scored === 0)
+              if (HISTORICAL_FALLBACK) {
+                return (
+                  <>
+                    <MetricCard 
+                      label="Items Scored (Last Run)" 
+                      value={HISTORICAL_FALLBACK.items_scored} 
+                      icon={CheckCircle} 
+                      variant="success"
+                      trend="Historical snapshot — live scoring paused"
+                    />
+                    <MetricCard 
+                      label="Overall Field Accuracy" 
+                      value={`${HISTORICAL_FALLBACK.avg_accuracy_pct}%`} 
+                      icon={Target} 
+                      variant="destructive"
+                      trend="Sparse input baseline (34%)"
+                    />
+                    <MetricCard 
+                      label="Attribute LOV Compliance" 
+                      value={`${HISTORICAL_FALLBACK.attribute_lov_compliance_pct}%`} 
+                      icon={Settings} 
+                      variant="destructive"
+                      trend="Requires external catalog data"
+                    />
+                    <MetricCard 
+                      label="Char-Limit Compliance" 
+                      value={HISTORICAL_FALLBACK.char_limit_compliance && Object.values(HISTORICAL_FALLBACK.char_limit_compliance).length > 0 
+                        ? `${Math.round(Object.values(HISTORICAL_FALLBACK.char_limit_compliance).reduce((a, b) => a + b, 0) / Object.values(HISTORICAL_FALLBACK.char_limit_compliance).length)}%` 
+                        : 'N/A'} 
+                      icon={FileText} 
+                      variant="default"
+                      trend="All descriptions within limits"
+                    />
+                  </>
+                );
+              }
+              
+              // Should never reach here, but safety fallback
+              return (
+                <>
+                  <MetricCard label="Items Scored" value="—" icon={CheckCircle} trend="Unavailable" />
+                  <MetricCard label="Overall Accuracy" value="—" icon={Target} trend="Unavailable" />
+                  <MetricCard label="Attr LOV Compliance" value="—" icon={Settings} trend="Unavailable" />
+                  <MetricCard label="Char-Limit Compliance" value="—" icon={FileText} trend="Unavailable" />
+                </>
+              );
+            })()}
           </div>
 
           {/* Honest framing note */}
