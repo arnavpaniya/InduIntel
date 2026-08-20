@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { formatMeasurement, parseMeasurement } from '@/lib/ai/attributes';
+import { createHash } from 'crypto';
 
 interface AttributeItem {
   label: string;
@@ -43,6 +44,24 @@ Return ONLY valid JSON:
   "reasoning": "brief explanation"
 }`;
 
+function hashInput(input: any): string {
+  return createHash('sha256').update(JSON.stringify(input)).digest('hex').slice(0, 16);
+}
+
+async function getCachedResult(supabase: any, itemId: string, step: string, inputHash: string) {
+  const { data } = await supabase
+    .from('enrichment_logs')
+    .select('output_json')
+    .eq('item_id', itemId)
+    .eq('step', step)
+    .eq('status', 'success')
+    .contains('input_json', { _hash: inputHash })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.output_json || null;
+}
+
 async function logEnrichment(
   supabase: any,
   itemId: string,
@@ -51,14 +70,15 @@ async function logEnrichment(
   error: string | null,
   input: any,
   output: any,
-  durationMs: number
+  durationMs: number,
+  inputHash: string
 ) {
   await supabase.from('enrichment_logs').insert({
     item_id: itemId,
     step,
     status,
     error,
-    input_json: input,
+    input_json: { ...input, _hash: inputHash },
     output_json: output,
     duration_ms: durationMs,
   });
@@ -91,6 +111,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Item not found', item_id }, { status: 404 });
     }
 
+    const inputData = {
+      mfg_part_num: item.mfg_part_num,
+      part_desc: item.part_desc,
+      manufacturer_name: item.manufacturer_name,
+      brand_name: item.brand_name,
+    };
+    const inputHash = hashInput(inputData);
+
+    // Check cache
+    const cached = await getCachedResult(supabase, item_id, 'attributes', inputHash);
+    if (cached) {
+      console.log('[ATTRIBUTES] Cache hit - returning cached result');
+      const duration = Date.now() - startTime;
+      await logEnrichment(supabase, item_id, 'attributes', 'success', null, inputData, cached, duration, inputHash);
+      
+      // Re-insert cached attributes
+      const validAttributes = (cached.attributes || [])
+        .filter((a: any) => a.label && a.value)
+        .slice(0, 50)
+        .map((a: any, idx: number) => {
+          let formattedValue = a.value;
+          let formattedUom = a.uom;
+          
+          if (a.value && a.uom) {
+            const parsed = parseMeasurement(`${a.value} ${a.uom}`);
+            if (parsed) {
+              formattedValue = parsed.value.toString();
+              formattedUom = parsed.uom;
+            }
+          }
+          
+          return {
+            item_id: item_id,
+            seq: idx + 1,
+            label: a.label,
+            value: formattedValue,
+            uom: formattedUom,
+          };
+        });
+      
+      if (validAttributes.length > 0) {
+        await supabaseAdmin.from('item_attributes').delete().eq('item_id', item_id);
+        await supabaseAdmin.from('item_attributes').insert(validAttributes);
+      }
+      
+      return NextResponse.json({ success: true, data: cached, count: validAttributes.length, cached: true });
+    }
+
     const prompt = `${ATTRIBUTES_PROMPT}
 
 Item data:
@@ -108,7 +176,7 @@ Return JSON only.`;
     const duration = Date.now() - startTime;
 
     if (!result.data || result.error) {
-      await logEnrichment(supabase, item_id, 'attributes', 'error', result.error || 'No data', { item }, result, duration);
+      await logEnrichment(supabase, item_id, 'attributes', 'error', result.error || 'No data', inputData, result, duration, inputHash);
       return NextResponse.json({ error: result.error || 'Failed to parse attributes', data: result.data }, { status: 500 });
     }
 
@@ -118,11 +186,9 @@ Return JSON only.`;
       .filter((a: any) => a.label && a.value)
       .slice(0, 50)
       .map((a: any, idx: number) => {
-        // Enforce "number space abbreviation" format in code
         let formattedValue = a.value;
         let formattedUom = a.uom;
         
-        // If value contains a number and uom is present, try to parse and reformat
         if (a.value && a.uom) {
           const parsed = parseMeasurement(`${a.value} ${a.uom}`);
           if (parsed) {
@@ -156,19 +222,19 @@ Return JSON only.`;
       }, null, 2));
 
       if (attrError) {
-        await logEnrichment(supabase, item_id, 'attributes', 'error', attrError.message, { item }, result, duration);
+        await logEnrichment(supabase, item_id, 'attributes', 'error', attrError.message, inputData, result, duration, inputHash);
         return NextResponse.json({ error: attrError.message }, { status: 500 });
       }
 
       if (!inserted || inserted.length === 0) {
-        await logEnrichment(supabase, item_id, 'attributes', 'error', 'Insert returned no rows', { item }, result, duration);
+        await logEnrichment(supabase, item_id, 'attributes', 'error', 'Insert returned no rows', inputData, result, duration, inputHash);
         return NextResponse.json({ error: 'Insert returned no rows' }, { status: 500 });
       }
 
       console.log('[ATTRIBUTES] Inserted attributes:', inserted);
     }
 
-    await logEnrichment(supabase, item_id, 'attributes', 'success', null, { item }, result.data, duration);
+    await logEnrichment(supabase, item_id, 'attributes', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data, count: validAttributes.length });
   } catch (error) {

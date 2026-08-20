@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
+import { createHash } from 'crypto';
 
 interface ManufacturerResult {
   manufacturer_name: string | null;
@@ -35,6 +36,24 @@ Return ONLY valid JSON:
   "reasoning": "brief explanation"
 }`;
 
+function hashInput(input: any): string {
+  return createHash('sha256').update(JSON.stringify(input)).digest('hex').slice(0, 16);
+}
+
+async function getCachedResult(supabase: any, itemId: string, step: string, inputHash: string) {
+  const { data } = await supabase
+    .from('enrichment_logs')
+    .select('output_json')
+    .eq('item_id', itemId)
+    .eq('step', step)
+    .eq('status', 'success')
+    .contains('input_json', { _hash: inputHash })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.output_json || null;
+}
+
 async function logEnrichment(
   supabase: any,
   itemId: string,
@@ -43,14 +62,15 @@ async function logEnrichment(
   error: string | null,
   input: any,
   output: any,
-  durationMs: number
+  durationMs: number,
+  inputHash: string
 ) {
   await supabase.from('enrichment_logs').insert({
     item_id: itemId,
     step,
     status,
     error,
-    input_json: input,
+    input_json: { ...input, _hash: inputHash },
     output_json: output,
     duration_ms: durationMs,
   });
@@ -83,6 +103,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Item not found', item_id }, { status: 404 });
     }
 
+    const inputData = {
+      mfg_part_num: item.mfg_part_num,
+      part_desc: item.part_desc,
+      part_manuf: item.part_manuf,
+      e1_brand: item.e1_brand,
+      unilog_brand: item.unilog_brand,
+      dib_brand: item.dib_brand,
+    };
+    const inputHash = hashInput(inputData);
+
+    // Check cache
+    const cached = await getCachedResult(supabase, item_id, 'manufacturer', inputHash);
+    if (cached) {
+      console.log('[MANUFACTURER] Cache hit - returning cached result');
+      const duration = Date.now() - startTime;
+      await logEnrichment(supabase, item_id, 'manufacturer', 'success', null, inputData, cached, duration, inputHash);
+      
+      // Still update the item with cached data
+      const { data: updated } = await supabaseAdmin
+        .from('items')
+        .update({
+          manufacturer_name: cached.manufacturer_name,
+          brand_name: cached.brand_name,
+          confidence_score: cached.confidence,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', item_id)
+        .select();
+      
+      return NextResponse.json({ success: true, data: cached, item: updated?.[0], cached: true });
+    }
+
     const prompt = `${MANUFACTURER_PROMPT}
 
 Item data:
@@ -102,7 +154,7 @@ Return JSON only.`;
     const duration = Date.now() - startTime;
 
     if (!result.data || result.error) {
-      await logEnrichment(supabase, item_id, 'manufacturer', 'error', result.error || 'No data', { item }, result, duration);
+      await logEnrichment(supabase, item_id, 'manufacturer', 'error', result.error || 'No data', inputData, result, duration, inputHash);
       return NextResponse.json({ error: result.error || 'Failed to parse manufacturer', data: result.data }, { status: 500 });
     }
 
@@ -133,19 +185,19 @@ Return JSON only.`;
     }, null, 2));
 
     if (updateError) {
-      await logEnrichment(supabase, item_id, 'manufacturer', 'error', updateError.message, { item }, result, duration);
+      await logEnrichment(supabase, item_id, 'manufacturer', 'error', updateError.message, inputData, result, duration, inputHash);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     if (!updated || updated.length === 0) {
-      await logEnrichment(supabase, item_id, 'manufacturer', 'error', 'Update returned no rows', { item }, result, duration);
+      await logEnrichment(supabase, item_id, 'manufacturer', 'error', 'Update returned no rows', inputData, result, duration, inputHash);
       return NextResponse.json({ error: 'Update returned no rows for item_id: ' + item_id }, { status: 404 });
     }
 
     const updatedItem = updated[0];
     console.log('[MANUFACTURER] Updated item:', updatedItem);
 
-    await logEnrichment(supabase, item_id, 'manufacturer', 'success', null, { item }, result.data, duration);
+    await logEnrichment(supabase, item_id, 'manufacturer', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data, item: updatedItem });
   } catch (error) {

@@ -110,20 +110,23 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
       continue;
     }
 
-    // Main item update for ground truth
+    // Main item update for ground truth - ONLY raw input fields + is_ground_truth=true
+    // The complete enriched answer data belongs ONLY in ground_truth_* tables (via snapshot_ground_truth)
     groundTruthItems.push({
       id: itemId,
-      manufacturer_name: cleanValue(row.MANUFACTURER_NAME),
-      brand_name: cleanValue(row.BRAND_NAME),
-      dept: cleanValue(row.Dept),
-      class: cleanValue(row.Class),
-      fine: cleanValue(row.Fine),
-      classpath: cleanValue(row.Classpath),
+      manufacturer_name: null,
+      brand_name: null,
+      dept: null,
+      class: null,
+      fine: null,
+      classpath: null,
+      confidence_score: null,
+      field_confidence: null,
       is_ground_truth: true,
-      status: 'enriched',
+      status: 'raw',
     });
 
-    // Descriptions
+    // Descriptions - insert into ground_truth_descriptions via snapshot, not item_descriptions
     const descFields = [
       'MOBILE_DESC', 'INVOICE_DESC', 'SHORT_DESC', 'LONG_DESC1',
       'RETAIL_DESC', 'MARKETING_DESCRIPTION', 'PRODUCT_NAME',
@@ -140,7 +143,7 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
       }
     }
 
-    // Attributes (1-50)
+    // Attributes (1-50) - insert into ground_truth_attributes via snapshot
     for (let i = 1; i <= 50; i++) {
       const label = cleanValue(row[`ATTRIBUTE_LABEL ${i}`]);
       const value = cleanValue(row[`ATTRIBUTE_VALUE ${i}`]);
@@ -157,7 +160,7 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
       }
     }
 
-    // Assets
+    // Assets - insert into ground_truth_assets via snapshot
     const assetFields = [
       { field: 'MFR URL', type: 'mfr_url' },
       { field: 'Ref URL 1', type: 'ref_url' },
@@ -192,7 +195,7 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
       }
     }
 
-    // Specs - upsert on item_id
+    // Specs - upsert into ground_truth_specs via snapshot
     specsToInsert.push({
       item_id: itemId,
       upc: cleanValue(row.UPC),
@@ -213,7 +216,7 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
     });
   }
 
-  console.log('📤 Updating ground truth items...');
+  console.log('📤 Updating ground truth items to raw state...');
   for (const item of groundTruthItems) {
     const { id, ...updates } = item;
     const { error } = await supabase
@@ -225,16 +228,15 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
     }
   }
 
-  console.log(`📤 Inserting ${descriptionsToInsert.length} descriptions...`);
+  console.log(`📤 Inserting ${descriptionsToInsert.length} descriptions into item_descriptions (for snapshot)...`);
   if (descriptionsToInsert.length > 0) {
-    // Clear existing descriptions for these items first
     const itemIds = [...new Set(descriptionsToInsert.map(d => d.item_id))];
     await supabase.from('item_descriptions').delete().in('item_id', itemIds);
     const { error } = await supabase.from('item_descriptions').insert(descriptionsToInsert);
     if (error) console.error('❌ Error inserting descriptions:', error);
   }
 
-  console.log(`📤 Inserting ${attributesToInsert.length} attributes...`);
+  console.log(`📤 Inserting ${attributesToInsert.length} attributes into item_attributes (for snapshot)...`);
   if (attributesToInsert.length > 0) {
     const itemIds = [...new Set(attributesToInsert.map(a => a.item_id))];
     await supabase.from('item_attributes').delete().in('item_id', itemIds);
@@ -242,7 +244,7 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
     if (error) console.error('❌ Error inserting attributes:', error);
   }
 
-  console.log(`📤 Inserting ${assetsToInsert.length} assets...`);
+  console.log(`📤 Inserting ${assetsToInsert.length} assets into item_assets (for snapshot)...`);
   if (assetsToInsert.length > 0) {
     const itemIds = [...new Set(assetsToInsert.map(a => a.item_id))];
     await supabase.from('item_assets').delete().in('item_id', itemIds);
@@ -250,7 +252,7 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
     if (error) console.error('❌ Error inserting assets:', error);
   }
 
-  console.log(`📤 Upserting ${specsToInsert.length} specs...`);
+  console.log(`📤 Upserting ${specsToInsert.length} specs into item_specs (for snapshot)...`);
   if (specsToInsert.length > 0) {
     const { error } = await supabase
       .from('item_specs')
@@ -258,7 +260,16 @@ async function seedGroundTruth(itemIdMap: Map<string, string>) {
     if (error) console.error('❌ Error upserting specs:', error);
   }
 
-  console.log('✅ Ground truth seeding complete');
+  // Now run snapshot_ground_truth to copy all this data to ground_truth_* tables
+  console.log('📸 Running snapshot_ground_truth() to preserve answer key in ground_truth_* tables...');
+  const { error: snapshotError } = await supabase.rpc('snapshot_ground_truth');
+  if (snapshotError) {
+    console.error('❌ Error running snapshot_ground_truth:', snapshotError);
+  } else {
+    console.log('✅ Snapshot complete - ground_truth_* tables now hold the answer key');
+  }
+
+  console.log('✅ Ground truth seeding complete (items left in raw state, answer key in ground_truth_* tables)');
 }
 
 async function main() {

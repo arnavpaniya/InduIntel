@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
+import { createHash } from 'crypto';
 
 interface DescriptionItem {
   field_name: string;
@@ -51,6 +52,24 @@ const MAX_LENGTHS = {
   marketing_description: 350,
 };
 
+function hashInput(input: any): string {
+  return createHash('sha256').update(JSON.stringify(input)).digest('hex').slice(0, 16);
+}
+
+async function getCachedResult(supabase: any, itemId: string, step: string, inputHash: string) {
+  const { data } = await supabase
+    .from('enrichment_logs')
+    .select('output_json')
+    .eq('item_id', itemId)
+    .eq('step', step)
+    .eq('status', 'success')
+    .contains('input_json', { _hash: inputHash })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.output_json || null;
+}
+
 async function logEnrichment(
   supabase: any,
   itemId: string,
@@ -59,14 +78,15 @@ async function logEnrichment(
   error: string | null,
   input: any,
   output: any,
-  durationMs: number
+  durationMs: number,
+  inputHash: string
 ) {
   await supabase.from('enrichment_logs').insert({
     item_id: itemId,
     step,
     status,
     error,
-    input_json: input,
+    input_json: { ...input, _hash: inputHash },
     output_json: output,
     duration_ms: durationMs,
   });
@@ -119,6 +139,40 @@ export async function POST(request: NextRequest) {
 
     const attrText = (attrs || []).map(a => `${a.label}: ${a.value} ${a.uom || ''}`.trim()).join('; ');
 
+    const inputData = {
+      mfg_part_num: item.mfg_part_num,
+      part_desc: item.part_desc,
+      manufacturer_name: item.manufacturer_name,
+      brand_name: item.brand_name,
+      classpath: item.classpath,
+      extracted_attributes: attrText || 'none',
+    };
+    const inputHash = hashInput(inputData);
+
+    // Check cache
+    const cached = await getCachedResult(supabase, item_id, 'descriptions', inputHash);
+    if (cached) {
+      console.log('[DESCRIPTIONS] Cache hit - returning cached result');
+      const duration = Date.now() - startTime;
+      await logEnrichment(supabase, item_id, 'descriptions', 'success', null, inputData, cached, duration, inputHash);
+      
+      const processedDescriptions = (cached.descriptions || [])
+        .map(enforceLength)
+        .map(d => ({
+          item_id,
+          field_name: d.field_name,
+          value: d.value,
+          char_count: d.value.length,
+        }));
+      
+      if (processedDescriptions.length > 0) {
+        await supabaseAdmin.from('item_descriptions').delete().eq('item_id', item_id);
+        await supabaseAdmin.from('item_descriptions').insert(processedDescriptions);
+      }
+      
+      return NextResponse.json({ success: true, data: cached, count: processedDescriptions.length, cached: true });
+    }
+
     const prompt = `${DESCRIPTIONS_PROMPT}
 
 Item data:
@@ -138,7 +192,7 @@ Return JSON only.`;
     const duration = Date.now() - startTime;
 
     if (!result.data || result.error) {
-      await logEnrichment(supabase, item_id, 'descriptions', 'error', result.error || 'No data', { item }, result, duration);
+      await logEnrichment(supabase, item_id, 'descriptions', 'error', result.error || 'No data', inputData, result, duration, inputHash);
       return NextResponse.json({ error: result.error || 'Failed to parse descriptions', data: result.data }, { status: 500 });
     }
 
@@ -172,19 +226,19 @@ Return JSON only.`;
       }, null, 2));
 
       if (descError) {
-        await logEnrichment(supabase, item_id, 'descriptions', 'error', descError.message, { item }, result, duration);
+        await logEnrichment(supabase, item_id, 'descriptions', 'error', descError.message, inputData, result, duration, inputHash);
         return NextResponse.json({ error: descError.message }, { status: 500 });
       }
 
       if (!inserted || inserted.length === 0) {
-        await logEnrichment(supabase, item_id, 'descriptions', 'error', 'Insert returned no rows', { item }, result, duration);
+        await logEnrichment(supabase, item_id, 'descriptions', 'error', 'Insert returned no rows', inputData, result, duration, inputHash);
         return NextResponse.json({ error: 'Insert returned no rows' }, { status: 500 });
       }
 
       console.log('[DESCRIPTIONS] Inserted descriptions:', inserted);
     }
 
-    await logEnrichment(supabase, item_id, 'descriptions', 'success', null, { item }, result.data, duration);
+    await logEnrichment(supabase, item_id, 'descriptions', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data, count: processedDescriptions.length });
   } catch (error) {

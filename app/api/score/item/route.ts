@@ -10,6 +10,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'item_id and ground_truth_id required' }, { status: 400 });
     }
     
+    // SAFETY CHECK: Reject self-comparison (item compared to itself)
+    if (item_id === ground_truth_id) {
+      return NextResponse.json({ 
+        error: 'Self-comparison detected: item_id and ground_truth_id are identical. This indicates a seeding/configuration error where the enriched item is the same row as the ground truth answer key. Ground truth items must be in raw state and compared against separate ground_truth_* tables.' 
+      }, { status: 400 });
+    }
+    
     const supabase = await createServerSupabaseClient();
     
     // Verify both items exist
