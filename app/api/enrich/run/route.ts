@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { debugLog, debugError, debugWarn, debugJson } from '@/lib/debug';
 
 const ENRICHMENT_STEPS = [
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     debugLog('[RUN] Setting status to enriching...');
-    const { data: statusData, error: statusError } = await supabaseAdmin
+    const { data: statusData, error: statusError } = await getSupabaseAdmin()
       .from('items')
       .update({ status: 'enriching', updated_at: new Date().toISOString() })
       .eq('id', item_id)
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
 
     debugLog('[RUN] Computed confidenceScore:', confidenceScore, 'fieldConfidence:', fieldConfidence, 'status:', status);
 
-    const { data: finalUpdate, error: finalError } = await supabaseAdmin
+    const { data: finalUpdate, error: finalError } = await getSupabaseAdmin()
       .from('items')
       .update({
         status,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { debugLog, debugError } from '@/lib/debug';
 
 const DAILY_QUOTA_LIMIT = parseInt(process.env.DAILY_QUOTA_LIMIT || '18', 10); // Safety margin under 20
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     debugLog('[BATCH] Starting batch enrichment with limit:', limit, 'quota limit:', DAILY_QUOTA_LIMIT);
 
     // Check quota before starting
-    const quotaCheck = await checkAndIncrementQuota(supabaseAdmin);
+    const quotaCheck = await checkAndIncrementQuota(getSupabaseAdmin());
     if (!quotaCheck.allowed) {
       return NextResponse.json({ 
         error: 'Daily quota exceeded', 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     for (const item of rawItems) {
       // Check quota before each item (each item = 5 requests)
-      const quotaCheck = await checkAndIncrementQuota(supabaseAdmin);
+      const quotaCheck = await checkAndIncrementQuota(getSupabaseAdmin());
       if (!quotaCheck.allowed) {
         quotaSkipped++;
         debugLog(`[BATCH] Skipping ${item.mfg_part_num} due to quota limit`);
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     debugLog('[BATCH] Summary:', summary);
 
-    await supabaseAdmin.from('enrichment_logs').insert({
+    await getSupabaseAdmin().from('enrichment_logs').insert({
       item_id: null,
       step: 'batch',
       status: 'success',

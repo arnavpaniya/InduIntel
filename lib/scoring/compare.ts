@@ -1,9 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+let _supabase: SupabaseClient | null = null;
+function getSupabase(): SupabaseClient {
+  if (_supabase) return _supabase;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment');
+  }
+  _supabase = createClient(supabaseUrl, supabaseServiceKey);
+  return _supabase;
+}
 
 export type MatchType = 'exact_match' | 'close_match' | 'mismatch' | 'missing_in_output' | 'extra_in_output';
 
@@ -178,6 +185,7 @@ function compareAttributes(
 }
 
 export async function scoreItem(enrichedItemId: string, groundTruthItemId: string): Promise<ScoreResult> {
+  const supabase = getSupabase();
   // Fetch enriched item with all related data
   const { data: enriched, error: enrichedError } = await supabase
     .from('items')

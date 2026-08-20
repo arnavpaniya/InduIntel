@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       const duration = Date.now() - startTime;
       await logEnrichment(supabase, item_id, 'classify', 'success', null, inputData, cached, duration, inputHash);
       
-      const { data: updated } = await supabaseAdmin
+      const { data: updated } = await getSupabaseAdmin()
         .from('items')
         .update({
           dept: cached.dept,
@@ -183,7 +183,7 @@ debugJson('[CLASSIFY] UPDATE payload:', {
   updated_at: new Date().toISOString(),
 });
 
-    const { data: updated, error: updateError } = await supabaseAdmin
+    const { data: updated, error: updateError } = await getSupabaseAdmin()
       .from('items')
       .update({
         dept: result.data.dept,

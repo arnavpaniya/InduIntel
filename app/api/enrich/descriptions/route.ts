@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
@@ -189,8 +189,8 @@ export async function POST(request: NextRequest) {
         }));
       
       if (processedDescriptions.length > 0) {
-        await supabaseAdmin.from('item_descriptions').delete().eq('item_id', item_id);
-        await supabaseAdmin.from('item_descriptions').insert(processedDescriptions);
+        await getSupabaseAdmin().from('item_descriptions').delete().eq('item_id', item_id);
+        await getSupabaseAdmin().from('item_descriptions').insert(processedDescriptions);
       }
       
       return NextResponse.json({ success: true, data: cached, count: processedDescriptions.length, cached: true });
@@ -237,8 +237,8 @@ Return JSON only.`;
     }
 
     if (processedDescriptions.length > 0) {
-      await supabaseAdmin.from('item_descriptions').delete().eq('item_id', item_id);
-      const { data: inserted, error: descError } = await supabaseAdmin
+      await getSupabaseAdmin().from('item_descriptions').delete().eq('item_id', item_id);
+      const { data: inserted, error: descError } = await getSupabaseAdmin()
         .from('item_descriptions')
         .insert(processedDescriptions)
         .select();

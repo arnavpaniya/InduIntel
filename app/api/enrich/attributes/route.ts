@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { formatMeasurement, parseMeasurement } from '@/lib/ai/attributes';
 import { createHash } from 'crypto';
@@ -175,8 +175,8 @@ export async function POST(request: NextRequest) {
         });
       
       if (validAttributes.length > 0) {
-        await supabaseAdmin.from('item_attributes').delete().eq('item_id', item_id);
-        await supabaseAdmin.from('item_attributes').insert(validAttributes);
+        await getSupabaseAdmin().from('item_attributes').delete().eq('item_id', item_id);
+        await getSupabaseAdmin().from('item_attributes').insert(validAttributes);
       }
       
       return NextResponse.json({ success: true, data: cached, count: validAttributes.length, cached: true });
@@ -233,8 +233,8 @@ Return JSON only.`;
     debugLog('[ATTRIBUTES] About to INSERT attributes, item_id:', item_id, 'count:', validAttributes.length);
 
     if (validAttributes.length > 0) {
-      await supabaseAdmin.from('item_attributes').delete().eq('item_id', item_id);
-      const { data: inserted, error: attrError } = await supabaseAdmin
+      await getSupabaseAdmin().from('item_attributes').delete().eq('item_id', item_id);
+      const { data: inserted, error: attrError } = await getSupabaseAdmin()
         .from('item_attributes')
         .insert(validAttributes)
         .select();

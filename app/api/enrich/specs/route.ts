@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
       
       const specData = cached;
       const { confidence, reasoning, ...specFields } = specData;
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('item_specs')
         .upsert({ item_id, ...specFields }, { onConflict: 'item_id' });
       
@@ -237,7 +237,7 @@ Return JSON only.`;
     const specData = result.data;
     const { confidence, reasoning, ...specFields } = specData;
 
-    const { data: upserted, error: specError } = await supabaseAdmin
+    const { data: upserted, error: specError } = await getSupabaseAdmin()
       .from('item_specs')
       .upsert({ item_id, ...specFields }, { onConflict: 'item_id' })
       .select();

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { callLLMWithRetry } from '@/lib/ai/gemini';
 import { createHash } from 'crypto';
 import { debugLog, debugError, debugJson } from '@/lib/debug';
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       await logEnrichment(supabase, item_id, 'manufacturer', 'success', null, inputData, cached, duration, inputHash);
       
       // Still update the item with cached data
-      const { data: updated } = await supabaseAdmin
+      const { data: updated } = await getSupabaseAdmin()
         .from('items')
         .update({
           manufacturer_name: cached.manufacturer_name,
@@ -180,7 +180,7 @@ debugJson('[MANUFACTURER] UPDATE payload:', {
   updated_at: new Date().toISOString(),
 });
 
-    const { data: updated, error: updateError } = await supabaseAdmin
+    const { data: updated, error: updateError } = await getSupabaseAdmin()
       .from('items')
       .update({
         manufacturer_name: result.data.manufacturer_name,
