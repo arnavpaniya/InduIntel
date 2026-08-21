@@ -395,20 +395,6 @@ export default function DashboardClient() {
           </div>
           
           <div className="flex items-center gap-4">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 bg-slate-100 text-xs text-slate-700 cursor-help font-medium">
-                    <span>Free AI Credits: <strong>{quotaStatus.remaining}</strong> left today</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="end" className="bg-slate-900 text-slate-100 text-xs">
-                  <p className="font-semibold">Daily AI Pipeline Quota</p>
-                  <p>{quotaStatus.used} of {quotaStatus.limit} AI calls used today.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
             <Link href="/dashboard/insights">
               <Button variant="outline" size="sm" className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 gap-1.5 text-xs font-semibold">
                 <BarChart2 className="h-3.5 w-3.5 text-indigo-600" />
