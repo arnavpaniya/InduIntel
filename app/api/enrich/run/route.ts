@@ -43,7 +43,6 @@ async function logEnrichment(
   });
 }
 
-
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
@@ -97,9 +96,6 @@ export async function POST(request: NextRequest) {
           debugError(`[RUN] Step ${step} failed:`, result.error);
         } else {
           debugLog(`[RUN] Step ${step} succeeded in ${Date.now() - stepStart}ms`);
-          // Handle different response formats:
-          // manufacturer/classify: { data: { data: { confidence, ... } } }
-          // attributes/descriptions/specs: { data: { confidence, ... } }
           const stepConfidence = result.data?.data?.confidence ?? result.data?.confidence;
           if (stepConfidence !== undefined && typeof stepConfidence === 'number') {
             stepConfidences.push(stepConfidence);
@@ -112,6 +108,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fetch enriched item with all relations
     const { data: enrichedItem, error: fetchError } = await supabase
       .from('items')
       .select(`
@@ -124,7 +121,7 @@ export async function POST(request: NextRequest) {
       .eq('id', item_id)
       .maybeSingle();
 
-    debugLog('[RUN] Final fetch - fetchError:', fetchError?.message, 'item found:', !!enrichedItem);
+    debugLog('[RUN] Fetch enriched item - fetchError:', fetchError?.message, 'item found:', !!enrichedItem);
 
     if (fetchError) {
       await logEnrichment(supabase, item_id, 'orchestrator', 'error', fetchError.message, { item_id }, null, Date.now() - startTime);
@@ -159,19 +156,15 @@ export async function POST(request: NextRequest) {
           if (desc?.value) totalFilled++;
         }
       } else if (req.table === 'item_attributes') {
-        // minCount is required in config for item_attributes, but type allows optional
-        // Runtime guard with fallback and warning
         const minCount = req.minCount ?? 0;
-        if (req.minCount === undefined) {
-          debugWarn('[RUN] item_attributes requirement missing minCount, defaulting to 0');
-        }
         totalExpected += minCount;
         const count = enrichedItem.item_attributes?.length || 0;
         totalFilled += Math.min(count, minCount);
       } else if (req.table === 'item_specs' && req.fields) {
+        const specObj = Array.isArray(enrichedItem.item_specs) ? enrichedItem.item_specs[0] : enrichedItem.item_specs;
         for (const field of req.fields) {
           totalExpected++;
-          if (enrichedItem.item_specs?.[field]) totalFilled++;
+          if (specObj?.[field]) totalFilled++;
         }
       }
     }
@@ -200,6 +193,19 @@ export async function POST(request: NextRequest) {
 
     debugJson('[RUN] Final status update:', { data: finalUpdate, error: finalError, count: finalUpdate?.length });
 
+    // Fetch complete final enriched item with all relations & updated scores
+    const { data: finalEnrichedItem } = await supabase
+      .from('items')
+      .select(`
+        *,
+        item_descriptions(*),
+        item_attributes(*),
+        item_assets(*),
+        item_specs(*)
+      `)
+      .eq('id', item_id)
+      .maybeSingle();
+
     await logEnrichment(supabase, item_id, 'orchestrator', hasErrors ? 'error' : 'success', hasErrors ? 'One or more steps failed' : null, { item_id }, { confidenceScore, fieldConfidence, status, steps: stepResults }, Date.now() - startTime);
 
     return NextResponse.json({
@@ -209,14 +215,18 @@ export async function POST(request: NextRequest) {
       confidence_score: confidenceScore,
       field_confidence: fieldConfidence,
       step_results: stepResults,
-      item: enrichedItem,
+      item: finalEnrichedItem || {
+        ...enrichedItem,
+        status,
+        confidence_score: confidenceScore,
+        field_confidence: fieldConfidence,
+      },
     });
   } catch (error) {
     debugError('Orchestrator error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
 
 function determineStatus(confidenceScore: number, item: any): 'enriched' | 'review' {
   const criticalFields = ['manufacturer_name', 'brand_name', 'classpath'];

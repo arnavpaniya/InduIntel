@@ -80,7 +80,9 @@ export default function ItemDetailPage() {
       const result = await enrichItem(item.id);
       if (result.success) {
         showToast(`Enrichment complete! Quality score: ${result.confidence_score}%`, 'success');
-        setItem(result.item);
+        // Fetch fresh detail to get full relations and updated confidence score
+        const updatedItem = await fetchItemDetail(item.id);
+        setItem(updatedItem);
       } else {
         showToast('Enrichment failed', 'error');
       }

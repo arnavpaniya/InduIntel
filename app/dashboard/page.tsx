@@ -387,7 +387,7 @@ export default function DashboardClient() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-lg font-extrabold tracking-tight text-slate-900 font-display hover:opacity-80 transition-opacity">
+            <Link href="/" className="font-brand text-xl tracking-tight text-slate-900 hover:opacity-80 transition-opacity">
               InduIntel
             </Link>
             <span className="text-slate-300">|</span>
@@ -395,7 +395,6 @@ export default function DashboardClient() {
           </div>
           
           <div className="flex items-center gap-4">
-            {/* AI Credits */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -422,7 +421,6 @@ export default function DashboardClient() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Toast */}
         {toast && (
           <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-2">
             <Card className={cn('w-80 shadow-lg border-slate-200 bg-white text-slate-900', toast.type === 'error' && 'border-red-300 bg-red-50 text-red-900')}>
@@ -435,7 +433,6 @@ export default function DashboardClient() {
           </div>
         )}
 
-        {/* Executive Overview */}
         <motion.div
           variants={gridVariants}
           initial="hidden"
@@ -472,7 +469,6 @@ export default function DashboardClient() {
           />
         </motion.div>
 
-        {/* Toolbar */}
         <motion.div
           variants={panelVariants}
           initial="hidden"
@@ -643,7 +639,6 @@ export default function DashboardClient() {
                 </TableBody>
               </Table>
 
-              {/* Pagination */}
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between p-4 border-t border-slate-200 bg-slate-50">
                   <span className="text-xs text-slate-600">
@@ -675,7 +670,6 @@ export default function DashboardClient() {
           </Card>
         </motion.div>
 
-        {/* Upload Modal */}
         {uploadOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
             <div className="bg-white border border-slate-200 w-full max-w-xl rounded-xl shadow-xl overflow-hidden">

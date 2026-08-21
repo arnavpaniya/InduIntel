@@ -9,8 +9,7 @@ import {
   ArrowRight, ChevronRight, CheckCircle2, 
   FileText, Layers, Package, TrendingUp,
   AlertTriangle, Shield, Sparkles, Wand2,
-  Eye, Check, X, FileSpreadsheet, Download, BarChart2,
-  ArrowUpRight, Sparkle
+  Eye, Check, X, FileSpreadsheet, Download, BarChart2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -123,9 +122,9 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
         <div className="container mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-extrabold tracking-tight text-slate-900 font-display">InduIntel</span>
+            <span className="font-brand text-2xl tracking-tight text-slate-900">InduIntel</span>
             <span className="text-slate-300">|</span>
-            <span className="text-xs font-medium text-slate-500">Catalog Intelligence</span>
+            <span className="text-xs font-semibold text-slate-500">Catalog Intelligence</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-600">
@@ -157,14 +156,14 @@ export default function LandingPage() {
               Built for Catalog Managers & Non-Technical Teams
             </Badge>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 font-display leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight">
               Fix Messy Product Data. <br />
               <span className="text-indigo-600">Publish Clean Catalogs in Seconds.</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-sans max-w-2xl mx-auto">
               Supplier spreadsheets are full of typos, missing sizes, and broken brand names. 
-              <strong className="text-slate-900 font-semibold"> InduIntel uses AI to fix brand names, build standard category trees, write customer product descriptions, and verify accuracy</strong> — so anyone can understand and publish them instantly.
+              <strong className="text-slate-900 font-semibold"> <span className="font-brand font-extrabold text-slate-900 text-lg">InduIntel</span> uses AI to fix brand names, build standard category trees, write customer product descriptions, and verify accuracy</strong> — so anyone can understand and publish them instantly.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -530,7 +529,7 @@ export default function LandingPage() {
       <footer className="py-6 border-t border-slate-200 bg-white text-xs text-slate-500">
         <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div>
-            <span className="font-bold text-slate-900">InduIntel</span> — Product Catalog Intelligence
+            <span className="font-brand font-bold text-slate-900 text-sm">InduIntel</span> — Product Catalog Intelligence
           </div>
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="hover:text-slate-900 transition-colors">Workspace</Link>
