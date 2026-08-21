@@ -9,7 +9,7 @@ import {
   UploadResponse
 } from '@/lib/types';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = '';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -22,16 +22,23 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   
   if (!response.ok) {
     const errorBody = await response.text();
-    let errorMessage = `HTTP ${response.status}`;
+    let errorMessage = `HTTP ${response.status} ${response.statusText}`.trim();
     try {
       const errorJson = JSON.parse(errorBody);
       errorMessage = errorJson.error || errorJson.message || errorMessage;
     } catch {
       errorMessage = errorBody || errorMessage;
     }
-    const error = new Error(errorMessage) as Error & { status: number; body: string };
+    const error = new Error(errorMessage) as Error & {
+      status: number;
+      statusText: string;
+      body: string;
+      url: string;
+    };
     error.status = response.status;
+    error.statusText = response.statusText;
     error.body = errorBody;
+    error.url = response.url || url;
     throw error;
   }
   
@@ -104,8 +111,20 @@ export async function uploadItems(file: File, source: 'csv' | 'pdf' = 'csv'): Pr
   });
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    const errorBody = await response.text();
+    let errorMessage = `HTTP ${response.status} ${response.statusText}`.trim();
+    try {
+      const errorJson = JSON.parse(errorBody);
+      errorMessage = errorJson.error || errorJson.message || errorMessage;
+    } catch {
+      errorMessage = errorBody || errorMessage;
+    }
+    const error = new Error(errorMessage) as Error & { status: number; statusText: string; body: string; url: string };
+    error.status = response.status;
+    error.statusText = response.statusText;
+    error.body = errorBody;
+    error.url = response.url || `${API_BASE}/api/items/upload`;
+    throw error;
   }
   
   return response.json();
@@ -126,8 +145,20 @@ export async function addManualItem(data: {
   });
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to add item' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    const errorBody = await response.text();
+    let errorMessage = `HTTP ${response.status} ${response.statusText}`.trim();
+    try {
+      const errorJson = JSON.parse(errorBody);
+      errorMessage = errorJson.error || errorJson.message || errorMessage;
+    } catch {
+      errorMessage = errorBody || errorMessage;
+    }
+    const error = new Error(errorMessage) as Error & { status: number; statusText: string; body: string; url: string };
+    error.status = response.status;
+    error.statusText = response.statusText;
+    error.body = errorBody;
+    error.url = response.url || `${API_BASE}/api/items/upload`;
+    throw error;
   }
   
   return response.json();

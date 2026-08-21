@@ -182,11 +182,13 @@ export default function DashboardClient() {
       setItems(data.items);
       setPagination(prev => ({ ...prev, total: data.pagination.total, totalPages: data.pagination.totalPages }));
     } catch (error) {
-      const err = error as Error & { status?: number; body?: string };
+      const err = error as Error & { status?: number; statusText?: string; body?: string; url?: string };
       console.error('Failed to load items:', {
         message: err.message,
         status: err.status,
+        statusText: err.statusText,
         body: err.body,
+        url: err.url,
       });
       const detail = err.status ? ` (status ${err.status})` : '';
       const bodyDetail = err.body ? ` - ${err.body.slice(0, 200)}` : '';

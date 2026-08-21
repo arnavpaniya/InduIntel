@@ -4,6 +4,23 @@ import { debugError } from '@/lib/debug';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function emptyItemsResponse(page: number, limit: number) {
+  return NextResponse.json({
+    items: [],
+    pagination: {
+      page,
+      limit,
+      total: 0,
+      totalPages: 0,
+    },
+  });
+}
+
+function formatError(error: unknown): string {
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  return String(error);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -16,15 +33,7 @@ export async function GET(request: NextRequest) {
     const batchId = searchParams.get('batch');
 
     if (batchId && !UUID_RE.test(batchId)) {
-      return NextResponse.json({
-        items: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-        },
-      });
+      return emptyItemsResponse(page, limit);
     }
     
     const from = (page - 1) * limit;
@@ -51,7 +60,21 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query;
     
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      debugError('[ITEMS] Supabase query failed:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        batchId,
+        page,
+        limit,
+        status,
+        search,
+      });
+      if (batchId) {
+        return emptyItemsResponse(page, limit);
+      }
+      return NextResponse.json({ error: error.message, code: error.code, details: error.details }, { status: 500 });
     }
     
     return NextResponse.json({
@@ -64,7 +87,22 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    debugError('API Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const batchId = searchParams.get('batch');
+
+    debugError('[ITEMS] API exception:', {
+      error: formatError(error),
+      batchId,
+      page,
+      limit,
+    });
+
+    if (batchId) {
+      return emptyItemsResponse(page, limit);
+    }
+
+    return NextResponse.json({ error: formatError(error) }, { status: 500 });
   }
 }
