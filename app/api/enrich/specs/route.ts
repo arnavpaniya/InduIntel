@@ -257,13 +257,6 @@ Return JSON only.`;
       return NextResponse.json({ error: specError.message }, { status: 500 });
     }
 
-    if (!upserted || upserted.length === 0) {
-      await logEnrichment(supabase, item_id, 'specs', 'error', 'Upsert returned no rows', inputData, result, duration, inputHash);
-      return NextResponse.json({ error: 'Upsert returned no rows' }, { status: 500 });
-    }
-
-    debugLog('[SPECS] Upserted specs:', upserted);
-
     await logEnrichment(supabase, item_id, 'specs', 'success', null, inputData, result.data, duration, inputHash);
 
     return NextResponse.json({ success: true, data: result.data });

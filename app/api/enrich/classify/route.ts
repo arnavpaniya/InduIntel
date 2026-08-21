@@ -210,17 +210,9 @@ debugJson('[CLASSIFY] UPDATE payload:', {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    if (!updated || updated.length === 0) {
-      await logEnrichment(supabase, item_id, 'classify', 'error', 'Update returned no rows', inputData, result, duration, inputHash);
-      return NextResponse.json({ error: 'Update returned no rows for item_id: ' + item_id }, { status: 404 });
-    }
-
-    const updatedItem = updated[0];
-    debugLog('[CLASSIFY] Updated item:', updatedItem);
-
     await logEnrichment(supabase, item_id, 'classify', 'success', null, inputData, result.data, duration, inputHash);
 
-    return NextResponse.json({ success: true, data: result.data, item: updatedItem });
+    return NextResponse.json({ success: true, data: result.data, item: updated?.[0] });
   } catch (error) {
     debugError('Classification enrichment error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

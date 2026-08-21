@@ -257,13 +257,6 @@ Return JSON only.`;
         await logEnrichment(supabase, item_id, 'descriptions', 'error', descError.message, inputData, result, duration, inputHash);
         return NextResponse.json({ error: descError.message }, { status: 500 });
       }
-
-      if (!inserted || inserted.length === 0) {
-        await logEnrichment(supabase, item_id, 'descriptions', 'error', 'Insert returned no rows', inputData, result, duration, inputHash);
-        return NextResponse.json({ error: 'Insert returned no rows' }, { status: 500 });
-      }
-
-      debugLog('[DESCRIPTIONS] Inserted descriptions:', inserted);
     }
 
     await logEnrichment(supabase, item_id, 'descriptions', 'success', null, inputData, result.data, duration, inputHash);

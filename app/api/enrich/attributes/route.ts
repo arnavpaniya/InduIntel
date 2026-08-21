@@ -253,13 +253,6 @@ Return JSON only.`;
         await logEnrichment(supabase, item_id, 'attributes', 'error', attrError.message, inputData, result, duration, inputHash);
         return NextResponse.json({ error: attrError.message }, { status: 500 });
       }
-
-      if (!inserted || inserted.length === 0) {
-        await logEnrichment(supabase, item_id, 'attributes', 'error', 'Insert returned no rows', inputData, result, duration, inputHash);
-        return NextResponse.json({ error: 'Insert returned no rows' }, { status: 500 });
-      }
-
-      debugLog('[ATTRIBUTES] Inserted attributes:', inserted);
     }
 
     await logEnrichment(supabase, item_id, 'attributes', 'success', null, inputData, result.data, duration, inputHash);
