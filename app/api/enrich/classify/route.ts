@@ -162,7 +162,7 @@ Return JSON only.`;
 
     const result = await callLLMWithRetry<ClassifyResult>(prompt, {
       temperature: 0.1,
-      schema: CLASSIFY_SCHEMA,
+      responseSchema: CLASSIFY_SCHEMA,
     });
 
     const duration = Date.now() - startTime;
@@ -170,6 +170,10 @@ Return JSON only.`;
     if (!result.data || result.error) {
       await logEnrichment(supabase, item_id, 'classify', 'error', result.error || 'No data', inputData, result, duration, inputHash);
       return NextResponse.json({ error: result.error || 'Failed to parse classification', data: result.data }, { status: 500 });
+    }
+
+    if (typeof result.data.confidence !== 'number' || isNaN(result.data.confidence)) {
+      result.data.confidence = 0.8;
     }
 
 debugJson('[CLASSIFY] LLM result:', result.data);

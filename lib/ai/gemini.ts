@@ -14,6 +14,7 @@ export interface LLMOptions {
   model?: string;
   temperature?: number;
   schema?: Schema;
+  responseSchema?: Schema;
   systemPrompt?: string;
 }
 
@@ -48,8 +49,10 @@ export async function callLLM<T = unknown>(
     model = DEFAULT_MODEL,
     temperature = 0.1,
     schema,
+    responseSchema,
     systemPrompt = 'You are a precise data extraction assistant. Output only valid JSON.',
   } = options;
+  const effectiveSchema = responseSchema || schema;
 
   try {
     const generativeModel = genAI.getGenerativeModel({
@@ -58,7 +61,7 @@ export async function callLLM<T = unknown>(
       generationConfig: {
         responseMimeType: 'application/json',
         temperature,
-        ...(schema ? { responseSchema: buildSchema(schema) } : {}),
+        ...(effectiveSchema ? { responseSchema: buildSchema(effectiveSchema) } : {}),
       },
     });
 

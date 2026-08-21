@@ -161,7 +161,7 @@ Return JSON only.`;
 
     const result = await callLLMWithRetry<ManufacturerResult>(prompt, {
       temperature: 0.1,
-      schema: MANUFACTURER_SCHEMA,
+      responseSchema: MANUFACTURER_SCHEMA,
     });
 
     const duration = Date.now() - startTime;
@@ -169,6 +169,10 @@ Return JSON only.`;
     if (!result.data || result.error) {
       await logEnrichment(supabase, item_id, 'manufacturer', 'error', result.error || 'No data', inputData, result, duration, inputHash);
       return NextResponse.json({ error: result.error || 'Failed to parse manufacturer', data: result.data }, { status: 500 });
+    }
+
+    if (typeof result.data.confidence !== 'number' || isNaN(result.data.confidence)) {
+      result.data.confidence = 0.8;
     }
 
 debugJson('[MANUFACTURER] LLM result:', result.data);
