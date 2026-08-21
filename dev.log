@@ -335,3 +335,418 @@ Require stack:
 <w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
 <w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
 <w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+ ✓ Compiled in 257ms (2757 modules)
+ ✓ Compiled in 122ms (1462 modules)
+ ✓ Compiled /api/items in 196ms (1389 modules)
+ OPTIONS /api/items?page=1&limit=20 204 in 276ms
+ OPTIONS /api/items?page=1&limit=20 204 in 257ms
+ OPTIONS /api/items?page=1&limit=20 204 in 276ms
+ OPTIONS /api/items?page=1&limit=20 204 in 257ms
+ OPTIONS /api/items?page=1&limit=20 204 in 14ms
+ OPTIONS /api/items?page=1&limit=20 204 in 6ms
+ OPTIONS /api/items?page=1&limit=20 204 in 14ms
+ OPTIONS /api/items?page=1&limit=20 204 in 6ms
+ ✓ Compiled /_not-found in 387ms (2840 modules)
+ OPTIONS /api/items?page=1&limit=20 404 in 452ms
+ OPTIONS /api/items?page=1&limit=20 404 in 441ms
+ OPTIONS /api/items?page=1&limit=20 404 in 453ms
+ OPTIONS /api/items?page=1&limit=20 404 in 442ms
+ ✓ Compiled /api/items/upload in 356ms (1411 modules)
+ POST /api/items/upload 500 in 11354ms
+ POST /api/items/upload 500 in 11348ms
+ POST /api/items/upload 500 in 10950ms
+ POST /api/items/upload 500 in 10942ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/enrich/specs/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/enrich/specs/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/enrich/specs/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/score/batch/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/score/batch/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/score/batch/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ POST /api/items/upload 500 in 6327ms
+ POST /api/items/upload 500 in 6323ms
+ OPTIONS /api/items?page=1&limit=20 204 in 12ms
+ OPTIONS /api/items?page=1&limit=20 204 in 6ms
+ OPTIONS /api/items?page=1&limit=20 204 in 12ms
+ OPTIONS /api/items?page=1&limit=20 204 in 6ms
+ OPTIONS /api/items?page=1&limit=20 204 in 12ms
+ OPTIONS /api/items?page=1&limit=20 204 in 6ms
+ OPTIONS /api/items?page=1&limit=20 204 in 12ms
+ OPTIONS /api/items?page=1&limit=20 204 in 5ms
+ OPTIONS /api/items?page=1&limit=20 204 in 11ms
+ OPTIONS /api/items?page=1&limit=20 204 in 6ms
+ OPTIONS /api/items?page=1&limit=20 204 in 11ms
+ OPTIONS /api/items?page=1&limit=20 204 in 6ms
+ OPTIONS /api/items?page=1&limit=20 204 in 11ms
+ OPTIONS /api/items?page=1&limit=20 204 in 5ms
+ OPTIONS /api/items?page=1&limit=20 204 in 11ms
+ OPTIONS /api/items?page=1&limit=20 204 in 5ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/enrich/specs/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/enrich/specs/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/enrich/specs/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/score/batch/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/score/batch/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/score/batch/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+ ✓ Compiled in 739ms (2757 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/upload/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/upload/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/upload/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/upload/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/upload/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/upload/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/enrich/specs/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/enrich/specs/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/enrich/specs/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/score/batch/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/score/batch/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/score/batch/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled /api/enrich/manufacturer in 261ms (1393 modules)
+ POST /api/enrich/manufacturer 200 in 9056ms
+ POST /api/enrich/manufacturer 200 in 9047ms
+ ✓ Compiled /api/enrich/classify in 90ms (1395 modules)
+ POST /api/enrich/classify 200 in 8140ms
+ POST /api/enrich/classify 200 in 8137ms
+ ✓ Compiled /api/enrich/attributes in 120ms (1398 modules)
+ POST /api/enrich/attributes 200 in 7604ms
+ POST /api/enrich/attributes 200 in 7599ms
+ ✓ Compiled /api/enrich/descriptions in 88ms (1400 modules)
+ POST /api/enrich/descriptions 200 in 13593ms
+ POST /api/enrich/descriptions 200 in 13587ms
+ ✓ Compiled /api/enrich/specs in 92ms (1402 modules)
+ POST /api/enrich/specs 200 in 29683ms
+ POST /api/enrich/specs 200 in 29679ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/upload/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/upload/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/upload/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/score/batch/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/score/batch/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/score/batch/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+ ✓ Compiled in 1368ms (2753 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/upload/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/upload/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/upload/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/score/batch/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/score/batch/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/score/batch/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/upload/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/upload/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/upload/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled /api/enrich/manufacturer in 385ms (1392 modules)
+ POST /api/enrich/manufacturer 200 in 7632ms
+ POST /api/enrich/manufacturer 200 in 7625ms
+ ✓ Compiled /api/enrich/classify in 81ms (1394 modules)
+ POST /api/enrich/classify 200 in 6138ms
+ POST /api/enrich/classify 200 in 6131ms
+ ✓ Compiled /api/enrich/attributes in 72ms (1397 modules)
+ POST /api/enrich/attributes 200 in 7866ms
+ POST /api/enrich/attributes 200 in 7857ms
+ ✓ Compiled /api/enrich/descriptions in 144ms (1399 modules)
+ POST /api/enrich/descriptions 200 in 11804ms
+ POST /api/enrich/descriptions 200 in 11799ms
+ ✓ Compiled /api/enrich/specs in 113ms (1401 modules)
+ POST /api/enrich/specs 200 in 11151ms
+ POST /api/enrich/specs 200 in 11145ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/score/batch/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/score/batch/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/score/batch/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/score/batch/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/upload/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/upload/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/upload/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/upload/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+ ✓ Compiled in 389ms (1459 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/node_modules/@next/swc-darwin-arm64/next-swc.darwin-arm64.node'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '@next/swc-darwin-arm64/next-swc.darwin-arm64.node' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/node_modules/@next/swc-darwin-arm64/next-swc.darwin-arm64.node', but to 'Error: Can't resolve '@next/swc-darwin-arm64/next-swc.darwin-arm64.node' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc'' instead. Resolving dependencies are ignored for this path.
+<w>  at unknown 4 @next/swc-darwin-arm64/next-swc.darwin-arm64.node
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 1458ms (1459 modules)
+ ✓ Compiled in 609ms (2759 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/node_modules/@next/swc-darwin-arm64/next-swc.darwin-arm64.node'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '@next/swc-darwin-arm64/next-swc.darwin-arm64.node' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/node_modules/@next/swc-darwin-arm64/next-swc.darwin-arm64.node', but to 'Error: Can't resolve '@next/swc-darwin-arm64/next-swc.darwin-arm64.node' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc'' instead. Resolving dependencies are ignored for this path.
+<w>  at unknown 4 @next/swc-darwin-arm64/next-swc.darwin-arm64.node
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 372ms (1466 modules)
+ ✓ Compiled in 394ms (2764 modules)
+ ✓ Compiled in 227ms (1466 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/.next/server/app/api'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/items/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/items/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/items/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/items/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/enrich/specs/route' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/enrich/specs/route' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/enrich/specs/route (expected /Users/arnavpaniya/InduIntel/.next/server/app/api/enrich/specs/route.js)
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/arnavpaniya/InduIntel/node_modules/@next/swc-darwin-arm64/next-swc.darwin-arm64.node'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '@next/swc-darwin-arm64/next-swc.darwin-arm64.node' in /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc for build dependencies doesn't lead to expected result '/Users/arnavpaniya/InduIntel/node_modules/@next/swc-darwin-arm64/next-swc.darwin-arm64.node', but to 'Error: Can't resolve '@next/swc-darwin-arm64/next-swc.darwin-arm64.node' in '/Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc'' instead. Resolving dependencies are ignored for this path.
+<w>  at unknown 4 @next/swc-darwin-arm64/next-swc.darwin-arm64.node
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/arnavpaniya/InduIntel/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js

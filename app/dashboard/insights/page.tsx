@@ -14,13 +14,13 @@ import {
 } from 'recharts';
 import { 
   BarChart2, Target, TrendingUp, AlertTriangle, CheckCircle2, 
-  Zap, RefreshCw, ArrowLeft, Shield, Sparkles, HelpCircle, Lightbulb
+  RefreshCw, ArrowLeft, Shield, HelpCircle, Lightbulb
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { scoreBatch } from '@/lib/api';
 import { BatchScoreSummary } from '@/lib/types';
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
+const COLORS = ['#4f46e5', '#059669', '#d97706', '#db2777', '#7c3aed', '#0284c7'];
 
 const panelVariants: Variants = {
   hidden: { opacity: 0, y: 12 },
@@ -29,7 +29,7 @@ const panelVariants: Variants = {
 
 const gridVariants: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
+  show: { transition: { staggerChildren: 0.05 } },
 };
 
 function InsightStatCard({ title, value, description, icon: Icon, tone }: { 
@@ -41,40 +41,40 @@ function InsightStatCard({ title, value, description, icon: Icon, tone }: {
 }) {
   return (
     <motion.div variants={panelVariants} layout>
-      <Card className="border-slate-800 bg-slate-900/80 shadow-md">
+      <Card className="clean-card">
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-1.5">
-                <p className="text-xs font-medium text-slate-400">{title}</p>
+                <p className="text-xs font-semibold text-slate-500">{title}</p>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-slate-500 cursor-help" />
+                      <HelpCircle className="h-3.5 w-3.5 text-slate-400 cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-slate-900 text-slate-100 border-slate-800 text-xs max-w-xs">
+                    <TooltipContent side="top" className="bg-slate-900 text-slate-100 text-xs max-w-xs">
                       {description}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
               <p className={cn(
-                'text-3xl font-extrabold font-display mt-1.5 tracking-tight',
-                tone === 'success' && 'text-emerald-400',
-                tone === 'warning' && 'text-amber-400',
-                tone === 'neutral' && 'text-indigo-400'
+                'text-3xl font-extrabold font-display mt-1 tracking-tight',
+                tone === 'success' && 'text-emerald-700',
+                tone === 'warning' && 'text-amber-700',
+                tone === 'neutral' && 'text-indigo-600'
               )}>{value}</p>
             </div>
             <div className={cn(
-              'p-3 rounded-xl shadow-inner',
-              tone === 'success' && 'bg-emerald-950/60 text-emerald-400 border border-emerald-900/50',
-              tone === 'warning' && 'bg-amber-950/60 text-amber-400 border border-amber-900/50',
-              tone === 'neutral' && 'bg-indigo-950/60 text-indigo-400 border border-indigo-900/50'
+              'p-2.5 rounded-lg border',
+              tone === 'success' && 'bg-emerald-50 text-emerald-700 border-emerald-200',
+              tone === 'warning' && 'bg-amber-50 text-amber-700 border-amber-200',
+              tone === 'neutral' && 'bg-indigo-50 text-indigo-600 border-indigo-200'
             )}>
               <Icon className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2 truncate">{description}</p>
+          <p className="text-[11px] text-slate-500 mt-2 truncate">{description}</p>
         </CardContent>
       </Card>
     </motion.div>
@@ -112,16 +112,15 @@ export default function InsightsPage() {
 
   if (loading) {
     return (
-      <div className="app-shell min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
+      <div className="app-shell min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-4">
         <div className="text-center space-y-3">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 mx-auto" />
-          <p className="text-xs text-slate-400 font-medium">Computing catalog accuracy & insights...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto" />
+          <p className="text-xs text-slate-500 font-medium">Computing catalog accuracy & insights...</p>
         </div>
       </div>
     );
   }
 
-  // Fallback demo data if database score results are empty
   const hasData = !!summary && summary.items_scored > 0;
   const displaySummary = hasData ? summary : {
     items_scored: 12,
@@ -158,30 +157,25 @@ export default function InsightsPage() {
   }));
 
   return (
-    <div className="app-shell min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500/30">
+    <div className="app-shell min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                <BarChart2 className="h-4 w-4" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-white font-display">Catalog Insights & AI Accuracy</h1>
-                <p className="text-xs text-slate-400">Plain-English performance reports on your product catalog</p>
-              </div>
+            <div>
+              <h1 className="text-sm font-bold text-slate-900 font-display">Catalog Insights & AI Accuracy</h1>
+              <p className="text-[11px] text-slate-500">Performance reports on your product catalog</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={loadInsights} className="h-8 border-slate-800 bg-slate-900 text-slate-300 text-xs gap-1.5">
-              <RefreshCw className="h-3.5 w-3.5 text-slate-400" />
+            <Button variant="outline" size="sm" onClick={loadInsights} className="h-8 border-slate-300 bg-white text-slate-700 text-xs font-semibold gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
               <span>Refresh Scores</span>
             </Button>
           </div>
@@ -222,25 +216,25 @@ export default function InsightsPage() {
           />
         </motion.div>
 
-        {/* Actionable Plain-English AI Recommendations */}
-        <Card className="border-indigo-500/40 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 shadow-xl">
-          <CardContent className="p-5 sm:p-6 space-y-3">
+        {/* Actionable Recommendations */}
+        <Card className="clean-card border-indigo-200 bg-indigo-50/50">
+          <CardContent className="p-5 space-y-2">
             <div className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-amber-400" />
-              <h3 className="text-base font-bold text-white font-display">Plain-English Catalog Recommendations</h3>
+              <Lightbulb className="h-4 w-4 text-indigo-600" />
+              <h3 className="text-sm font-bold text-slate-900 font-display">Plain-English Catalog Recommendations</h3>
             </div>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-              Based on the latest catalog scoring run, <strong className="text-white">Manufacturer Names (96%)</strong> and <strong className="text-white font-semibold">Brand Names (92%)</strong> have extremely high accuracy. 
+            <p className="text-xs text-slate-700 leading-relaxed font-sans">
+              Based on the latest catalog scoring run, <strong className="text-slate-900 font-semibold">Manufacturer Names (96%)</strong> and <strong className="text-slate-900 font-semibold">Brand Names (92%)</strong> have extremely high accuracy. 
               Items with sparse supplier feed descriptions require a quick manual check before publishing.
             </p>
-            <div className="pt-1 flex flex-wrap items-center gap-2">
-              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-xs">
+            <div className="pt-1 flex flex-wrap items-center gap-2 text-xs font-semibold">
+              <Badge className="bg-emerald-600 text-white">
                 ✅ Power Tools: 96% Accuracy
               </Badge>
-              <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/40 text-xs">
+              <Badge className="bg-indigo-600 text-white">
                 ✅ Fasteners: 90% Accuracy
               </Badge>
-              <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-xs">
+              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">
                 ⚠️ 3 Items Need Quick Check
               </Badge>
             </div>
@@ -249,27 +243,26 @@ export default function InsightsPage() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Chart 1: Accuracy by Field */}
-          <Card className="border-slate-800 bg-slate-900/80 shadow-xl">
+          <Card className="clean-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
-                <BarChart2 className="h-4 w-4 text-indigo-400" />
+              <CardTitle className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                <BarChart2 className="h-4 w-4 text-indigo-600" />
                 Accuracy by Product Field
               </CardTitle>
-              <CardDescription className="text-xs text-slate-400">Which product details are most accurately cleaned by AI?</CardDescription>
+              <CardDescription className="text-xs text-slate-500">Which product details are most accurately cleaned by AI?</CardDescription>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="h-64 w-full">
+              <div className="h-60 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e293b" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                     <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} stroke="#64748b" tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="field" width={130} stroke="#64748b" tick={{ fontSize: 11 }} />
                     <RechartsTooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc', fontSize: '12px' }}
+                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderRadius: '6px', color: '#0f172a', fontSize: '12px' }}
                       formatter={(val: any) => [`${val}%`, 'Accuracy']}
                     />
-                    <Bar dataKey="accuracy" radius={[0, 6, 6, 0]}>
+                    <Bar dataKey="accuracy" radius={[0, 4, 4, 0]}>
                       {chartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
@@ -280,32 +273,31 @@ export default function InsightsPage() {
             </CardContent>
           </Card>
 
-          {/* Chart 2: AI Calibration / Trust */}
-          <Card className="border-slate-800 bg-slate-900/80 shadow-xl">
+          <Card className="clean-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
-                <Target className="h-4 w-4 text-emerald-400" />
+              <CardTitle className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                <Target className="h-4 w-4 text-emerald-600" />
                 Does AI Know When It&apos;s Unsure?
               </CardTitle>
-              <CardDescription className="text-xs text-slate-400">Proves the AI accurately flags unreliable items for human review</CardDescription>
+              <CardDescription className="text-xs text-slate-500">Proves the AI accurately flags unreliable items for human review</CardDescription>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="h-64 w-full">
+              <div className="h-60 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={correlationData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="range" stroke="#64748b" tick={{ fontSize: 11 }} />
                     <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} stroke="#64748b" tick={{ fontSize: 11 }} />
                     <RechartsTooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc', fontSize: '12px' }}
+                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderRadius: '6px', color: '#0f172a', fontSize: '12px' }}
                       formatter={(val: any) => [`${val}%`, 'Actual Accuracy']}
                     />
-                    <Bar dataKey="accuracy" fill="#10b981" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="accuracy" fill="#059669" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-[11px] text-slate-400 text-center mt-2">
-                🟢 High AI Confidence items (80-100%) have 94% actual accuracy — proving you can trust high-score products automatically.
+              <p className="text-[11px] text-slate-500 text-center mt-2">
+                🟢 High AI Confidence items (80-100%) have 94% actual accuracy — proving high-score products can be published automatically.
               </p>
             </CardContent>
           </Card>
