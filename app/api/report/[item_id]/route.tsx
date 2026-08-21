@@ -4,6 +4,8 @@ import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import React from 'react';
 import { renderToStream } from '@react-pdf/renderer';
 
+export const dynamic = 'force-dynamic';
+
 const brandBlue = '#0ea5e9';
 const darkGray = '#1e293b';
 const midGray = '#64748b';
