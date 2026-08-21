@@ -563,14 +563,6 @@ export default function DashboardClient() {
               <span>Upload Catalog (CSV/PDF)</span>
             </Button>
 
-            <Button 
-              onClick={handleBatchEnrich} 
-              disabled={batchLoading || quotaStatus.near_limit || statusCounts.raw === 0}
-              className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1.5 shadow-sm"
-            >
-              <span>{batchLoading ? 'Cleaning Catalog...' : 'Clean Next 3 Products'}</span>
-            </Button>
-
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
