@@ -285,7 +285,7 @@ export const HEADER_MAP: Record<DeliveryHeader, string | null> = {
   'INVOICE_DESC': 'invoice_desc',
   'SHORT_DESC': 'short_desc',
   'LONG_DESC1': 'long_desc1',
-  'RETAIL_DESC': null,
+  'RETAIL_DESC': 'retail_desc',
   'MARKETING_DESCRIPTION': 'marketing_description',
   'ITEM_FEATURES_1': 'item_features_1',
   'ITEM_FEATURES_2': 'item_features_2',
@@ -509,7 +509,7 @@ export const HEADER_MAP: Record<DeliveryHeader, string | null> = {
   'Video Link 1': null,
   'Country Of Origin': 'country_of_origin',
   'Discontinued': null,
-  'Actual Image (Yes/No)': null,
+  'Actual Image (Yes/No)': 'actual_image_flag',
 } as const;
 
 function getDesc(item: EnrichedItem, field: string): string {
@@ -599,6 +599,9 @@ export function mapToDeliveryFormat(item: EnrichedItem): Record<DeliveryHeader, 
       case 'marketing_description':
         value = getDesc(item, 'marketing_description');
         break;
+      case 'retail_desc':
+        value = getDesc(item, 'retail_desc');
+        break;
       case 'upc':
         value = getSpec(item, 'upc');
         break;
@@ -644,7 +647,7 @@ export function mapToDeliveryFormat(item: EnrichedItem): Record<DeliveryHeader, 
       case 'country_of_origin':
         value = getSpec(item, 'country_of_origin');
         break;
-      case 'actual_image_yes_no':
+      case 'actual_image_flag':
         const assets = item.item_assets || [];
         value = (assets.some((a: any) => a.product_image ? a.product_image !== '-- No Product Image --' && a.product_image !== '' : false)) ? 'Yes' : 'No';
         break;
