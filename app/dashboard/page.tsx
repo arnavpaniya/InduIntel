@@ -13,12 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
   RefreshCw, Search, Filter, ChevronLeft, ChevronRight, 
   Zap, AlertTriangle, CheckCircle2, Clock, XCircle,
   BarChart2, Package, Eye,
   Upload, FileText, Plus, X, Loader2, HelpCircle,
-  FileSpreadsheet, ArrowLeft
+  FileSpreadsheet, ArrowLeft, Download, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchItems, enrichItem, enrichBatch, fetchQuotaStatus, uploadItems, addManualItem } from '@/lib/api';
@@ -381,6 +382,52 @@ export default function DashboardClient() {
 
   const statusCounts = getStatusCounts();
 
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('csv');
+
+  const hasEnrichedItems = statusCounts.enriched + statusCounts.review > 0;
+
+  const handleExport = async (format: 'csv' | 'xlsx') => {
+    if (!hasEnrichedItems) {
+      showToast('Enrich at least one item first', 'error');
+      return;
+    }
+    setExportLoading(true);
+    setExportFormat(format);
+    try {
+      const params = new URLSearchParams();
+      if (urlBatchId) params.set('batch_id', urlBatchId);
+      params.set('format', format);
+      
+      const response = await fetch(`/api/export?${params.toString()}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Export failed');
+      }
+      
+      const blob = await response.blob();
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `induintel-export-${dateStr}.${format}`;
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      showToast(`Exported ${format.toUpperCase()} successfully!`, 'success');
+    } catch (error) {
+      console.error('Export failed:', error);
+      showToast(error instanceof Error ? error.message : 'Export failed', 'error');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <div className="app-shell min-h-screen bg-slate-50 text-slate-900">
       {/* Top Header */}
@@ -523,6 +570,49 @@ export default function DashboardClient() {
             >
               <span>{batchLoading ? 'Cleaning Catalog...' : 'Clean Next 3 Products'}</span>
             </Button>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        onClick={() => handleExport(exportFormat)}
+                        disabled={exportLoading || !hasEnrichedItems}
+                        className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs gap-1.5 shadow-sm"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Export Results</span>
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[160px] bg-white border-slate-200 text-slate-800">
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
+                        onClick={() => handleExport('csv')}
+                        disabled={exportLoading}
+                      >
+                        <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Download CSV</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
+                        onClick={() => handleExport('xlsx')}
+                        disabled={exportLoading}
+                      >
+                        <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Download XLSX</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs bg-slate-900 text-slate-100">
+                  {hasEnrichedItems 
+                    ? `Export ${statusCounts.enriched + statusCounts.review} enriched item(s) to ${exportFormat.toUpperCase()}`
+                    : 'Enrich at least one item first'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </motion.div>
 
