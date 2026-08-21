@@ -546,6 +546,9 @@ export function mapToDeliveryFormat(item: EnrichedItem): Record<DeliveryHeader, 
 
     switch (internalField) {
       case 'mfg_part_num':
+      case 'PART_NUMBER':
+      case 'SKU - MY_PART_NUMBER':
+      case 'MANUFACTURER_PART_NUMBER':
         value = item.mfg_part_num ?? '';
         break;
       case 'part_desc':
@@ -640,6 +643,10 @@ export function mapToDeliveryFormat(item: EnrichedItem): Record<DeliveryHeader, 
         break;
       case 'country_of_origin':
         value = getSpec(item, 'country_of_origin');
+        break;
+      case 'actual_image_yes_no':
+        const assets = item.item_assets || [];
+        value = (assets.some((a: any) => a.product_image ? a.product_image !== '-- No Product Image --' && a.product_image !== '' : false)) ? 'Yes' : 'No';
         break;
       default:
         if (internalField.startsWith('item_features_')) {

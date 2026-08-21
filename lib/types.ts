@@ -76,6 +76,7 @@ export interface EnrichedItem extends Item {
   item_descriptions: ItemDescription[];
   item_attributes: ItemAttribute[];
   item_specs: ItemSpec[];
+  item_assets: { product_image: string }[];
 }
 
 export interface EnrichRunResponse {

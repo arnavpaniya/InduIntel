@@ -39,7 +39,7 @@ const DESCRIPTIONS_SCHEMA: Schema = {
   required: ['descriptions', 'confidence', 'reasoning'],
 };
 
-const DESCRIPTIONS_PROMPT = `Generate 5 standardized product description variants for industrial catalog use.
+const DESCRIPTIONS_PROMPT = `Generate 6 standardized product description variants for industrial catalog use.
 
 Rules:
 1. invoice_desc: ≤40 chars, ALL CAPS, abbreviated, key specs only (e.g. "DISHWASHER LEG 5 SST 120V 15A 50-1/4IN")
@@ -47,6 +47,7 @@ Rules:
 3. short_desc: brand + series + MPN + item type + 2-3 key attrs, ~100-150 chars (e.g. "FRIGIDAIRE® Professional Series PDSH4816AF Dishwasher With CleanBoost™, Leg Mounting, 5-Wash Cycle, Stainless Steel")
 4. long_desc1: full sentence, attributes + dims + finish, ~200-400 chars
 5. marketing_description: promotional tone, benefits-focused, ~150-300 chars (optional if not applicable)
+6. retail_desc: retail storefront tone, benefits + key specs, ~100-200 chars (e.g. "The CMT 790.820 Planer Blade is a high-quality accessory designed for various planer applications. This set includes two durable blades, Model 790.820, ensuring efficient and precise material removal.")
 
 Constraints:
 - Use only info from input - NEVER invent specs
@@ -61,7 +62,8 @@ Return ONLY valid JSON:
     {"field_name": "mobile_desc", "value": "...", "char_count": N},
     {"field_name": "short_desc", "value": "...", "char_count": N},
     {"field_name": "long_desc1", "value": "...", "char_count": N},
-    {"field_name": "marketing_description", "value": "...", "char_count": N}
+    {"field_name": "marketing_description", "value": "...", "char_count": N},
+    {"field_name": "retail_desc", "value": "...", "char_count": N}
   ],
   "confidence": 0.0-1.0,
   "reasoning": "brief explanation"
@@ -73,6 +75,7 @@ const MAX_LENGTHS = {
   short_desc: 180,
   long_desc1: 500,
   marketing_description: 350,
+  retail_desc: 200,
 };
 
 function hashInput(input: any): string {
