@@ -649,7 +649,7 @@ export function mapToDeliveryFormat(item: EnrichedItem): Record<DeliveryHeader, 
         break;
       case 'actual_image_flag':
         const assets = item.item_assets || [];
-        value = (assets.some((a: any) => a.product_image ? a.product_image !== '-- No Product Image --' && a.product_image !== '' : false)) ? 'Yes' : 'No';
+        value = assets.some((a: any) => a.asset_type === 'product_image' && a.url) ? 'Yes' : 'No';
         break;
       default:
         if (internalField.startsWith('item_features_')) {
