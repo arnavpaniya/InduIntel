@@ -4,27 +4,28 @@
 
 @layer base {
   :root {
-    --background: 42 24% 96%;
-    --foreground: 214 36% 10%;
+    --background: 210 28% 96%;
+    --foreground: 240 22% 7%;
     --card: 0 0% 100%;
-    --card-foreground: 214 36% 10%;
+    --card-foreground: 240 26% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 214 36% 10%;
-    --primary: 193 92% 31%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 203 27% 91%;
-    --secondary-foreground: 214 36% 10%;
-    --muted: 203 27% 91%;
-    --muted-foreground: 213 14% 42%;
-    --accent: 151 38% 90%;
-    --accent-foreground: 162 45% 16%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 240 26% 8%;
+    --primary: 240 24% 7%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 274 74% 95%;
+    --secondary-foreground: 276 58% 30%;
+    --muted: 214 24% 94%;
+    --muted-foreground: 224 8% 45%;
+    --accent: 280 78% 94%;
+    --accent-foreground: 276 58% 30%;
+    --destructive: 0 68% 45%;
     --destructive-foreground: 210 40% 98%;
-    --border: 204 18% 84%;
-    --input: 204 18% 84%;
-    --ring: 193 92% 31%;
+    --border: 216 18% 88%;
+    --input: 216 18% 88%;
+    --ring: 285 78% 63%;
     --radius: 0.5rem;
-    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-sans: 'Segoe UI Variable Text', 'Aptos', 'Segoe UI', system-ui, sans-serif;
+    --font-display: 'Segoe UI Variable Display', 'Aptos Display', 'Segoe UI', system-ui, sans-serif;
   }
 
   .dark {
@@ -57,14 +58,31 @@
   body {
     @apply bg-background text-foreground;
     min-height: 100vh;
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
     background:
-      linear-gradient(135deg, rgba(6, 95, 116, 0.08), transparent 32%),
-      linear-gradient(315deg, rgba(34, 197, 94, 0.08), transparent 30%),
+      radial-gradient(circle at 12% 0%, rgba(210, 85, 255, 0.11), transparent 28rem),
+      radial-gradient(circle at 88% 8%, rgba(103, 178, 181, 0.12), transparent 30rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 249, 251, 0.96) 46%, rgba(235, 241, 245, 0.94) 100%),
       hsl(var(--background));
+    background-attachment: fixed;
   }
 
   ::selection {
     background: hsl(var(--primary) / 0.18);
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  h1,
+  h2 {
+    line-height: 1.08;
   }
 }
 
@@ -80,31 +98,43 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-image:
-      linear-gradient(hsl(var(--foreground) / 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
-    background-size: 44px 44px;
-    mask-image: linear-gradient(to bottom, black, transparent 72%);
+    background:
+      linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62) 18%, rgba(255, 255, 255, 0.62) 82%, transparent),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.58), transparent 34rem);
+  }
+
+  .app-shell::after {
+    content: "";
+    position: fixed;
+    left: 50%;
+    top: 0;
+    z-index: -1;
+    width: min(1180px, calc(100vw - 32px));
+    height: 100%;
+    pointer-events: none;
+    transform: translateX(-50%);
+    border-left: 1px solid rgba(15, 23, 42, 0.035);
+    border-right: 1px solid rgba(15, 23, 42, 0.035);
+    background: rgba(255, 255, 255, 0.2);
   }
 
   .hero-grid {
     background:
-      radial-gradient(circle at 20% 18%, rgba(20, 184, 166, 0.22), transparent 26%),
-      radial-gradient(circle at 78% 8%, rgba(245, 158, 11, 0.16), transparent 24%),
-      linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(12, 74, 110, 0.92));
+      radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.14), transparent 22%),
+      linear-gradient(135deg, rgba(7, 8, 13, 0.98), rgba(17, 20, 28, 0.97) 58%, rgba(42, 38, 52, 0.95));
   }
 
   .glass-panel {
-    border: 1px solid hsl(var(--border) / 0.72);
-    background: hsl(var(--card) / 0.82);
-    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.08);
-    backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border) / 0.78);
+    background: hsl(var(--card) / 0.94);
+    box-shadow: 0 18px 44px rgba(25, 24, 32, 0.075);
+    backdrop-filter: blur(12px);
   }
 
   .metric-ring {
     background:
       linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-      linear-gradient(135deg, hsl(var(--primary) / 0.55), rgba(34, 197, 94, 0.48), rgba(245, 158, 11, 0.38)) border-box;
+      linear-gradient(135deg, rgba(210, 85, 255, 0.46), rgba(251, 190, 101, 0.34), rgba(103, 178, 181, 0.32)) border-box;
     border: 1px solid transparent;
   }
 

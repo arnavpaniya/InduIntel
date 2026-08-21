@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 function DashboardSkeleton() {
   return (
     <div className="app-shell min-h-screen">
-      <header className="sticky top-0 z-30 border-b bg-card/82 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4">
           <div className="animate-pulse space-y-2">
             <div className="h-8 w-48 bg-muted rounded" />

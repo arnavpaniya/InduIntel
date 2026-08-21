@@ -90,7 +90,7 @@ export default function ItemDetailPage() {
   const hasEnrichment = item.status !== 'raw';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-shell min-h-screen">
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -114,7 +114,7 @@ export default function ItemDetailPage() {
             </Badge>
             <Badge variant="outline" className="gap-1">
               <Settings className="h-3 w-3" />
-              AI's Own Confidence: {item.field_confidence ? `${Math.round(item.field_confidence * 100)}%` : '—'}
+              AI&apos;s Own Confidence: {item.field_confidence ? `${Math.round(item.field_confidence * 100)}%` : '—'}
             </Badge>
             <TooltipProvider>
               <Tooltip>
@@ -145,9 +145,9 @@ export default function ItemDetailPage() {
           <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-2 mb-4">
             <Card className={cn('w-80', toast.type === 'error' && 'border-destructive')}>
               <CardContent className="p-4 flex items-center gap-3">
-                {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-emerald-700" />}
                 {toast.type === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
-                {toast.type === 'info' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+                {toast.type === 'info' && <AlertTriangle className="h-5 w-5 text-amber-700" />}
                 <p className="text-sm">{toast.message}</p>
               </CardContent>
             </Card>
@@ -215,7 +215,7 @@ export default function ItemDetailPage() {
                     <p className="text-xs text-muted-foreground mt-1">How much of the product info the AI was able to complete</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">AI's Own Confidence</p>
+                    <p className="text-muted-foreground">AI&apos;s Own Confidence</p>
                     <p className="font-medium text-lg">{item.field_confidence ? `${Math.round(item.field_confidence * 100)}%` : '—'}</p>
                     <p className="text-xs text-muted-foreground mt-1">How sure the AI is that what it found is correct</p>
                   </div>

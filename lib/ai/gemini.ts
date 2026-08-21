@@ -4,11 +4,7 @@ import { debugError, debugLog } from '@/lib/debug';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-if (!GEMINI_API_KEY) {
-  throw new Error('GEMINI_API_KEY not set in environment');
-}
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 export interface LLMOptions {
   model?: string;
@@ -55,6 +51,10 @@ export async function callLLM<T = unknown>(
   const effectiveSchema = responseSchema || schema;
 
   try {
+    if (!genAI) {
+      throw new Error('GEMINI_API_KEY not set in environment');
+    }
+
     const generativeModel = genAI.getGenerativeModel({
       model,
       systemInstruction: systemPrompt,

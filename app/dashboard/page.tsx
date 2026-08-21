@@ -121,8 +121,8 @@ function SummaryCard({ label, value, icon: Icon, tone }: {
               'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg shadow-inner',
               tone === 'neutral' && 'bg-primary/10 text-primary',
               tone === 'raw' && 'bg-slate-100 text-slate-600',
-              tone === 'success' && 'bg-emerald-100 text-emerald-700',
-              tone === 'review' && 'bg-amber-100 text-amber-700'
+              tone === 'success' && 'bg-emerald-50 text-emerald-700',
+              tone === 'review' && 'bg-amber-50 text-amber-700'
             )}>
               <Icon className="h-5 w-5" />
             </div>
@@ -379,10 +379,10 @@ export default function DashboardClient() {
   return (
     <div className="app-shell min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b bg-card/82 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-cyan-900/15">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-slate-950/20">
               <Zap className="h-6 w-6" />
             </div>
             <div>
@@ -406,11 +406,11 @@ export default function DashboardClient() {
                   <div className="space-y-1">
                     <p>Daily Gemini API quota</p>
                     <p className="font-medium">{quotaStatus.used} / {quotaStatus.limit} used</p>
-                    <p className={cn('font-medium', quotaStatus.near_limit ? 'text-destructive' : 'text-green-600')}>
+                    <p className={cn('font-medium', quotaStatus.near_limit ? 'text-destructive' : 'text-emerald-700')}>
                       {quotaStatus.remaining} remaining
                     </p>
                     {quotaStatus.near_limit && (
-                      <p className="text-destructive text-xs">⚠ Near limit - enrichment may be blocked</p>
+                      <p className="text-destructive text-xs">Near limit - enrichment may be blocked</p>
                     )}
                   </div>
                 </TooltipContent>
@@ -444,7 +444,7 @@ export default function DashboardClient() {
         {pagination.total === 0 && (
           <Card className="glass-panel text-center py-12">
             <CardContent>
-              <Package className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
+              <Package className="mx-auto mb-4 h-14 w-14 text-fuchsia-700/70" />
               <h2 className="text-xl font-semibold mb-2">No items found</h2>
               <p className="text-muted-foreground mb-4">Upload a CSV or add a product manually to get started.</p>
               <Button onClick={() => setUploadOpen(true)}>
@@ -489,7 +489,7 @@ export default function DashboardClient() {
                   </SelectContent>
                 </Select>
                 {urlBatchId && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-fuchsia-50 text-fuchsia-700 rounded-lg text-sm">
                     <Filter className="h-4 w-4" />
                     <span>Filtered by batch: {urlBatchId.slice(0, 8)}...</span>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => router.push('/dashboard')}>
@@ -569,7 +569,7 @@ export default function DashboardClient() {
                       </TableRow>
                     ) : (
                       items.map((item) => (
-                        <TableRow key={item.id} className="hover:bg-accent/45">
+                        <TableRow key={item.id} className="hover:bg-accent/50">
                           <TableCell className="font-mono font-medium">{item.mfg_part_num}</TableCell>
                           <TableCell className="max-w-xs truncate">{item.part_desc || '—'}</TableCell>
                           <TableCell>{item.manufacturer_name || <span className="text-muted-foreground">—</span>}</TableCell>
@@ -652,7 +652,7 @@ export default function DashboardClient() {
         {/* Upload Modal */}
         {uploadOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in">
-            <div className="bg-card w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-4">
+            <div className="bg-card w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-lg border shadow-xl shadow-slate-950/20 animate-in zoom-in-95 slide-in-from-bottom-4">
               <div className="flex items-center justify-between p-4 border-b">
                 <h2 className="text-lg font-semibold">Upload Dataset</h2>
                 <Button variant="ghost" size="sm" onClick={() => setUploadOpen(false)}>
@@ -690,7 +690,7 @@ export default function DashboardClient() {
               <div className="p-4">
                 {uploadTab === 'csv' && (
                   <div className="space-y-4">
-                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                    <div className="border-2 border-dashed border-fuchsia-200 bg-fuchsia-50/30 rounded-lg p-8 text-center">
                       <input
                         type="file"
                         accept=".csv,text/csv"
@@ -700,15 +700,15 @@ export default function DashboardClient() {
                         disabled={uploadLoading}
                       />
                       <label htmlFor="csv-upload" className="cursor-pointer">
-                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                        <FileText className="h-12 w-12 mx-auto text-fuchsia-700/70 mb-3" />
                         <p className="text-lg font-medium mb-1">Drag & drop CSV file or click to browse</p>
                         <p className="text-sm text-muted-foreground">Must contain: Mfg_Part_Num, Part_Desc, E1_Brand, Unilog_Brand, DIB_Brand, Part_Manuf</p>
                       </label>
                     </div>
                     {csvFile && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                      <div className="bg-fuchsia-50 border border-fuchsia-200 rounded-lg p-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-green-600" />
+                          <FileText className="h-5 w-5 text-fuchsia-700" />
                           <div>
                             <p className="font-medium">{csvFile.name}</p>
                             <p className="text-sm text-muted-foreground">{(csvFile.size / 1024).toFixed(1)} KB</p>
@@ -824,7 +824,7 @@ export default function DashboardClient() {
 
                 {uploadTab === 'pdf' && (
                   <div className="space-y-4">
-                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                    <div className="border-2 border-dashed border-fuchsia-200 bg-fuchsia-50/30 rounded-lg p-8 text-center">
                       <input
                         type="file"
                         accept=".pdf,application/pdf"
@@ -834,15 +834,15 @@ export default function DashboardClient() {
                         disabled={uploadLoading}
                       />
                       <label htmlFor="pdf-upload" className="cursor-pointer">
-                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                        <FileText className="h-12 w-12 mx-auto text-fuchsia-700/70 mb-3" />
                         <p className="text-lg font-medium mb-1">Drag & drop PDF file or click to browse</p>
                         <p className="text-sm text-muted-foreground">PDF should contain structured product data with MPN, description, brands, manufacturer</p>
                       </label>
                     </div>
                     {pdfFile && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                      <div className="bg-fuchsia-50 border border-fuchsia-200 rounded-lg p-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-green-600" />
+                          <FileText className="h-5 w-5 text-fuchsia-700" />
                           <div>
                             <p className="font-medium">{pdfFile.name}</p>
                             <p className="text-sm text-muted-foreground">{(pdfFile.size / 1024).toFixed(1)} KB</p>
@@ -882,9 +882,9 @@ export default function DashboardClient() {
           <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-2">
             <Card className={cn('w-80', toast.type === 'error' && 'border-destructive')}>
               <CardContent className="p-4 flex items-center gap-3">
-                {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-emerald-700" />}
                 {toast.type === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
-                {toast.type === 'info' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+                {toast.type === 'info' && <AlertTriangle className="h-5 w-5 text-amber-700" />}
                 <p className="text-sm">{toast.message}</p>
               </CardContent>
             </Card>

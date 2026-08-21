@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { scoreBatch } from '@/lib/api';
 import { BatchScoreSummary, BatchScoreResponse } from '@/lib/types';
 
-const COLORS = ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
+const COLORS = ['#d255ff', '#f0b35f', '#67aeb0', '#11131c', '#f6d7ff', '#fde7bd'];
 
 const panelVariants: Variants = {
   hidden: { opacity: 0, y: 16 },
@@ -48,16 +48,16 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: {
             <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold mt-1">{value}</p>
             {trend && (
-              <p className={cn('text-xs mt-1', variant === 'success' ? 'text-green-600' : variant === 'warning' ? 'text-yellow-600' : 'text-red-600')}>
+              <p className={cn('text-xs mt-1', variant === 'success' ? 'text-emerald-700' : variant === 'warning' ? 'text-amber-700' : 'text-red-700')}>
                 {trend}
               </p>
             )}
           </div>
           <div className={cn('p-3 rounded-lg shadow-inner', 
-            variant === 'success' && 'bg-emerald-100 text-emerald-700',
-            variant === 'warning' && 'bg-amber-100 text-amber-700',
-            variant === 'destructive' && 'bg-red-100 text-red-700',
-            variant === 'default' && 'bg-blue-100 text-blue-600'
+            variant === 'success' && 'bg-emerald-50 text-emerald-700',
+            variant === 'warning' && 'bg-amber-50 text-amber-700',
+            variant === 'destructive' && 'bg-red-50 text-red-700',
+            variant === 'default' && 'bg-fuchsia-50 text-fuchsia-700'
           )}>
             <Icon className="h-6 w-6" />
           </div>
@@ -86,11 +86,10 @@ function GroupAccuracyChart({ data }: { data: Array<{ group: string; accuracy: n
               <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="group" width={120} tick={{ fontSize: 12 }} />
               <Tooltip 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(value: any) => value !== undefined ? [`${value}%`, 'Accuracy'] : ['', '']}
+                formatter={(value: unknown) => value !== undefined ? [`${value}%`, 'Accuracy'] : ['', '']}
                 labelFormatter={(group) => group}
               />
-              <Bar dataKey="accuracy" fill="#3b82f6" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="accuracy" fill="#d255ff" radius={[0, 4, 4, 0]}>
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
@@ -107,7 +106,7 @@ function GroupAccuracyChart({ data }: { data: Array<{ group: string; accuracy: n
                   className="h-full rounded-full transition-all" 
                   style={{ 
                     width: `${entry.accuracy}%`,
-                    backgroundColor: entry.accuracy >= 80 ? '#22c55e' : entry.accuracy >= 50 ? '#eab308' : '#ef4444'
+                    backgroundColor: entry.accuracy >= 80 ? '#67aeb0' : entry.accuracy >= 50 ? '#f0b35f' : '#d255ff'
                   }}
                 />
               </div>
@@ -135,10 +134,10 @@ function ConfidenceCorrelationChart({ data }: { data: Record<string, number> }) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5" />
-          Knows When It's Unsure
+          Knows When It&apos;s Unsure
         </CardTitle>
         <CardDescription>
-          Does the AI's confidence match actual accuracy? Bars show accuracy % for items in each confidence range.
+          Does the AI&apos;s confidence match actual accuracy? Bars show accuracy % for items in each confidence range.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -149,9 +148,9 @@ function ConfidenceCorrelationChart({ data }: { data: Record<string, number> }) 
               <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="bin" width={80} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value: any) => value !== undefined ? [`${value}%`, 'Accuracy'] : ['', '']} />
-              <Bar dataKey="accuracy" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="accuracy" fill="#d255ff" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.accuracy >= 70 ? '#22c55e' : entry.accuracy >= 40 ? '#eab308' : '#ef4444'} />
+                  <Cell key={`cell-${index}`} fill={entry.accuracy >= 70 ? '#67aeb0' : entry.accuracy >= 40 ? '#f0b35f' : '#d255ff'} />
                 ))}
               </Bar>
             </BarChart>
@@ -166,13 +165,13 @@ function ConfidenceCorrelationChart({ data }: { data: Record<string, number> }) 
                   className="h-full rounded-full transition-all" 
                   style={{ 
                     width: `${entry.accuracy}%`,
-                    backgroundColor: entry.accuracy >= 70 ? '#22c55e' : entry.accuracy >= 40 ? '#eab308' : '#ef4444'
+                    backgroundColor: entry.accuracy >= 70 ? '#67aeb0' : entry.accuracy >= 40 ? '#f0b35f' : '#d255ff'
                   }}
                 />
               </div>
               <span className="text-sm font-medium w-16 text-right">{entry.accuracy}%</span>
               <span className="text-xs text-muted-foreground">
-                {entry.accuracy >= 70 ? '✓ Well calibrated' : entry.accuracy >= 40 ? '⚠ Moderate' : '✗ Poor correlation'}
+                {entry.accuracy >= 70 ? 'Well calibrated' : entry.accuracy >= 40 ? 'Moderate' : 'Poor correlation'}
               </span>
             </div>
           ))}
@@ -205,9 +204,9 @@ function CharLimitComplianceChart({ data }: { data: Record<string, number> }) {
               <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="field" width={100} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value: any) => value !== undefined ? [`${value}%`, 'Compliance'] : ['', '']} />
-              <Bar dataKey="compliance" fill="#06b6d4" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="compliance" fill="#67aeb0" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.compliance === 100 ? '#22c55e' : entry.compliance >= 50 ? '#eab308' : '#ef4444'} />
+                  <Cell key={`cell-${index}`} fill={entry.compliance === 100 ? '#67aeb0' : entry.compliance >= 50 ? '#f0b35f' : '#d255ff'} />
                 ))}
               </Bar>
             </BarChart>
@@ -292,7 +291,7 @@ export default function InsightsPage() {
             <Target className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">No results yet</h2>
             <p className="text-muted-foreground mb-6">
-              We're still gathering results — check back after a few items are processed.
+              We&apos;re still gathering results — check back after a few items are processed.
             </p>
             <Button onClick={loadInsights}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -344,10 +343,10 @@ export default function InsightsPage() {
   return (
     <div className="app-shell min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b bg-card/82 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-cyan-900/15">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-slate-950/20">
               <BarChart2 className="h-6 w-6" />
             </div>
             <div>
@@ -369,9 +368,9 @@ export default function InsightsPage() {
         <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-2">
           <Card className={cn('w-80', toast.type === 'error' && 'border-destructive')}>
             <CardContent className="p-4 flex items-center gap-3">
-              {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
+              {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-emerald-700" />}
               {toast.type === 'error' && <AlertTriangle className="h-5 w-5 text-destructive" />}
-              {toast.type === 'info' && <Zap className="h-5 w-5 text-blue-500" />}
+              {toast.type === 'info' && <Zap className="h-5 w-5 text-fuchsia-700" />}
               <p className="text-sm">{toast.message}</p>
             </CardContent>
           </Card>
@@ -541,10 +540,10 @@ export default function InsightsPage() {
               <div>
                 <h3 className="font-medium text-primary">Key Insight: Confidence-Accuracy Correlation</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  The chart above shows whether the system's confidence scores reliably predict actual accuracy. 
+                  The chart above shows whether the system&apos;s confidence scores reliably predict actual accuracy. 
                   <strong>Green bars</strong> indicate well-calibrated confidence (high confidence → high accuracy). 
                   <strong>Yellow/red bars</strong> suggest overconfidence or underconfidence. 
-                  This "explainable AI" metric proves the system knows what it doesn't know — a key differentiator for production deployment.
+                  This &quot;explainable AI&quot; metric proves the system knows what it doesn&apos;t know — a key differentiator for production deployment.
                 </p>
               </div>
             </div>

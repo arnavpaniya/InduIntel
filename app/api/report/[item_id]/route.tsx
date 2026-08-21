@@ -382,7 +382,7 @@ function ConfidenceSection({
           <Text style={styles.confidenceValue}>{confidenceScore !== null ? `${confidenceScore}%` : '—'}</Text>
           <Text style={styles.confidenceLabel}>Information Completeness</Text>
           <Text style={styles.confidenceExplanation}>
-            How much of the product's details our AI was able to fill in
+            How much of the product&apos;s details our AI was able to fill in
           </Text>
         </View>
         <View style={styles.confidenceBox}>
@@ -416,7 +416,7 @@ function GroundTruthSection({ gtResult }: { gtResult: any | null }) {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Checked Against Real Answers</Text>
       <Text style={styles.noteText}>
-        We compared our AI's results to a known correct answer for this product. Here's how it did:
+        We compared our AI&apos;s results to a known correct answer for this product. Here&apos;s how it did:
       </Text>
       <View style={styles.gtTable}>
         <View style={styles.gtHeader}>

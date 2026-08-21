@@ -90,19 +90,19 @@ function MetricCard({ label, value, icon: Icon, trend, variant = 'default' }: {
             <p className="text-3xl font-bold mt-1 truncate">{value}</p>
             {trend && (
               <p className={cn('text-xs mt-1', 
-                variant === 'success' && 'text-green-600', 
-                variant === 'warning' && 'text-yellow-600', 
-                variant === 'destructive' && 'text-red-600',
-                variant === 'default' && 'text-blue-600'
+                variant === 'success' && 'text-emerald-700',
+                variant === 'warning' && 'text-amber-700',
+                variant === 'destructive' && 'text-red-700',
+                variant === 'default' && 'text-primary'
               )}>
                 {trend}
               </p>
             )}
           </div>
           <div className={cn('p-3 rounded-lg flex-shrink-0 shadow-inner', 
-            variant === 'success' && 'bg-emerald-100 text-emerald-700',
-            variant === 'warning' && 'bg-amber-100 text-amber-700',
-            variant === 'destructive' && 'bg-red-100 text-red-700',
+            variant === 'success' && 'bg-emerald-50 text-emerald-700',
+            variant === 'warning' && 'bg-amber-50 text-amber-700',
+            variant === 'destructive' && 'bg-red-50 text-red-700',
             variant === 'default' && 'bg-primary/10 text-primary'
           )}>
             <Icon className="h-6 w-6" />
@@ -125,7 +125,7 @@ function StepCard({ step, title, description, icon: Icon }: {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-full h-0.5 bg-border" />
         </div>
-        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground border-4 border-background shadow-lg shadow-cyan-900/15">
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground border-4 border-background shadow-lg shadow-slate-950/20">
           <Icon className="h-6 w-6" />
         </div>
       </div>
@@ -202,9 +202,9 @@ function RawInputCard({ rawItem }: { rawItem: any }) {
 function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
   if (!enrichedItem) {
     return (
-      <Card className="glass-panel border-emerald-500/20">
+      <Card className="glass-panel border-fuchsia-700/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-600">
+          <CardTitle className="flex items-center gap-2 text-fuchsia-700">
             <CheckCircle className="h-5 w-5" />
             After: AI-Enriched & Validated
           </CardTitle>
@@ -212,24 +212,24 @@ function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
         </CardHeader>
         <CardContent className="text-center py-8 text-muted-foreground">
           <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>No enriched items yet. Click "Run Batch" in dashboard.</p>
+          <p>No enriched items yet. Click &quot;Run Batch&quot; in dashboard.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="glass-panel border-emerald-500/20">
+    <Card className="glass-panel border-fuchsia-700/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-green-600">
+        <CardTitle className="flex items-center gap-2 text-fuchsia-700">
           <CheckCircle className="h-5 w-5" />
           After: AI-Enriched & Validated
         </CardTitle>
         <CardDescription>Structured, commerce-ready record with confidence scoring</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-          <p className="font-mono text-sm font-medium text-green-700 mb-2">MPN: {enrichedItem.mfg_part_num}</p>
+        <div className="p-4 bg-fuchsia-50 rounded-lg border border-fuchsia-100">
+          <p className="font-mono text-sm font-medium text-fuchsia-700 mb-2">MPN: {enrichedItem.mfg_part_num}</p>
           <p className="font-medium">{enrichedItem.part_desc || 'No description'}</p>
           <div className="flex flex-wrap gap-2 mt-3">
             <Badge variant="success" className="text-xs">{enrichedItem.manufacturer_name || 'Detected'}</Badge>
@@ -242,7 +242,7 @@ function EnrichedOutputCard({ enrichedItem }: { enrichedItem: any }) {
           {enrichedItem.classpath && (
             <div className="p-3 bg-muted/50 rounded">
               <p className="text-muted-foreground text-xs mb-1">Classpath</p>
-              <p className="font-mono text-sm text-green-700">{enrichedItem.classpath}</p>
+              <p className="font-mono text-sm text-fuchsia-700">{enrichedItem.classpath}</p>
             </div>
           )}
           {enrichedItem.descriptions && enrichedItem.descriptions.length > 0 && (
@@ -296,7 +296,7 @@ export default async function LandingPage() {
           <div className="mx-auto max-w-5xl text-center">
             {/* Logo/Name */}
             <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/12 text-white ring-1 ring-white/20">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white ring-1 ring-white/20">
                 <Zap className="h-7 w-7" />
               </div>
               <span className="text-3xl font-bold tracking-tight">InduIntel</span>
@@ -309,7 +309,7 @@ export default async function LandingPage() {
               <span className="masked-rise"><span>Validated by AI.</span></span>
             </h1>
             
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-cyan-50/82">
+            <p className="mx-auto mb-10 max-w-2xl text-lg text-slate-100/80">
               Distributors waste hours cleaning inconsistent product data. 
               InduIntel automates enrichment, classification, and validation — 
               so your catalog is always accurate, complete, and ready to sell.
@@ -332,14 +332,14 @@ export default async function LandingPage() {
             </div>
 
             {/* Trust indicator */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-sm text-cyan-50/75 sm:gap-6">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-sm text-slate-100/70 sm:gap-6">
               <div className="flex items-center gap-1">
                 <Shield className="h-4 w-4" />
                 <span>Checked against real answers</span>
               </div>
               <div className="flex items-center gap-1">
                 <Target className="h-4 w-4" />
-                <span>Knows when it's unsure</span>
+                <span>Knows when it&apos;s unsure</span>
               </div>
               <div className="flex items-center gap-1">
                 <Sparkles className="h-4 w-4" />
@@ -360,7 +360,7 @@ export default async function LandingPage() {
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Distributors receive catalog data from hundreds of manufacturers — each with different formats, 
-              missing fields, placeholder brands, and no standard taxonomy. Manual enrichment doesn't scale.
+              missing fields, placeholder brands, and no standard taxonomy. Manual enrichment doesn&apos;t scale.
             </p>
           </div>
 
@@ -379,7 +379,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Solution / How It Works */}
-      <section className="bg-white/42 py-16 lg:py-24">
+      <section className="bg-slate-50/80 py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <Badge variant="secondary" className="mb-3">The Solution</Badge>
@@ -500,17 +500,17 @@ export default async function LandingPage() {
 
           {/* Honest framing note */}
           {metrics && metrics.avg_accuracy_pct < 50 && (
-            <Card className="max-w-3xl mx-auto border-yellow-500/30 bg-yellow-50/50">
+            <Card className="max-w-3xl mx-auto border-amber-700/20 bg-amber-50/60">
               <CardContent className="p-6">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <AlertTriangle className="h-5 w-5 text-amber-700 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h3 className="font-medium text-yellow-800 mb-1">Honest assessment: {metrics.avg_accuracy_pct}% baseline accuracy</h3>
-                    <p className="text-sm text-yellow-700">
-                      The raw input descriptions in our test set are often minimal (e.g. "Display Only", distributor names instead of manufacturers). 
+                    <h3 className="font-medium text-amber-900 mb-1">Honest assessment: {metrics.avg_accuracy_pct}% baseline accuracy</h3>
+                    <p className="text-sm text-amber-900/80">
+                      The raw input descriptions in our test set are often minimal (e.g. &quot;Display Only&quot;, distributor names instead of manufacturers). 
                       This is a <strong>realistic baseline</strong> — not a cherry-picked demo. 
-                      The pipeline's value is the <strong>confidence scoring</strong> that correctly identifies which fields are unreliable (status: "review") 
-                      so human reviewers know exactly where to focus. That's how the AI shows what it knows and what it doesn't.
+                      The pipeline&apos;s value is the <strong>confidence scoring</strong> that correctly identifies which fields are unreliable (status: &quot;review&quot;) 
+                      so human reviewers know exactly where to focus. That&apos;s how the AI shows what it knows and what it doesn&apos;t.
                     </p>
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default async function LandingPage() {
                           className="h-full rounded-full transition-all" 
                           style={{ 
                             width: `${accuracy}%`,
-                            backgroundColor: accuracy >= 80 ? '#22c55e' : accuracy >= 50 ? '#eab308' : '#ef4444'
+                            backgroundColor: accuracy >= 80 ? '#67aeb0' : accuracy >= 50 ? '#f0b35f' : '#d255ff'
                           }}
                         />
                       </div>
