@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { debugLog, debugError, debugWarn, debugJson } from '@/lib/debug';
+import { debugLog, debugError, debugJson } from '@/lib/debug';
+import { detectMissingFields } from '@/lib/product-intelligence/missing-fields';
+import { geminiUsageTracker } from '@/lib/ai/external-retrieval';
 
 const ENRICHMENT_STEPS = [
   'manufacturer',
   'classify',
+  // Optional step: missing-field analysis + conditional external evidence
+  // Inserted after classify if fields are identified as needing external evidence
+  // This preserves backward compatibility — if no fields need external lookup,
+  // the step is skipped and the pipeline continues as before.
+  'missing-field-analysis',
+  'external_evidence',
   'attributes',
   'descriptions',
   'specs',
@@ -90,8 +98,93 @@ export async function POST(request: NextRequest) {
     let hasErrors = false;
     const stepConfidences: number[] = [];
 
+    // Track item state through the pipeline
+    let itemState: any = { ...item }; // start with raw item data
+
     for (const step of ENRICHMENT_STEPS) {
       const stepStart = Date.now();
+      
+      // ---- Missing-field analysis: runs after classify to determine
+      //         which fields need external evidence ----
+      if (step === 'missing-field-analysis') {
+        try {
+          debugLog('[RUN] Running missing-field analysis after classify');
+          // detectMissingFields uses item taxonomy + existing values
+          // to determine which fields are worth external lookup
+          const missingInfo = detectMissingFields(itemState);
+          
+          stepResults[step] = {
+            success: true,
+            data: {
+              neededFields: missingInfo.needed,
+              skipFields: missingInfo.skip,
+              rationale: missingInfo.rationale,
+            },
+            duration: Date.now() - stepStart,
+          };
+          
+          // Store the missing field info in itemState for the external_evidence step
+          itemState.missingFields = missingInfo.needed;
+          itemState.missingFieldRationale = missingInfo.rationale;
+          
+          debugLog('[RUN] Missing-field analysis complete - needed:', missingInfo.needed);
+        } catch (error) {
+          hasErrors = true;
+          stepResults[step] = { success: false, error: String(error), duration: Date.now() - stepStart };
+          debugError(`[RUN] Missing-field analysis exception:`, error);
+          itemState.missingFields = [];
+        }
+        // Continue to next step regardless
+        continue;
+      }
+      
+      // ---- External evidence step: conditional, only runs if missing fields identified ----
+      if (step === 'external_evidence') {
+        // If no missing fields were identified, skip this step
+        if (!itemState.missingFields || itemState.missingFields.length === 0) {
+          debugLog('[RUN] Skipping external_evidence: no missing fields identified');
+          stepResults[step] = {
+            success: true,
+            data: { evidence: [], neededFields: [] },
+            duration: 0,
+          };
+          // Continue to attributes step
+          // Note: we do NOT decrement stepStart here since we're in the loop
+          // The loop will just continue; we need to account for the time
+          // But since we're using continue, we should still track it
+          // Let's just record a successful no-op
+          continue;
+        }
+        
+        debugLog('[RUN] Running external_evidence for fields:', itemState.missingFields);
+        try {
+          const result = await callStep('external_evidence', item_id, baseUrl);
+          stepResults[step] = { success: true, data: result, duration: Date.now() - stepStart };
+          
+          if (!result.success) {
+            hasErrors = true;
+            debugError(`[RUN] external_evidence step failed:`, result.error);
+          } else {
+            debugLog('[RUN] external_evidence step succeeded in', Date.now() - stepStart, 'ms');
+            // Store the evidence results into itemState for downstream use
+            if (result.data && result.data.evidence) {
+              itemState.externalEvidence = result.data.evidence;
+            }
+            // Update stepConfidences if available
+            if (result.data && typeof result.data.confidence === 'number') {
+              stepConfidences.push(result.data.confidence);
+            }
+          }
+        } catch (error) {
+          hasErrors = true;
+          stepResults[step] = { success: false, error: String(error), duration: Date.now() - stepStart };
+          debugError(`[RUN] external_evidence step exception:`, error);
+        }
+        // Continue to attributes step
+        continue;
+      }
+      
+      // ---- Normal step execution for all other steps ----
       try {
         debugLog(`[RUN] Calling step: ${step}`);
         const result = await callStep(step, item_id, baseUrl);
@@ -102,6 +195,25 @@ export async function POST(request: NextRequest) {
           debugError(`[RUN] Step ${step} failed:`, result.error);
         } else {
           debugLog(`[RUN] Step ${step} succeeded in ${Date.now() - stepStart}ms`);
+          
+          // Update itemState with data from steps that populate item fields
+          if (step === 'classify' && result.data) {
+            // Store classify results (dept, class, fine, classpath)
+            if (result.data.dept) itemState.dept = result.data.dept;
+            if (result.data.class) itemState.class = result.data.class;
+            if (result.data.fine) itemState.fine = result.data.fine;
+            if (result.data.classpath) itemState.classpath = result.data.classpath;
+            debugLog('[RUN] Classify results stored in itemState');
+          }
+          
+          if (step === 'attributes' && result.data) {
+            // Store attributes results
+            if (result.data.data && result.data.data.attributes) {
+              itemState.item_attributes = result.data.data.attributes;
+            }
+            debugLog('[RUN] Attributes results stored in itemState');
+          }
+          
           const stepConfidence = result.data?.data?.confidence ?? result.data?.confidence;
           if (stepConfidence !== undefined && typeof stepConfidence === 'number') {
             stepConfidences.push(stepConfidence);
