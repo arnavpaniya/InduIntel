@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { generateCsv, mapToDeliveryFormat, DELIVERY_HEADERS } from '@/lib/export/mapToDeliveryFormat';
+import { transformItemToInternal } from '@/lib/unihack/transform-item';
+import { productToRow, emptyRow, type InternalProductFields, UNIHACK_HEADERS } from '@/lib/unihack/output-mapper';
 import ExcelJS from 'exceljs';
 import { debugError } from '@/lib/debug';
 
@@ -20,7 +21,8 @@ export async function GET(request: NextRequest) {
         *,
         item_descriptions(*),
         item_attributes(*),
-        item_specs(*)
+        item_specs(*),
+        item_assets(*)
       `)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -46,7 +48,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No enriched items found to export' }, { status: 404 });
     }
 
+    // Transform each item into the internal canonical format
     const typedItems = items as any[];
+    const internalItems: InternalProductFields[] = [];
+    const rows: string[][] = [];
+
+    for (const item of typedItems) {
+      const descriptions = item.item_descriptions || [];
+      const attributes = item.item_attributes || [];
+      const specs = item.item_specs ? item.item_specs[0] : null;
+      const assets = item.item_assets || [];
+
+      const internal = transformItemToInternal(item, descriptions, attributes, specs, assets);
+      internalItems.push(internal);
+
+      // Convert to UniHack 252-column row
+      const row = productToRow(internal);
+      rows.push(row);
+    }
 
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `induintel-export-${dateStr}`;
@@ -55,19 +74,19 @@ export async function GET(request: NextRequest) {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Export');
 
-      worksheet.columns = DELIVERY_HEADERS.map(header => ({
+      // Use the canonical UniHack headers as column definitions
+      worksheet.columns = UNIHACK_HEADERS.map(header => ({
         header,
         key: header,
         width: Math.min(Math.max(header.length + 2, 15), 50),
       }));
 
-      for (const item of typedItems) {
-        const rowData = mapToDeliveryFormat(item);
-        worksheet.addRow(rowData);
+      for (const row of rows) {
+        worksheet.addRow(row);
       }
 
       const buffer = await workbook.xlsx.writeBuffer();
-      
+
       return new NextResponse(buffer, {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -76,9 +95,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const csv = generateCsv(typedItems);
-    
-    return new NextResponse(csv, {
+    // CSV format: use the canonical UniHack headers
+    const csvHeader = UNIHACK_HEADERS.join(',');
+    const csvData = [csvHeader, ...rows.map(r => r.join(','))].join('\n');
+
+    return new NextResponse(csvData, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${filename}.csv"`,
