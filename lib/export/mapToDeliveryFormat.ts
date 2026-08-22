@@ -679,11 +679,12 @@ export function mapToDeliveryFormat(item: EnrichedItem): Record<DeliveryHeader, 
   return result as Record<DeliveryHeader, string>;
 }
 
-export function escapeCsv(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return '"' + value.replace(/"/g, '""') + '"';
+export function escapeCsv(value: string | number | null | undefined): string {
+  const str = String(value === null || value === undefined ? '' : value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return '"' + str.replace(/"/g, '""') + '"';
   }
-  return value;
+  return str;
 }
 
 export function generateCsv(items: EnrichedItem[]): string {

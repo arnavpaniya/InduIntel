@@ -119,6 +119,7 @@ export function createEmptyProduct(id: string): CanonicalProduct {
     with: null,
     assets: [],
     value_status: { ...defaultStatus },
+    field_provenance: {},
   };
 }
 
@@ -136,10 +137,20 @@ export function setFieldStatus(
   if (status !== undefined) {
     newStatus[field] = status;
   } else {
-    // Default: if no explicit status, use 'inferred' for most fields
-    // but 'verified' if it has a value (non-null, non-undefined, non-empty)
+    // Default based on value presence:
+    // - 'verified' if value exists with content
+    // - 'inferred' if value is derived from known text/sources
+    // - 'unresolved' if no value exists (null/undefined/empty)
     const value = (product as any)[field];
-    newStatus[field] = value != null && String(value).length > 0 ? 'verified' : 'inferred';
+    if (value == null || String(value).length === 0) {
+      newStatus[field] = 'unresolved';
+    } else if (value != null && String(value).length > 0) {
+      // inferred status is set explicitly by callers
+      // who know the value was derived (e.g., from descriptions, attributes)
+      newStatus[field] = 'inferred';
+    } else {
+      newStatus[field] = 'verified';
+    }
   }
   
   return {
@@ -160,9 +171,14 @@ export function addProvenance(
   // Presence of provenance suggests 'inferred' or 'external' source
   newStatus[field] = 'inferred';
   
+  // Store the provenance record
+  const newProvenance: Record<string, ProductFieldProvenance> = { ...product.field_provenance };
+  newProvenance[field] = provenance;
+  
   return {
     ...product,
     value_status: newStatus,
+    field_provenance: newProvenance,
   };
 }
 
@@ -224,35 +240,41 @@ export function transformSupabaseProductToCanonical(
   let product = createEmptyProduct(item.id);
 
   // --- Identity ---
-  product = setFieldStatus(product, 'mfg_part_num', item.mfg_part_num != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'manufacturer_part_number', item.alternate_part_number != null ? 'verified' : 'inferred');
+  product = setFieldStatus(product, 'mfg_part_num', item.mfg_part_num != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'manufacturer_part_number', item.alternate_part_number != null ? 'verified' : 'unresolved');
   
-  // Handle mfg_part_num / part_number / SKU mappings
-  const partNumber = item.mfg_part_num || item.part_number || item.sku || null;
-  if (partNumber !== null) {
-    product = setFieldStatus(product, 'mfg_part_num', 'verified');
-    // Also set as manufacturer_part_number if not separately set
-    if (product.manufacturer_part_number == null) {
-      product = { ...product, manufacturer_part_number: partNumber };
-    }
-  }
+  // Identity fields: each has its own semantic meaning.
+  // - mfg_part_num: from the mfg_part_num field
+  // - manufacturer_part_number: from an explicit manufacturer-part-number field
+  // - alternate_part_number: from an actual alternate part number field
+  // - sku: from an actual SKU field
+  // Do NOT copy values between identity fields merely to increase coverage.
+  // Each field is populated only from its direct source.
   
-  product = setFieldStatus(product, 'alternate_part_number', item.alternate_part_number != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'sku', item.sku != null ? 'verified' : 'inferred');
+  // sku: only from an actual SKU field (not in standard item schema, remains null/unresolved)
+  product = setFieldStatus(product, 'sku', item.sku != null ? 'verified' : 'unresolved');
+  
+  // manufacturer_part_number: only from explicit manufacturer-part-number field
+  // (not from mfg_part_num to avoid duplication)
+  // Currently no explicit manufacturer-part-number field in standard schema
+  
+  // alternate_part_number: only from actual alternate part number field
+  // (not in standard schema, remains null/unresolved unless explicitly provided)
+  product = setFieldStatus(product, 'trade_name', item.trade_name != null ? 'verified' : 'unresolved');
   
   // Trade name, brand name, manufacturer name
-  product = setFieldStatus(product, 'trade_name', item.trade_name != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'brand_name', item.brand_name != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'manufacturer_name', item.manufacturer_name != null ? 'verified' : 'inferred');
+  product = setFieldStatus(product, 'trade_name', item.trade_name != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'brand_name', item.brand_name != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'manufacturer_name', item.manufacturer_name != null ? 'verified' : 'unresolved');
   
   // Product name
-  product = setFieldStatus(product, 'product_name', item.product_name != null ? 'verified' : 'inferred');
+  product = setFieldStatus(product, 'product_name', item.product_name != null ? 'verified' : 'unresolved');
 
   // --- Taxonomy ---
-  product = setFieldStatus(product, 'dept', item.dept != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'klass', item.class != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'fine', item.fine != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'classpath', item.classpath != null ? 'verified' : 'inferred');
+  product = setFieldStatus(product, 'product_name', item.product_name != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'klass', item.class != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'fine', item.fine != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'classpath', item.classpath != null ? 'verified' : 'unresolved');
 
   // --- Descriptions ---
   // Extract the 5 description values from descriptions
@@ -260,9 +282,12 @@ export function transformSupabaseProductToCanonical(
     descriptions.map((d: any) => [d.field_name, d.value || ''])
   );
   
-  product = setFieldStatus(product, 'invoice_desc', byField.get('invoice_desc') != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'mobile_desc', byField.get('mobile_desc') != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'short_desc', byField.get('short_desc') != null ? 'verified' : 'inferred');
+  product = setFieldStatus(product, 'invoice_desc', byField.get('invoice_desc') != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'mobile_desc', byField.get('mobile_desc') != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'short_desc', byField.get('short_desc') != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'long_desc1', byField.get('long_desc1') != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'retail_desc', byField.get('retail_desc') != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'marketing_description', byField.get('marketing_description') != null ? 'verified' : 'unresolved');
   product = setFieldStatus(product, 'long_desc1', byField.get('long_desc1') != null ? 'verified' : 'inferred');
   product = setFieldStatus(product, 'retail_desc', byField.get('retail_desc') != null ? 'verified' : 'inferred');
   product = setFieldStatus(product, 'marketing_description', byField.get('marketing_description') != null ? 'verified' : 'inferred');
@@ -348,23 +373,23 @@ export function transformSupabaseProductToCanonical(
 
   // --- Specifications ---
   if (specs) {
-    product = setFieldStatus(product, 'upc', specs.upc != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'ean', specs.ean != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'gtin', specs.gtin != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'unspsc', specs.unspsc != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'list_price', specs.list_price != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'length', specs.length != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'length_uom', specs.length_uom != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'width', specs.width != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'width_uom', specs.width_uom != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'height', specs.height != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'height_uom', specs.height_uom != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'weight', specs.weight != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'weight_uom', specs.weight_uom != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'country_of_origin', specs.country_of_origin != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'warranty', specs.warranty != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'selling_qty', specs.selling_qty != null ? 'verified' : 'inferred');
-    product = setFieldStatus(product, 'selling_uom', specs.selling_uom != null ? 'verified' : 'inferred');
+    product = setFieldStatus(product, 'upc', specs.upc != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'ean', specs.ean != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'gtin', specs.gtin != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'unspsc', specs.unspsc != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'list_price', specs.list_price != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'length', specs.length != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'length_uom', specs.length_uom != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'width', specs.width != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'width_uom', specs.width_uom != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'height', specs.height != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'height_uom', specs.height_uom != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'weight', specs.weight != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'weight_uom', specs.weight_uom != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'country_of_origin', specs.country_of_origin != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'warranty', specs.warranty != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'selling_qty', specs.selling_qty != null ? 'verified' : 'unresolved');
+    product = setFieldStatus(product, 'selling_uom', specs.selling_uom != null ? 'verified' : 'unresolved');
     product = setFieldStatus(product, 'discontinued', specs.discontinued != null ? 'verified' : 'inferred');
 
     // Apply spec values
@@ -393,6 +418,9 @@ export function transformSupabaseProductToCanonical(
   // --- Assets ---
   const assetList: ProductAsset[] = [];
   for (const asset of assets || []) {
+    // Skip assets with empty or whitespace-only URLs
+    if (String(asset.url).trim() === '') continue;
+    
     let type: ProductAssetType;
     const assetType = asset.asset_type;
     

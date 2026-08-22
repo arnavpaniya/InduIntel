@@ -175,4 +175,7 @@ export interface CanonicalProduct {
 
   /** Field-level value status tracking */
   value_status: Record<string, ProductFieldStatus>;
+
+  /** Field-level provenance tracking */
+  field_provenance: Record<string, ProductFieldProvenance>;
 }
