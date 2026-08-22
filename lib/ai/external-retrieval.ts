@@ -1,8 +1,3 @@
-export interface GeminiUsageReport {
-  productsTested: number; externalSearches: number; externalRetrievals: number;
-  deterministicExtractions: number; geminiCalls: number; geminiCallsAvoided: number;
-  cacheHits: number; cacheMisses: number;
-}
 export const geminiUsageTracker = {
   productsTested: 0, externalSearches: 0, externalRetrievals: 0,
   deterministicExtractions: 0, geminiCalls: 0, geminiCallsAvoided: 0,
@@ -22,21 +17,8 @@ export const geminiUsageTracker = {
       cacheHits: this.cacheHits, cacheMisses: this.cacheMisses };
   },
 }
-export interface DeterministicExtraction {
-  upc?: string; ean?: string; gtin?: string; 
-  weight?: { value: number; uom: string } | undefined; 
-  warranty?: string | undefined; 
-  dimensions?: { value: number; uom: string }[] | undefined; 
-  mpn?: string | undefined; title?: string | undefined; manufacturer?: string | undefined;
-}
-export interface RetrievalResult {
-  success: boolean; evidenceText: string; rawUrl: string; finalUrl: string;
-  status: number; evidence: Record<string, string>; error?: string;
-}
-export function isDeterministicSufficient(
-  extracted: DeterministicExtraction,
-  missingFields: string[]
-): boolean {
-  const c = missingFields.filter(f => ['upc','ean','gtin','weight','warranty'].includes(f));
-  return c.every(f => extracted[f] != null);
+export interface GeminiUsageReport {
+  productsTested: number; externalSearches: number; externalRetrievals: number;
+  deterministicExtractions: number; geminiCalls: number; geminiCallsAvoided: number;
+  cacheHits: number; cacheMisses: number;
 }

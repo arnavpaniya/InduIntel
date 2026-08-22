@@ -40,7 +40,7 @@ export function detectMissingFields(itemState: {
 
   // --- MPN (mfg_part_num) - Identity Anchor ---
   if (itemState.mfg_part_num == null) {
-    const hasManufacturer = itemState.manifesturer_name != null || 
+    const hasManufacturer = itemState.manufacturer_name != null || 
                             itemState.brand_name != null;
     const hasStrongDescription = itemState.part_desc != null && 
       itemState.part_desc.length > 20;
