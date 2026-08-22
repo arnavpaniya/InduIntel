@@ -70,15 +70,68 @@ class EvidenceCheckResponse(BaseModel):
     unresolved: List[str]
 
 
+# --- Explicit source classification (Bug 2 hardening) ---
+# Unknown domains are NEVER promoted to "manufacturer".
+# Domain matching uses strict hostname boundaries:
+#   www.knownmfg.com      -> matches knownmfg.com
+#   notknownmfg.com       -> does NOT match knownmfg.com
+KNOWN_MANUFACTURER_DOMAINS = {
+    "milwaukeetool.com", "dewalt.com", "boschtools.com", "makitatools.com",
+    "metabo.com", "hilti.com", "3m.com", "stanleyblackanddecker.com",
+}
+KNOWN_DISTRIBUTOR_DOMAINS = {
+    "grainger.com", "mcmaster.com", "zoro.com", "digikey.com",
+    "mouser.com", "newark.com", "frys.com",
+}
+KNOWN_SECONDARY_DOMAINS = {
+    # credible secondary/reference sources (standards bodies, references)
+    "wikipedia.org", "ansi.org", "iso.org", "astm.org", "ul.com", "osha.gov",
+}
+
+AUTHORITY_TIERS = {
+    "manufacturer": 1,
+    "distributor": 2,
+    "secondary": 3,
+    "unknown": 4,
+}
+
+
+def _load_extra_domains(env_key: str) -> set:
+    """Extend domain sets via comma-separated env var, without code changes."""
+    raw = os.getenv(env_key, "")
+    return {d.strip().lower() for d in raw.split(",") if d.strip()}
+
+
+def hostname_matches_domain(hostname: str, known_domain: str) -> bool:
+    """Boundary-safe domain match: exact or dot-separated subdomain only."""
+    h = (hostname or "").lower().strip().rstrip(".")
+    d = known_domain.lower().strip().rstrip(".")
+    return h == d or h.endswith("." + d)
+
+
+def _classify_host(host: str) -> str:
+    """Return source_type for a hostname using boundary-safe matching."""
+    for domain in KNOWN_MANUFACTURER_DOMAINS | _load_extra_domains("EVIDENCE_MANUFACTURER_DOMAINS"):
+        if hostname_matches_domain(host, domain):
+            return "manufacturer"
+    for domain in KNOWN_DISTRIBUTOR_DOMAINS | _load_extra_domains("EVIDENCE_DISTRIBUTOR_DOMAINS"):
+        if hostname_matches_domain(host, domain):
+            return "distributor"
+    for domain in KNOWN_SECONDARY_DOMAINS | _load_extra_domains("EVIDENCE_SECONDARY_DOMAINS"):
+        if hostname_matches_domain(host, domain):
+            return "secondary"
+    return "unknown"
+
+
 def classify_source(url: str) -> tuple:
-    """Classify a URL into (source_type, authority_tier)."""
+    """Classify a URL into (source_type, authority_tier).
+
+    Recognized domains map to their tier; anything unrecognized is
+    ("unknown", 4). Classification affects ranking/confidence only —
+    identity verification is enforced separately.
+    """
     host = (urlparse(url).hostname or "").lower()
-    # Heuristic: vendor-looking TLDs / known distributor patterns.
-    distributor_markers = ("distributor", "supply", "grainger", "mcmaster",
-                           "zoro", "fry", "newark", "digikey", "mouser")
-    if any(m in host for m in distributor_markers):
-        return "distributor", 3
-    return "manufacturer", 1  # default: treat direct hits as manufacturer tier-1
+    return _classify_host(host), AUTHORITY_TIERS[_classify_host(host)]
 
 
 @app.get("/")
@@ -109,15 +162,37 @@ async def evidence_check(request: EvidenceCheckRequest):
         )
 
     # --- 2/3/4. Retrieve, sanitize, verify, extract per candidate ---
-    for candidate in candidates[:3]:  # bounded: max 3 retrievals per product
+    # Bug 1 hardening: attempt up to 3 candidates; an identity mismatch,
+    # retrieval failure, or blocked URL on one candidate must never
+    # terminate the search. First identity-matched candidate wins;
+    # failures are reported only after ALL candidates are attempted.
+    MAX_CANDIDATE_ATTEMPTS = 3
+
+    # Ranking: classification affects ordering (tier 1 tried first), not identity.
+    ranked = sorted(
+        candidates[:MAX_CANDIDATE_ATTEMPTS],
+        key=lambda c: AUTHORITY_TIERS.get(_classify_host((urlparse(c.get("url") or "").hostname or "")), 4),
+    )
+
+    attempts_made = 0
+    best_reject_reason = None
+    best_source_info: Optional[SourceInfo] = None
+    best_identity_confidence = 0.0
+
+    for candidate in ranked:
         url = candidate.get("url") or ""
         ok, _reason = validate_url(url)
         if not ok:
+            if best_reject_reason is None:
+                best_reject_reason = f"blocked/invalid URL skipped: {url}"
             continue
 
         retrieved = retrieve_url(url)
         if not retrieved:
+            if best_reject_reason is None:
+                best_reject_reason = f"retrieval failed: {url}"
             continue
+        attempts_made += 1
 
         raw_text = sanitize_html(retrieved["content"])
         product_text = extract_product_text(raw_text)
@@ -137,13 +212,13 @@ async def evidence_check(request: EvidenceCheckRequest):
         )
 
         if not identity["identity_match"]:
-            return EvidenceCheckResponse(
-                success=True, needs_search=True, source=source_info,
-                identity_match=False, identity_confidence=identity["confidence"],
-                reject_reason=identity["reject_reason"],
-                evidence=[], deterministic_fields={},
-                needs_gemini=[], unresolved=missing,
-            )
+            # Keep the strongest rejection evidence; CONTINUE to next candidate.
+            if identity["confidence"] >= best_identity_confidence:
+                best_identity_confidence = identity["confidence"]
+                best_source_info = source_info
+                if identity["reject_reason"]:
+                    best_reject_reason = identity["reject_reason"]
+            continue
 
         fields = extract_deterministic_fields(
             product_text, source_url=retrieved["final_url"]
@@ -184,11 +259,15 @@ async def evidence_check(request: EvidenceCheckRequest):
             needs_gemini=needs_gemini, unresolved=unresolved,
         )
 
-    # All candidates failed retrieval/validation
+    # All candidates attempted — none identity-matched. Report gracefully
+    # with the strongest rejection evidence collected across attempts.
     return EvidenceCheckResponse(
-        success=True, needs_search=True, source=None,
-        identity_match=False, identity_confidence=0.0,
-        reject_reason="retrieval failed for all candidates",
+        success=True, needs_search=True, source=best_source_info,
+        identity_match=False, identity_confidence=best_identity_confidence,
+        reject_reason=best_reject_reason or (
+            f"no candidate matched after {attempts_made} retrieval(s)"
+            if attempts_made else "retrieval failed for all candidates"
+        ),
         evidence=[], deterministic_fields={},
         needs_gemini=[], unresolved=missing,
     )

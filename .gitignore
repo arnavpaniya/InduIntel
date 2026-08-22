@@ -35,3 +35,8 @@ next-env.d.ts
 
 # agents & cache
 .agents/
+
+# Python cache artifacts
+__pycache__/
+*.py[cod]
+*$py.class
