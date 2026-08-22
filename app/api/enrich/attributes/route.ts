@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     const { data: item, error: itemError } = await supabase
       .from('items')
-      .select('id, mfg_part_num, part_desc, manufacturer_name, brand_name')
+      .select('id, mfg_part_num, part_desc, manufacturer_name, brand_name, dept, class, fine, classpath')
       .eq('id', item_id)
       .maybeSingle();
 
@@ -130,19 +130,34 @@ export async function POST(request: NextRequest) {
     if (itemError) {
       return NextResponse.json({ error: itemError.message }, { status: 500 });
     }
-    if (!item) {
+if (!item) {
       return NextResponse.json({ error: 'Item not found', item_id }, { status: 404 });
     }
 
-    const inputData = {
+const inputData = {
       mfg_part_num: item.mfg_part_num,
       part_desc: item.part_desc,
       manufacturer_name: item.manufacturer_name,
       brand_name: item.brand_name,
+      dept: item.dept,
+      klass: item.class,
+      fine: item.fine,
+      classpath: item.classpath,
     };
-const inputHash = hashInput(inputData);
+    const inputHash = hashInput(inputData);
 
-// Pre-process part_desc: extract fraction patterns and compute decimal values
+    // Build category context for Gemini prompt
+    let categoryContext = '';
+    if (inputData.dept || inputData.klass || inputData.fine || inputData.classpath) {
+      categoryContext = `\n\nCategory context:
+- dept: ${inputData.dept || 'not specified'}
+- class: ${inputData.klass || 'not specified'}
+- fine: ${inputData.fine || 'not specified'}
+- classpath: ${inputData.classpath || 'not specified'}
+`;
+    }
+
+    // Pre-process part_desc: extract fraction patterns and compute decimal values
 const fractionPattern = /(\d+)-(\d+)\/(\d+)|(\d+)\/(\d+)/g;
 const replaceFraction = (match: string, whole: unknown, wNum: unknown, wDenom: unknown, fNum: unknown, fDenom: unknown) => {
   if (whole && wNum && wDenom) {
@@ -203,6 +218,7 @@ Item data:
 - manufacturer_name: ${item.manufacturer_name}
 - brand_name: ${item.brand_name}
 
+${categoryContext}
 Return JSON only.`;
 
     const result = await callLLMWithRetry<AttributesResult>(prompt, {

@@ -13,7 +13,7 @@ import type {
   ProductAttribute, 
   ProductAsset 
 } from '@/lib/product-intelligence/types';
-import { ProductAssetType } from '@/lib/product-intelligence/types';
+import { ProductAssetType, normalizeAssetType } from '@/lib/product-intelligence/normalize';
 
 // ---- Default Values ----
 
@@ -241,22 +241,19 @@ export function transformSupabaseProductToCanonical(
 
   // --- Identity ---
   product = setFieldStatus(product, 'mfg_part_num', item.mfg_part_num != null ? 'verified' : 'unresolved');
-  product = setFieldStatus(product, 'manufacturer_part_number', item.alternate_part_number != null ? 'verified' : 'unresolved');
+  product = setFieldStatus(product, 'manufacturer_part_number', undefined);
   
   // Identity fields: each has its own semantic meaning.
-  // - mfg_part_num: from the mfg_part_num field
-  // - manufacturer_part_number: from an explicit manufacturer-part-number field
-  // - alternate_part_number: from an actual alternate part number field
-  // - sku: from an actual SKU field
+  // - mfg_part_num: from the mfg_part_num field only
+  // - manufacturer_part_number: from an explicit manufacturer-part-number source only
+  //   (no such field in standard schema; remains null/unresolved)
+  // - alternate_part_number: from an actual alternate part number field only
+  // - sku: from an actual SKU field only
   // Do NOT copy values between identity fields merely to increase coverage.
   // Each field is populated only from its direct source.
   
   // sku: only from an actual SKU field (not in standard item schema, remains null/unresolved)
   product = setFieldStatus(product, 'sku', item.sku != null ? 'verified' : 'unresolved');
-  
-  // manufacturer_part_number: only from explicit manufacturer-part-number field
-  // (not from mfg_part_num to avoid duplication)
-  // Currently no explicit manufacturer-part-number field in standard schema
   
   // alternate_part_number: only from actual alternate part number field
   // (not in standard schema, remains null/unresolved unless explicitly provided)
@@ -288,9 +285,6 @@ export function transformSupabaseProductToCanonical(
   product = setFieldStatus(product, 'long_desc1', byField.get('long_desc1') != null ? 'verified' : 'unresolved');
   product = setFieldStatus(product, 'retail_desc', byField.get('retail_desc') != null ? 'verified' : 'unresolved');
   product = setFieldStatus(product, 'marketing_description', byField.get('marketing_description') != null ? 'verified' : 'unresolved');
-  product = setFieldStatus(product, 'long_desc1', byField.get('long_desc1') != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'retail_desc', byField.get('retail_desc') != null ? 'verified' : 'inferred');
-  product = setFieldStatus(product, 'marketing_description', byField.get('marketing_description') != null ? 'verified' : 'inferred');
 
   // Apply description values
   if (byField.get('invoice_desc') !== undefined) {
@@ -424,61 +418,8 @@ export function transformSupabaseProductToCanonical(
     let type: ProductAssetType;
     const assetType = asset.asset_type;
     
-    // Map asset types
-    switch (assetType) {
-      case 'product_image':
-        type = ProductAssetType.product_image;
-        break;
-      case 'spec_sheet':
-      case 'specification_sheet':
-        type = ProductAssetType.specification_sheet;
-        break;
-      case 'manual':
-        type = ProductAssetType.instruction_manual;
-        break;
-      case 'mfr_url':
-        type = ProductAssetType.manufacturer_url;
-        break;
-      case 'ref_url':
-        type = ProductAssetType.reference_url;
-        break;
-      case 'SDS':
-        type = ProductAssetType.SDS;
-        break;
-      case 'warranty_information':
-        type = ProductAssetType.warranty_information;
-        break;
-      case 'catalog':
-        type = ProductAssetType.catalog;
-        break;
-      case 'image_1':
-      case 'image_2':
-      case 'image_3':
-      case 'image_4':
-      case 'image_5':
-        type = ProductAssetType.alternate_image;
-        break;
-      case 'technical_bulletin':
-        type = ProductAssetType.technical_bulletin;
-        break;
-      case 'submittal':
-        type = ProductAssetType.submittal;
-        break;
-      case 'compatibility_chart':
-        type = ProductAssetType.compatibility_chart;
-        break;
-      case 'size_chart':
-        type = ProductAssetType.size_chart;
-        break;
-      case 'product_label':
-        type = ProductAssetType.product_label;
-        break;
-      case 'video':
-        type = ProductAssetType.video;
-        break;
-      default:
-        type = ProductAssetType.reference_url;
-    }
+    // Normalize asset type using the canonical case-insensitive function
+    type = normalizeAssetType(assetType);
     
     assetList.push({
       type,

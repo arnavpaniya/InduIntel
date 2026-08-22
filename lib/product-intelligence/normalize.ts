@@ -98,8 +98,11 @@ function enrichItemToCanonical(
   );
 }
 
-/** Map Supabase asset_type strings to ProductAssetType enum */
-function mapSupabaseAssetType(assetType: string | null | undefined): ProductAssetType {
+/** Canonical case-insensitive asset type normalizer.
+ *  Maps Supabase asset_type strings (any case) to ProductAssetType enum.
+ *  This is the single source of truth - all modules must use this function.
+ */
+export function normalizeAssetType(assetType: string | null | undefined): ProductAssetType {
   const mapping: Record<string, ProductAssetType> = {
     'product_image': ProductAssetType.product_image,
     'spec_sheet': ProductAssetType.specification_sheet,
@@ -132,8 +135,16 @@ function mapSupabaseAssetType(assetType: string | null | undefined): ProductAsse
   };
   
   if (assetType == null) return ProductAssetType.reference_url;
-  const mapped = mapping[assetType.toLowerCase()];
+  const lower = assetType.toLowerCase();
+  const mapped = mapping[lower];
   return mapped != null ? mapped : ProductAssetType.reference_url;
+}
+
+/** Legacy mapping - kept for backward compatibility.
+ *  Deprecated: use normalizeAssetType() instead.
+ */
+function mapSupabaseAssetType(assetType: string | null | undefined): ProductAssetType {
+  return normalizeAssetType(assetType);
 }
 
 /** Convert a CanonicalProduct back to InternalProductFields (used by existing UniHack mapper). */
@@ -402,4 +413,7 @@ export {
   mapSupabaseAssetType,
   canonicalToInternalFields 
 };
-export type { CanonicalProduct };
+export type { 
+  CanonicalProduct,
+  ProductAssetType 
+};

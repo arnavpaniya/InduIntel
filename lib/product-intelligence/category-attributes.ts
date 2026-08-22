@@ -67,10 +67,21 @@ export const SYNONYMOUS_LABELS: Record<string, string> = {
  */
 export function extractAttributes(
   product: CanonicalProduct,
-  categoryPath: CategoryPath = 'other'
+  categoryPath: CategoryPath = 'other' as CategoryPath
 ): ProductAttribute[] {
-  const ctx = categoryContext(product);
-  const relevant = relevantAttributes(categoryPath);
+  let effectivePath: CategoryPath = categoryPath;
+
+  // If categoryPath is 'other' (default), derive context from product taxonomy
+  if (categoryPath === 'other') {
+    const ctx = categoryContext(product);
+    // Map the primary category to a CategoryPath
+    const primary = ctx.primary as string;
+    effectivePath = categoryPathFromPrimary(primary);
+  } else {
+    effectivePath = categoryPath;
+  }
+
+  const relevant = relevantAttributes(effectivePath);
 
   // Collect attributes from product.attributes (label/value pairs)
   const seen = new Set<string>();
@@ -110,29 +121,6 @@ export function extractAttributes(
     });
   }
 
-  // Also extract from features if they contain attribute-like data
-  // (features are separate from attributes but may contain relevant info)
-  for (const feature of product.features || []) {
-    const label = normalizeLabel(feature.name ?? '');
-
-    if (!label || label.trim() === '') continue;
-    if (seen.has(label)) continue;
-    seen.add(label);
-
-    if (!isRelevant(label, relevant)) continue;
-    if (isFakeValue(feature.value)) continue;
-    if (!feature.value || feature.value.trim() === '') continue;
-
-    const normalized = SYNONYMOUS_LABELS[label.toLowerCase()] || label;
-    const value = feature.value.trim();
-
-    result.push({
-      label: normalized,
-      value,
-      provenance: feature.provenance,
-    });
-  }
-
   return result;
 }
 
@@ -147,6 +135,23 @@ function categoryContext(product: CanonicalProduct): CategoryContext {
   const primary = dept || classpath.split('/')[0] || 'other';
 
   return { dept, klass, fine, classpath, primary };
+}
+
+/** Map a primary category string to a CategoryPath value.
+ * 
+ * If the primary category matches a known category, return the corresponding CategoryPath.
+ * Otherwise return 'other' as the generic fallback.
+ */
+function categoryPathFromPrimary(primary: string): CategoryPath {
+  const categoryMap: Record<string, CategoryPath> = {
+    industrial: 'industrial',
+    electronics: 'electronics',
+    automotive: 'automotive',
+    construction: 'construction',
+    consumer: 'consumer',
+    medical: 'medical',
+  };
+  return categoryMap[primary] || 'other';
 }
 
 /** Return the list of relevant attribute labels for a given category. */
