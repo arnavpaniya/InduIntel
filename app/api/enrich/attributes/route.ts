@@ -140,9 +140,22 @@ export async function POST(request: NextRequest) {
       manufacturer_name: item.manufacturer_name,
       brand_name: item.brand_name,
     };
-    const inputHash = hashInput(inputData);
+const inputHash = hashInput(inputData);
 
-    // Check cache
+// Pre-process part_desc: extract fraction patterns and compute decimal values
+const fractionPattern = /(\d+)-(\d+)\/(\d+)|(\d+)\/(\d+)/g;
+const replaceFraction = (match: string, whole: unknown, wNum: unknown, wDenom: unknown, fNum: unknown, fDenom: unknown) => {
+  if (whole && wNum && wDenom) {
+    return String(parseInt(whole as string, 10) + parseInt(wNum as string, 10) / parseInt(wDenom as string, 10));
+  }
+  if (fNum && fDenom) {
+    return String(parseInt(fNum as string, 10) / parseInt(fDenom as string, 10));
+  }
+  return match;
+};
+const processedPartDesc = item.part_desc.replace(fractionPattern, replaceFraction);
+
+// Check cache
     const cached = await getCachedResult(supabase, item_id, 'attributes', inputHash);
     if (cached) {
       debugLog('[ATTRIBUTES] Cache hit - returning cached result');
@@ -186,7 +199,7 @@ export async function POST(request: NextRequest) {
 
 Item data:
 - mfg_part_num: ${item.mfg_part_num}
-- part_desc: ${item.part_desc}
+- part_desc: ${processedPartDesc}
 - manufacturer_name: ${item.manufacturer_name}
 - brand_name: ${item.brand_name}
 

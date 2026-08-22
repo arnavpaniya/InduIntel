@@ -1,3 +1,30 @@
+function parseFractionToDecimal(text: string): number | null {
+  const mixedNumberMatch = text.match(/^(\d+)-(\d+)\/(\d+)$/);
+  if (mixedNumberMatch) {
+    const whole = parseInt(mixedNumberMatch[1], 10);
+    const numerator = parseInt(mixedNumberMatch[2], 10);
+    const denominator = parseInt(mixedNumberMatch[3], 10);
+    const fraction = numerator / denominator;
+    return whole + fraction;
+  }
+
+  const fractionOnlyMatch = text.match(/^(\d+)\/(\d+)$/);
+  if (fractionOnlyMatch) {
+    const numerator = parseInt(fractionOnlyMatch[1], 10);
+    const denominator = parseInt(fractionOnlyMatch[2], 10);
+    if (denominator > 0) {
+      return numerator / denominator;
+    }
+  }
+
+  const decimalMatch = text.match(/^(\d+(?:\.\d+)?)$/);
+  if (decimalMatch) {
+    return parseFloat(decimalMatch[1]);
+  }
+
+  return null;
+}
+
 function decimalToFractionInches(value: number): string {
   const whole = Math.floor(value);
   const decimal = value - whole;
