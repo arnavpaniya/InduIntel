@@ -239,14 +239,11 @@ function relevantAttributes(categoryPath: CategoryPath): string[] {
 /** Check whether a label is relevant for the given category's attribute list. */
 function isRelevant(label: string, relevant: string[]): boolean {
   const lower = label.toLowerCase();
-  // Direct match
+  // Direct check: is the label itself in the relevant list (case-insensitive)?
   if (relevant.some(r => r.toLowerCase() === lower)) return true;
-  // Synonym match: check if any known synonym maps to the same canonical form
-  for (const [, canonical] of Object.entries(SYNONYMOUS_LABELS)) {
-    if (canonical.toLowerCase() === lower && relevant.some(r => r.toLowerCase() === canonical.toLowerCase())) {
-      return true;
-    }
-  }
+  // Synonym check: does this label map to a canonical form that's in the relevant list?
+  const canonical = SYNONYMOUS_LABELS[lower];
+  if (canonical && relevant.some(r => r.toLowerCase() === canonical)) return true;
   return false;
 }
 
