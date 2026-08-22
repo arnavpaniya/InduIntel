@@ -45,6 +45,12 @@ async function checkAndIncrementQuota(supabase: any): Promise<{ allowed: boolean
 
 export async function POST(request: NextRequest) {
   try {
+    const incomingToken = request.headers.get('x-internal-api-token');
+    const expectedToken = process.env.INTERNAL_API_TOKEN;
+    if (expectedToken && incomingToken !== expectedToken) {
+      debugError('[BATCH] Unauthorized: invalid or missing internal API token');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { limit = DEFAULT_BATCH_LIMIT } = await request.json();
     const supabase = await createServerSupabaseClient();
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

@@ -45,6 +45,12 @@ async function logEnrichment(
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const incomingToken = request.headers.get('x-internal-api-token');
+  const expectedToken = process.env.INTERNAL_API_TOKEN;
+  if (expectedToken && incomingToken !== expectedToken) {
+    debugError('[RUN] Unauthorized: invalid or missing internal API token');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const { item_id } = await request.json();
     if (!item_id) {

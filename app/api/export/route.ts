@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
     const { data: items, error } = await query;
 
     if (error) {
-      debugError('[EXPORT] Supabase query failed:', error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      debugError('[EXPORT] Supabase query failed:', error);
+      return NextResponse.json({ error: 'Export failed, please try again' }, { status: 500 });
     }
 
     if (!items || items.length === 0) {

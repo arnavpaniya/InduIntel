@@ -28,6 +28,12 @@ function cleanValue(value: string | undefined): string | null {
 
 export async function POST(request: NextRequest) {
   try {
+    const incomingToken = request.headers.get('x-internal-api-token');
+    const expectedToken = process.env.INTERNAL_API_TOKEN;
+    if (expectedToken && incomingToken !== expectedToken) {
+      debugError('[UPLOAD] Unauthorized: invalid or missing internal API token');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const contentType = request.headers.get('content-type') || '';
     
     if (contentType.includes('multipart/form-data')) {
