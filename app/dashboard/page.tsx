@@ -264,7 +264,23 @@ export default function DashboardClient() {
         loadItems();
         loadQuota();
       } else {
-        showToast(`Failed to clean item`, 'error');
+        const stepResults = result.step_results;
+        const firstFailedStep = Object.entries(stepResults).find(
+          ([, step]) => !step.success
+        );
+        let errorMessage = 'Failed to clean item';
+        if (firstFailedStep) {
+          const [stepName, step] = firstFailedStep;
+          const stepError = step.error || 'Unknown error';
+          if (
+            /429|quota|rate limit/i.test(stepError)
+          ) {
+            errorMessage = 'Daily AI limit reached — try again tomorrow or use a different key.';
+          } else {
+            errorMessage = `Failed at ${stepName}: ${stepError}`;
+          }
+        }
+        showToast(errorMessage, 'error');
       }
     } catch (error) {
       console.error('Enrich failed:', error);
