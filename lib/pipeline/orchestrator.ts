@@ -96,9 +96,14 @@ export interface EvidenceCache {
    * Returns the cached response, `null` for a negative-cached entry
    * ("searched, nothing found"), or `undefined` when no entry exists.
    */
-  get(key: string): Promise<EvidenceServiceResponse | null | undefined>;
+  get(key: string, ctx?: CacheContext): Promise<EvidenceServiceResponse | null | undefined>;
   /** Store a result (null = negative caching of "no evidence found"). */
-  set(key: string, value: EvidenceServiceResponse | null): Promise<void>;
+  set(key: string, value: EvidenceServiceResponse | null, ctx?: CacheContext): Promise<void>;
+}
+
+/** Optional per-call context (e.g., the real item row id for persistence). */
+export interface CacheContext {
+  itemId?: string;
 }
 
 export interface OrchestratorOptions {
@@ -139,40 +144,61 @@ export class InMemoryEvidenceCache implements EvidenceCache {
   }
 }
 
+/** True when the value is a well-formed UUID (enrichment_logs.item_id is UUID FK). */
+function isUuid(v: string | undefined | null): v is string {
+  return !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
 /**
- * Optional persistent cache reusing the EXISTING `enrichment_logs` table
+ * Persistent cache reusing the EXISTING `enrichment_logs` table
  * (same `_identity_key` convention as app/api/enrich/external-evidence).
- * Only wired when a Supabase admin client is supplied; never required.
+ *
+ * Schema constraints honored:
+ * - item_id is UUID NOT NULL REFERENCES items(id): persistence requires a REAL
+ *   item UUID via ctx.itemId. Offline/normalized rows (id "row-N") skip
+ *   persistence gracefully instead of corrupting the table.
+ * - Writes need a true service_role key (RLS); failures are surfaced as
+ *   warnings and degrade to "no persistent entry" without crashing.
  */
 export class SupabaseEnrichmentLogsCache implements EvidenceCache {
   constructor(private adminClient: {
     from: (table: string) => any;
   }) {}
 
-  async get(key: string): Promise<EvidenceServiceResponse | null | undefined> {
-    const { data } = await this.adminClient
+  async get(key: string, ctx?: CacheContext): Promise<EvidenceServiceResponse | null | undefined> {
+    if (!isUuid(ctx?.itemId)) return undefined; // nothing persisted for non-UUID rows
+    const { data, error } = await this.adminClient
       .from('enrichment_logs')
       .select('output_json')
+      .eq('item_id', ctx!.itemId)
       .eq('step', 'external_evidence')
       .eq('status', 'success')
       .contains('input_json', { _identity_key: key })
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (error) {
+      console.warn('[CACHE] read failed:', error.message ?? error);
+      return undefined;
+    }
     if (!data) return undefined;
     return (data.output_json as EvidenceServiceResponse | null) ?? null;
   }
 
-  async set(key: string, value: EvidenceServiceResponse | null): Promise<void> {
-    await this.adminClient.from('enrichment_logs').insert({
-      item_id: `identity:${key.slice(0, 24)}`,
+  async set(key: string, value: EvidenceServiceResponse | null, ctx?: CacheContext): Promise<void> {
+    if (!isUuid(ctx?.itemId)) return; // graceful skip — see class docs
+    const { error } = await this.adminClient.from('enrichment_logs').insert({
+      item_id: ctx!.itemId,
       step: 'external_evidence',
       status: 'success',
       error: null,
       input_json: { _identity_key: key },
       output_json: value,
-      duration_ms: 0,
     });
+    if (error) {
+      // Degrade honestly: pipeline continues without a persistent entry.
+      console.warn('[CACHE] persist failed:', error.message ?? error);
+    }
   }
 }
 
@@ -433,6 +459,20 @@ function applyEvidenceToProduct(
   }
 }
 
+/**
+ * Numeric coercion for LLM-returned values. Real models often answer
+ * "2.5 kg" instead of 2.5 — extract the leading number; fall back to the
+ * original string when no number exists (never fabricate).
+ */
+function coerceNumeric(v: unknown): unknown {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const m = v.trim().match(/^(-?\d+(?:[.,]\d+)?)/);
+    if (m) return Number(m[1].replace(',', '.'));
+  }
+  return v;
+}
+
 async function runGeminiBatch(
   product: CanonicalProduct,
   evidenceResp: EvidenceServiceResponse,
@@ -464,7 +504,7 @@ async function runGeminiBatch(
         if (v !== null && v !== undefined && v !== '') {
           const mapped = SPEC_FIELD_MAP[field];
           if (mapped) {
-            (product as any)[mapped.target] = mapped.numeric ? Number(v) : v;
+            (product as any)[mapped.target] = mapped.numeric ? coerceNumeric(v) : v;
             product.value_status[mapped.target as string] = 'inferred';
             product.field_provenance[mapped.target as string] = {
               source_type: 'inferred',
@@ -672,7 +712,7 @@ export async function runPipeline(
     let evidenceResp: EvidenceServiceResponse | null | undefined;
     if (needed.length > 0 && item.identity.key) {
       const cacheKey = evidenceCacheKey(item.identity);
-      evidenceResp = await cache.get(cacheKey);
+      evidenceResp = await cache.get(cacheKey, { itemId: item.id });
       if (evidenceResp !== undefined) {
         metrics.cacheHits++;          // includes negative-cached entries
       } else {
@@ -694,7 +734,7 @@ export async function runPipeline(
             { serviceUrl: evidenceUrl, timeoutMs: options.evidenceTimeoutMs },
           );
           metrics.timing.externalRetrievalMs += Date.now() - t0;
-          await cache.set(cacheKey, evidenceResp ?? null);
+          await cache.set(cacheKey, evidenceResp ?? null, { itemId: item.id });
         } catch (err) {
           metrics.timing.externalRetrievalMs += Date.now() - t0;
           errors.push({ productId: item.id, stage: 'external_evidence', message: msg(err) });

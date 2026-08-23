@@ -51,25 +51,44 @@ Smoke test: `POST $EVIDENCE_SERVICE_URL/evidence/check` with
 must answer HTTP 200 with the contract keys (`success`, `needs_search`,
 `identity_match`, `deterministic_fields`, `needs_gemini`, `unresolved`, …).
 
-## 4. Search provider
+## 4. Search provider (Tavily)
 
-The service needs a REAL search API — scraping search-engine HTML is not
-supported by design. Configure any provider exposing:
-
-```
-GET $EVIDENCE_SEARCH_URL?q=<query>   ->  {"results":[{"url": "...", "title": "..."}]}
-```
-
-(e.g. a thin proxy around SerpAPI / Bing / Google Custom Search JSON API).
-Set:
+The service integrates the **official Tavily Search API** as its discovery
+provider (verified against docs.tavily.com; no search-engine scraping).
 
 ```
-EVIDENCE_SEARCH_URL=https://your-provider.example/search
-EVIDENCE_SEARCH_API_KEY=your_provider_key
+EVIDENCE_SEARCH_URL=https://api.tavily.com/search
+EVIDENCE_SEARCH_API_KEY=tvly-...          # secret — never commit/log
 ```
 
-Without it the pipeline runs honestly with external evidence unresolved and
-reports `SEARCH PROVIDER NOT CONFIGURED`. **Do not fake one.**
+Provider selection is automatic: an `EVIDENCE_SEARCH_URL` containing
+`tavily.com` selects the Tavily provider (POST + Bearer auth); any other URL
+keeps the generic `GET ?q=` contract for local/mock providers.
+
+Behavior (all bounded, all graceful):
+- Request: `{query, max_results ≤ 20 (default 8), search_depth: "basic",
+  include_answer: false}` — Tavily's generated answer is never used as evidence;
+  only result URLs/titles feed discovery.
+- One polite retry on HTTP 429 only; auth failures (401/403) are never retried.
+- Timeouts, malformed JSON, malformed entries, and any non-200 degrade to
+  "no candidates" — the pipeline continues with fields left unresolved.
+- The key never appears in logs, errors, reports, or Git.
+
+Optional tuning: `EVIDENCE_SEARCH_TIMEOUT` (s, default 10),
+`EVIDENCE_SEARCH_MAX_RESULTS` (default 8), `EVIDENCE_SEARCH_RETRY_BACKOFF`
+(s, default 2).
+
+Smoke test exactly one real search:
+
+```bash
+npx tsx scripts/search-provider-smoke.ts
+```
+
+Verify the running service reports Tavily:
+
+```bash
+curl http://127.0.0.1:8000/   # -> {"search_provider": "TavilySearchProvider", ...}
+```
 
 ## 5. Environment variables
 

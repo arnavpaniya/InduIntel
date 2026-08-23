@@ -1,75 +1,72 @@
 /**
  * Stage 6 — Parts 11 + 12: Supabase production check & persistent cache test.
  *
- * Part 11 (read-only where possible):
- *   - connection
- *   - required tables/columns exist (items, item_descriptions, item_attributes,
- *     item_specs, item_assets, enrichment_logs)
- *   - row counts (head count only)
+ * Part 11 (read-only where possible): connection, required tables/columns,
+ * row counts.
  *
  * Part 12 (persistent cache via enrichment_logs):
- *   - write evidence result for identity A -> read -> HIT
- *   - different MPN                  -> MISS
- *   - same MPN, different manufacturer -> MISS
- *   - cleans up ONLY rows it created (item_id prefix 'stage6-cache-probe')
+ *   Product A -> evidence -> cache write -> read back = HIT
+ *   Same product again            -> HIT (no duplicate retrieval)
+ *   Different MPN                 -> MISS
+ *   Same MPN, different manufacturer -> MISS
+ *   Negative entry                -> stored as null
  *
- * Non-destructive: never deletes or resets pre-existing data.
+ * Credential honesty: the JWT payload's role is decoded locally (no network)
+ * and reported. Writes require a true service_role key; with any other role
+ * the round trip is reported BLOCKED, never faked. Cleanup touches ONLY rows
+ * this script created.
  */
 
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
 import { createClient } from '@supabase/supabase-js';
-import { computeIdentity } from '../lib/product-intelligence/identity';
 import { evidenceCacheKey, SupabaseEnrichmentLogsCache } from '../lib/pipeline/orchestrator';
+import { computeIdentity } from '../lib/product-intelligence/identity';
 import type { EvidenceServiceResponse } from '../lib/evidence/client';
 
 const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
-const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
 
-if (!url || !(serviceKey || publishableKey)) {
-  console.error('Supabase not configured — cannot run production check.');
+if (!url || !serviceKey) {
+  console.error('Supabase URL/key not configured — cannot run production check.');
   process.exit(1);
 }
 
-/**
- * Credential strategy: try the service-role key first (full write access).
- * If it is rejected (rotated/invalid), fall back to the publishable key for
- * READ-ONLY verification and report writes as blocked — never fake success.
- */
-async function pickClient(): Promise<{ client: any; role: 'service' | 'readonly'; writeBlocked: string | null }> {
-  if (serviceKey) {
-    const svc = createClient(url, serviceKey);
-    const { error } = await svc.from('items').select('id', { count: 'exact', head: true });
-    if (!error) return { client: svc, role: 'service', writeBlocked: null };
-    console.log(`Service-role key rejected (${error.message || '401'}). Falling back to read-only checks.`);
+/** Decode a JWT payload locally (structure only — no verification needed). */
+function jwtRole(jwt: string): string | null {
+  try {
+    const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString('utf-8'));
+    return payload.role ?? null;
+  } catch {
+    return null;
   }
-  const pub = createClient(url, publishableKey);
-  const { error } = await pub.from('items').select('id', { count: 'exact', head: true });
-  if (error) {
-    console.log(`Publishable key also failed: ${error.message}`);
-  }
-  return { client: pub, role: 'readonly', writeBlocked: 'SUPABASE_SERVICE_ROLE_KEY invalid/rotated (401). Writes blocked.' };
 }
-
-const PROBE_PREFIX = 'stage6-cache-probe';
 
 async function main(): Promise<void> {
   console.log('\n=== SUPABASE PRODUCTION CHECK ===\n');
 
-  const { client: supabase, role, writeBlocked } = await pickClient();
-  console.log(`Connection:            ✓ (${role === 'service' ? 'service-role' : 'READ-ONLY publishable key'})`);
-  if (writeBlocked) console.log(`Writes:                ✗ ${writeBlocked}`);
+  const role = jwtRole(serviceKey);
+  const isServiceRole = role === 'service_role' || serviceKey.startsWith('sb_secret_');
+  console.log(`Connection:              ✓ (${isServiceRole ? 'service-role' : `key role="${role ?? 'unknown'}" — NOT service_role`})`);
+  if (!isServiceRole) {
+    console.log('');
+    console.log('⚠️  The configured SUPABASE_SERVICE_ROLE_KEY does not carry the');
+    console.log('   service_role role — writes are rejected by RLS (42501).');
+    console.log('   Fix: Supabase Dashboard → Settings → API → copy the');
+    console.log('   "service_role" secret (or new-format sb_secret_... key), then re-run.');
+  }
 
-  // --- Required tables / columns ---
+  const supabase = createClient(url, serviceKey);
+
+  // --- Required tables / columns ------------------------------------------
   const tables: Array<{ name: string; columns: string[] }> = [
     { name: 'items', columns: ['id', 'mfg_part_num', 'part_desc', 'manufacturer_name', 'status', 'batch_id'] },
     { name: 'item_descriptions', columns: ['item_id', 'field_name', 'value'] },
     { name: 'item_attributes', columns: ['item_id', 'seq', 'label', 'value'] },
     { name: 'item_specs', columns: ['item_id', 'upc', 'weight', 'warranty'] },
     { name: 'item_assets', columns: ['item_id', 'asset_type', 'url'] },
-    { name: 'enrichment_logs', columns: ['item_id', 'step', 'status', 'input_json', 'output_json'] },
+    { name: 'enrichment_logs', columns: ['id', 'item_id', 'step', 'status', 'input_json', 'output_json'] },
   ];
 
   let allTablesOk = true;
@@ -85,41 +82,15 @@ async function main(): Promise<void> {
     }
   }
 
-  // --- Cache hygiene: clean OUR OWN previous probe rows only --------------
-  await supabase.from('enrichment_logs').delete().like('item_id', `${PROBE_PREFIX}%`);
-
-  // --- Persistent cache behavior (Part 12) --------------------------------
+  // --- Persistent cache behavior (Part 12) ---------------------------------
   console.log('\n=== PERSISTENT CACHE VERIFICATION ===\n');
-
-  if (writeBlocked) {
-    // Honest reporting: persistent-cache WRITES cannot be verified without a
-    // valid service-role key. Key-isolation logic is still proven offline.
-    console.log(`SKIPPED against live Supabase: ${writeBlocked}`);
-    console.log('Remediation: set a valid SUPABASE_SERVICE_ROLE_KEY, then re-run this script.');
-    console.log('Offline proof of key isolation (same code path as production):');
-  }
 
   const cache = new SupabaseEnrichmentLogsCache(supabase);
 
   const idA = computeIdentity({ manufacturer: 'Stage6 Probe Manufacturing', mpn: 'PRB-A-0001' });
-  const idA2 = computeIdentity({ manufacturer: 'Stage6 Probe Manufacturing', mpn: 'PRB-A-0001' }); // same product, formatting variants
+  const idA2 = computeIdentity({ manufacturer: 'stage6 probe manufacturing', mpn: 'prb-a-0001' }); // same product, formatting variants
   const idB = computeIdentity({ manufacturer: 'Stage6 Probe Manufacturing', mpn: 'PRB-B-0002' }); // different MPN
-  const idC = computeIdentity({ manufacturer: 'Other Vendor GmbH', mpn: 'PRB-A-0001' });        // different manufacturer
-
-  const sampleEvidence: EvidenceServiceResponse = {
-    success: true,
-    needs_search: true,
-    source: null,
-    identity_match: true,
-    identity_confidence: 0.99,
-    reject_reason: null,
-    evidence: [],
-    deterministic_fields: {
-      weight: { value: 1.5, uom: 'kg', evidence: 'Weight: 1.5 kg', source_url: 'probe://x', confidence: 0.9 },
-    },
-    needs_gemini: [],
-    unresolved: [],
-  };
+  const idC = computeIdentity({ manufacturer: 'Other Vendor GmbH', mpn: 'PRB-A-0001' });        // different mfr
 
   const keyA = evidenceCacheKey(idA);
   const keyA2 = evidenceCacheKey(idA2);
@@ -132,42 +103,97 @@ async function main(): Promise<void> {
   const keysIsolated = keyA === keyA2 && keyB !== keyA && keyC !== keyA;
 
   let roundTrip = false;
-  if (!writeBlocked) {
-    await cache.set(keyA, sampleEvidence);
+  let blockedReason: string | null = isServiceRole ? null : `writes need service_role; provided key role="${role}"`;
 
-    const hit = await cache.get(keyA);
-    console.log(`Product A after write:                    ${hit !== undefined && hit?.identity_match === true ? '✓ CACHE HIT' : '✗ MISS'}`);
+  if (!blockedReason) {
+    // Need a REAL items.id (enrichment_logs.item_id is UUID FK).
+    const { data: item } = await supabase.from('items').select('id').limit(1).maybeSingle();
+    if (!item) {
+      blockedReason = 'items table empty — cannot attach probe rows';
+    }
+    if (!blockedReason) {
+      const ctx = { itemId: item!.id };
+      const sampleEvidence: EvidenceServiceResponse = {
+        success: true,
+        needs_search: true,
+        source: null,
+        identity_match: true,
+        identity_confidence: 0.99,
+        reject_reason: null,
+        evidence: [],
+        deterministic_fields: {
+          weight: { value: 1.5, uom: 'kg', evidence: 'Weight: 1.5 kg', source_url: 'probe://x', confidence: 0.9 },
+        },
+        needs_gemini: [],
+        unresolved: [],
+      };
 
-    const hit2 = await cache.get(keyA2);
-    console.log('Product A again (formatting variants):    ' + (hit2 !== undefined && hit2?.identity_match ? '✓ CACHE HIT (no duplicate retrieval)' : '✗'));
+      await cache.set(keyA, sampleEvidence, ctx);
+      const hit = await cache.get(keyA, ctx);
+      console.log(`Product A after write:                    ${hit !== undefined && hit?.identity_match === true ? '✓ CACHE HIT' : '✗ MISS'}`);
+      if (hit === undefined) {
+        // Distinguish RLS vs schema-constraint causes for precise remediation.
+        const probe = await supabase.from('enrichment_logs').insert({
+          item_id: ctx.itemId,
+          step: 'external_evidence',
+          status: 'success',
+          input_json: { _identity_key: keyA },
+          output_json: { diagnostic: true },
+        });
+        if (probe.error?.message?.includes('enrichment_logs_step_check')) {
+          blockedReason = 'step CHECK constraint rejects external_evidence — apply supabase/migrations/010_external_evidence_step.sql (SQL Editor), then re-run';
+          console.log(`  ↳ cause: ${blockedReason}`);
+        } else if (probe.error) {
+          blockedReason = `insert rejected: ${probe.error.message}`;
+          console.log(`  ↳ cause: ${blockedReason}`);
+        }
+      }
 
-    const missB = await cache.get(keyB);
-    console.log(`Different MPN:                            ${missB === undefined ? '✓ CACHE MISS (isolated)' : '✗ CROSSED!'}`);
+      if (!blockedReason) {
+        const hit2 = await cache.get(keyA2, ctx);
+        console.log('Product A again (formatting variants):    ' + (hit2 !== undefined && hit2?.identity_match ? '✓ CACHE HIT (no duplicate retrieval)' : '✗'));
 
-    const missC = await cache.get(keyC);
-    console.log(`Different manufacturer, same MPN:         ${missC === undefined ? '✓ CACHE MISS (isolated)' : '✗ CROSSED!'}`);
+        const missB = await cache.get(keyB, ctx);
+        console.log(`Different MPN:                            ${missB === undefined ? '✓ CACHE MISS (isolated)' : '✗ CROSSED!'}`);
 
-    // Negative-cached entry semantics
-    const idD = computeIdentity({ manufacturer: 'Stage6 Probe Manufacturing', mpn: 'PRB-D-0004' });
-    await cache.set(evidenceCacheKey(idD), null);
-    const negEntry = await cache.get(evidenceCacheKey(idD));
-    console.log(`Negative entry stored (not-found):        ${negEntry === null ? '✓ null (searched, nothing found)' : negEntry === undefined ? '○ absent' : '✗ unexpected value'}`);
+        const missC = await cache.get(keyC, ctx);
+        console.log(`Different manufacturer, same MPN:         ${missC === undefined ? '✓ CACHE MISS (isolated)' : '✗ CROSSED!'}`);
 
-    // --- Cleanup own probe rows ---------------------------------------------
-    const del = await supabase.from('enrichment_logs').delete().like('item_id', `${PROBE_PREFIX}%`);
-    console.log(`Probe cleanup:                            ${del.error ? '✗ ' + del.error.message : '✓ removed own rows only'}`);
+        // Negative-cached entry semantics
+        const idD = computeIdentity({ manufacturer: 'Stage6 Probe Manufacturing', mpn: 'PRB-D-0004' });
+        await cache.set(evidenceCacheKey(idD), null, ctx);
+        const negEntry = await cache.get(evidenceCacheKey(idD), ctx);
+        console.log(`Negative entry stored (not-found):        ${negEntry === null ? '✓ null (searched, nothing found)' : negEntry === undefined ? '○ absent' : '✗ unexpected value'}`);
 
-    roundTrip =
-      hit?.identity_match === true && hit2?.identity_match === true &&
-      missB === undefined && missC === undefined;
-  } else {
-    roundTrip = false; // unverifiable without valid service credentials
+        // Cleanup ONLY our own probe rows on this item (per-key contains filter;
+        // PostgREST has no OR'd jsonb .in() syntax).
+        let cleaned = true;
+        for (const k of [keyA, keyB, keyC, evidenceCacheKey(idD)]) {
+          const del = await supabase
+            .from('enrichment_logs')
+            .delete()
+            .eq('item_id', item!.id)
+            .contains('input_json', { _identity_key: k });
+          if (del.error) { cleaned = false; console.log(`Probe cleanup error: ${del.error.message}`); }
+        }
+        if (cleaned) console.log('Probe cleanup (own rows only):            ✓ removed');
+
+        roundTrip =
+          hit?.identity_match === true && hit2?.identity_match === true &&
+          missB === undefined && missC === undefined && negEntry === null;
+      }
+    }
   }
 
-  const cacheOk = keysIsolated && (writeBlocked ? false : roundTrip);
+  if (blockedReason) {
+    console.log(`Round trip: BLOCKED — ${blockedReason}`);
+    console.log('Offline proof of key isolation (same production code path): shown above.');
+  }
 
-  console.log(`\nAll tables OK: ${allTablesOk} · Key isolation: ${keysIsolated ? 'PASS' : 'FAIL'} · Persistent-cache round trip: ${writeBlocked ? `BLOCKED — ${writeBlocked}` : roundTrip ? 'PASS' : 'FAIL'}`);
-  process.exitCode = allTablesOk && keysIsolated && !writeBlocked ? 0 : writeBlocked ? 2 : 1;
+  const cacheOk = keysIsolated && !blockedReason && roundTrip;
+
+  console.log(`\nAll tables OK: ${allTablesOk} · Key isolation: ${keysIsolated ? 'PASS' : 'FAIL'} · Persistent-cache round trip: ${cacheOk ? 'PASS' : blockedReason ? `BLOCKED (${blockedReason})` : 'FAIL'}`);
+  process.exitCode = allTablesOk && keysIsolated && cacheOk ? 0 : 1;
 }
 
 void main();

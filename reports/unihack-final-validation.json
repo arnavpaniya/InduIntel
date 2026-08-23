@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T09:19:45.712Z",
+  "generated_at": "2026-08-23T09:38:24.017Z",
   "source_input": "Unihack_ Sample Dataset - Input.csv",
   "input_rows": 1000,
   "processed_rows": 1000,
@@ -23,7 +23,7 @@
   "cache_hits": 1,
   "cache_misses": 958,
   "production_status": {
-    "gemini": "NOT CONFIGURED",
+    "gemini": "configured",
     "search_provider": "SEARCH PROVIDER NOT CONFIGURED",
     "evidence_service": "real",
     "supabase": "configured"
@@ -58,10 +58,10 @@
     "static_empty": 43000
   },
   "timing": {
-    "totalMs": 201,
+    "totalMs": 210,
     "avgPerProductMs": 0,
-    "externalRetrievalMs": 752,
+    "externalRetrievalMs": 787,
     "geminiMs": 0,
-    "totalWallMs": 202
+    "totalWallMs": 211
   }
 }

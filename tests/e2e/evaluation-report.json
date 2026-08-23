@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T09:18:25.719Z",
+  "generated_at": "2026-08-23T10:00:30.080Z",
   "evidence_service_mode": "real",
   "dataset_scenarios": 29,
   "totalProducts": 54,
@@ -19,19 +19,19 @@
   "unresolvedFields": 1967,
   "invalidFields": 2,
   "timing": {
-    "totalMs": 1390,
-    "avgPerProductMs": 26,
-    "externalRetrievalMs": 2662,
+    "totalMs": 1472,
+    "avgPerProductMs": 27,
+    "externalRetrievalMs": 2820,
     "geminiMs": 0
   },
   "outputColumns": 252,
   "performance": {
-    "totalMs": 1390,
-    "avgPerProductMs": 26,
-    "externalRetrievalMs": 2662,
+    "totalMs": 1472,
+    "avgPerProductMs": 27,
+    "externalRetrievalMs": 2820,
     "geminiMs": 0,
     "cache_hit_rate": 0.059,
-    "avg_ms_per_product": 26
+    "avg_ms_per_product": 27
   },
   "output_columns": 252
 }

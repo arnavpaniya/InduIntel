@@ -40,3 +40,8 @@ next-env.d.ts
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Python virtual environments
+.venv/
+venv/
+services/evidence/.venv/

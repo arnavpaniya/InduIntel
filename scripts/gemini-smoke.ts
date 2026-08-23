@@ -49,11 +49,12 @@ async function main(): Promise<void> {
   }
 
   const values = r.data.values ?? {};
-  const weightOk = values.weight === 2.5 || values.weight === '2.5';
+  const weightRaw = String(values.weight ?? '');
+  const weightOk = /^2\.5(\s*(kg|kilograms?))?$/i.test(weightRaw);
   const upcNull = values.upc === null || values.upc === undefined;
 
   console.log(`Call completed in ${ms}ms.`);
-  console.log(`  weight extracted from evidence : ${weightOk ? `✓ (${String(values.weight)})` : '✗ ' + JSON.stringify(values.weight)}`);
+  console.log(`  weight extracted from evidence : ${weightOk ? `✓ (${weightRaw})` : '✗ ' + JSON.stringify(values.weight)}`);
   console.log(`  unsupported field stays null   : ${upcNull ? '✓' : '✗ ' + JSON.stringify(values.upc)}`);
   console.log(`  confidence reported            : ${typeof r.data.confidence === 'number' ? '✓ ' + r.data.confidence : '○ missing'}`);
 

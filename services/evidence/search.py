@@ -3,9 +3,27 @@
 Never scrapes search engine HTML. Uses an API provider configured via
 environment variables. Returns "search unavailable" when no provider is
 configured.
+
+Providers:
+- TavilySearchProvider  — official Tavily Search API (POST, Bearer auth).
+  Selected automatically when EVIDENCE_SEARCH_URL points at tavily.com.
+- ApiSearchProvider     — generic REST provider (GET ?q= -> {"results":[...]})
+  kept for local/mock and alternative providers.
+- UnavailableProvider   — default when nothing is configured.
+
+Tavily notes (verified against official docs):
+- Endpoint : POST https://api.tavily.com/search
+- Auth     : Authorization: Bearer <EVIDENCE_SEARCH_API_KEY>
+- Body     : {"query": ..., "max_results": <=20, "search_depth": "basic",
+              "include_answer": false}
+- Response : {"results": [{"title": "...", "url": "..."}, ...], ...}
+Only result URLs/titles are consumed here; Tavily's generated answer and
+content snippets are NEVER used as product evidence — retrieval, sanitization,
+identity verification, and extraction stay in the existing Stage 4 pipeline.
 """
 
 import os
+import time
 from typing import Optional, Dict, Any, List
 
 
@@ -23,6 +41,13 @@ class UnavailableProvider(SearchProvider):
         return None
 
 
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, "") or default)
+    except ValueError:
+        return default
+
+
 class ApiSearchProvider(SearchProvider):
     """Generic REST search provider configured via env vars.
 
@@ -34,7 +59,7 @@ class ApiSearchProvider(SearchProvider):
         import httpx
         self.url = os.getenv("EVIDENCE_SEARCH_URL", "")
         self.api_key = os.getenv("EVIDENCE_SEARCH_API_KEY", "")
-        self.timeout = float(os.getenv("EVIDENCE_SEARCH_TIMEOUT", "10"))
+        self.timeout = _env_float("EVIDENCE_SEARCH_TIMEOUT", 10)
         self._client = httpx
 
     def search(self, query: str) -> Optional[List[Dict[str, Any]]]:
@@ -64,8 +89,114 @@ class ApiSearchProvider(SearchProvider):
             return None
 
 
+class TavilySearchProvider(SearchProvider):
+    """Official Tavily Search API provider.
+
+    Env:
+      EVIDENCE_SEARCH_URL      e.g. https://api.tavily.com/search
+      EVIDENCE_SEARCH_API_KEY  the Tavily key (NEVER logged)
+
+    Behavior:
+      - POST JSON body; Bearer auth header.
+      - Bounded max_results and bounded timeout.
+      - ONE polite retry on 429 only; auth failures are never retried.
+      - Any failure (missing config, HTTP error, timeout, malformed JSON,
+        malformed entries) yields None => "no candidates" downstream.
+      - The API key never appears in logs, errors, or returned data.
+    """
+
+    # Bounded discovery: enough candidates for Stage 4.1's MAX_CANDIDATE_ATTEMPTS
+    # plus a little ranking headroom, far below Tavily's own cap of 20.
+    MAX_RESULTS_DEFAULT = 8
+    RETRY_BACKOFF_SECONDS = _env_float("EVIDENCE_SEARCH_RETRY_BACKOFF", 2)
+
+    def __init__(self):
+        self.url = os.getenv("EVIDENCE_SEARCH_URL", "")
+        self.api_key = os.getenv("EVIDENCE_SEARCH_API_KEY", "")
+        self.timeout = _env_float("EVIDENCE_SEARCH_TIMEOUT", 10)
+        try:
+            max_results = int(os.getenv("EVIDENCE_SEARCH_MAX_RESULTS", str(self.MAX_RESULTS_DEFAULT)))
+        except ValueError:
+            max_results = self.MAX_RESULTS_DEFAULT
+        # Clamp to Tavily's documented maximum (20).
+        self.MAX_RESULTS = min(max(max_results, 0), 20)
+        if not self.api_key:
+            # No key -> provider cannot function; report unavailable honestly.
+            self._disabled_reason = "api key missing"
+        elif not self.url:
+            self._disabled_reason = "endpoint missing"
+        else:
+            self._disabled_reason = None
+
+    def search(self, query: str) -> Optional[List[Dict[str, Any]]]:
+        import httpx
+
+        if self._disabled_reason or not query or not query.strip():
+            return None
+
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        body = {
+            "query": query,
+            "max_results": self.MAX_RESULTS,
+            "search_depth": "basic",       # 1 credit; relevance is sufficient —
+            "include_answer": False,       # Tavily's generated answer is NOT evidence
+            "include_raw_content": False,
+        }
+
+        attempts = 0
+        while attempts < 2:  # bounded: initial attempt + one 429 retry
+            attempts += 1
+            try:
+                resp = httpx.post(
+                    self.url,
+                    json=body,
+                    headers=headers,
+                    timeout=self.timeout,
+                )
+            except Exception:
+                return None  # network/timeout/malformed request -> no candidates
+
+            if resp.status_code == 200:
+                return self._parse(resp)
+
+            if resp.status_code == 429 and attempts < 2:
+                # Respect the rate limit once, briefly; then give up.
+                time.sleep(self.RETRY_BACKOFF_SECONDS)
+                continue
+
+            # 401/403 (bad key), 432/433 (plan limits), 4xx/5xx — never retried.
+            return None
+
+        return None
+
+    def _parse(self, resp) -> Optional[List[Dict[str, Any]]]:
+        try:
+            data = resp.json()
+        except Exception:
+            return None
+        if not isinstance(data, dict):
+            return None
+        results = data.get("results")
+        if not isinstance(results, list):
+            return None
+
+        candidates: List[Dict[str, Any]] = []
+        for r in results[: self.MAX_RESULTS]:  # hard bound regardless of API
+            if not isinstance(r, dict):
+                continue  # malformed entry ignored safely
+            url = r.get("url")
+            if not isinstance(url, str) or not url.strip():
+                continue  # malformed entry ignored safely
+            title = r.get("title") if isinstance(r.get("title"), str) else ""
+            candidates.append({"url": url.strip(), "title": title})
+        return candidates
+
+
 def get_provider() -> SearchProvider:
     """Return the configured search provider, or UnavailableProvider."""
+    url = os.getenv("EVIDENCE_SEARCH_URL", "")
+    if url and "tavily.com" in url.lower():
+        return TavilySearchProvider()
     if os.getenv("EVIDENCE_SEARCH_URL"):
         return ApiSearchProvider()
     return UnavailableProvider()
