@@ -12,17 +12,22 @@ export interface Item {
   classpath: string | null;
   manufacturer_name: string | null;
   brand_name: string | null;
-  status: 'raw' | 'enriching' | 'enriched' | 'review';
+  status: 'raw' | 'enriching' | 'enriched' | 'review' | 'failed';
   confidence_score: number | null;
   field_confidence: number | null;
   is_ground_truth: boolean;
   batch_id: string | null;
+  /** populated when status='failed' */
+  failed_step?: string | null;
+  failed_error?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface ItemsResponse {
   items: Item[];
+  /** Per-status totals straight from the database (may be undefined) */
+  statusCounts?: Record<string, number>;
   pagination: {
     page: number;
     limit: number;
@@ -82,7 +87,9 @@ export interface EnrichedItem extends Item {
 export interface EnrichRunResponse {
   success: boolean;
   item_id: string;
-  status: 'enriched' | 'review';
+  status: 'enriched' | 'review' | 'failed';
+  failed_step?: string;
+  failed_error?: string;
   confidence_score: number;
   field_confidence: number;
   step_results: Record<string, any>;

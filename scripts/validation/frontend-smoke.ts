@@ -59,10 +59,18 @@ async function main() {
   const run = await j('/api/enrich/run', { method: 'POST', headers: H, body: JSON.stringify({ item_id: target.id }) });
   const steps = run.parsed?.step_results ?? {};
   const ranSteps = Object.keys(steps);
+  const isHandledFailure = run.parsed?.status === 'failed';
   check('POST /api/enrich/run', run.status === 200 && !!run.parsed?.item_id,
-    `steps=[${ranSteps.join(',')}]`);
-  for (const expected of ['manufacturer', 'classify', 'missing-field-analysis', 'external_evidence', 'attributes', 'descriptions', 'specs']) {
-    check(`  step ${expected}`, expected in steps);
+    `steps=[${ranSteps.join(',')}] status=${run.parsed?.status}`);
+  if (!isHandledFailure) {
+    // Success path: every stage must have executed
+    for (const expected of ['manufacturer', 'classify', 'missing-field-analysis', 'external_evidence', 'attributes', 'descriptions', 'specs']) {
+      check(`  step ${expected}`, expected in steps);
+    }
+  } else {
+    // Handled failure path: pipeline must stop at the failing step and report it
+    const fs2 = run.parsed?.failed_step;
+    check('  pipeline aborted at failing step', ranSteps.includes(fs2), `aborted after ${fs2}`);
   }
   const evData = steps['external_evidence']?.data;
   check('external evidence reached Python service',
@@ -72,7 +80,12 @@ async function main() {
   // 4) Backend-derived status/confidence
   const st = run.parsed?.status;
   const cs = run.parsed?.confidence_score;
-  check('status ∈ {enriched, review}', st === 'enriched' || st === 'review', `status=${st} confidence=${cs}`);
+  check('backend-reported lifecycle status', ['enriched','review','failed'].includes(st), `status=${st} confidence=${cs}`);
+  if (st === 'failed') {
+    check('failed state carries failed_step + safe error',
+      !!run.parsed?.failed_step && !!run.parsed?.failed_error,
+      `step=${run.parsed?.failed_step} err="${String(run.parsed?.failed_error).slice(0,60)}"`);
+  }
 
   // 5) Item detail reflects persisted state
   const detail = await j(`/api/items/${target.id}`);

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { 
-  ArrowLeft, Zap, Settings, Package, CheckCircle2, XCircle, AlertTriangle, 
+  ArrowLeft, Zap, Clock, Settings, Package, CheckCircle2, XCircle, AlertTriangle, 
   FileText, Download, Wand2, ChevronRight, Layers, Eye, Check, X, Shield, Sparkles, HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -73,22 +73,52 @@ export default function ItemDetailPage() {
     loadItem();
   }, [itemId]);
 
+  const [lastFailure, setLastFailure] = useState<{ step: string; message: string } | null>(null);
+
+  const STEP_LABELS: Record<string, string> = {
+    manufacturer: 'Manufacturer',
+    classify: 'Classification',
+    'missing-field-analysis': 'Missing-field analysis',
+    external_evidence: 'External evidence',
+    attributes: 'Attribute extraction',
+    descriptions: 'Description generation',
+    specs: 'Specifications',
+  };
+
   const handleEnrich = async () => {
     if (!item) return;
     setEnriching(true);
+    setLastFailure(null);
     try {
       const result = await enrichItem(item.id);
-      if (result.success) {
-        showToast(`Enrichment complete! Quality score: ${result.confidence_score}%`, 'success');
-        // Fetch fresh detail to get full relations and updated confidence score
-        const updatedItem = await fetchItemDetail(item.id);
-        setItem(updatedItem);
-      } else {
-        showToast('Enrichment failed', 'error');
+
+      // Persisted failure state from the backend (handled business failure)
+      if (!result.success || result.status === 'failed') {
+        const step = result.failed_step ?? 'unknown';
+        const label = STEP_LABELS[step] ?? step;
+        const safeMsg =
+          (result as any).failed_error ??
+          (Object.values(result.step_results ?? {}).find((r: any) => r?.safeError)?.safeError as string | undefined) ??
+          'Cleaning could not be completed.';
+        setLastFailure({ step: label, message: safeMsg });
+        setItem((prev) =>
+          prev ? { ...prev, status: 'failed', failed_step: step, failed_error: safeMsg } : prev,
+        );
+        showToast(`Cleaning failed at ${label}`, 'error');
+        return;
       }
+
+      showToast(`Cleaning complete! Completeness score: ${result.confidence_score}%`, 'success');
+      // Fetch fresh detail so the report renders the same persisted Supabase
+      // state the dashboard and exports use.
+      const updatedItem = await fetchItemDetail(item.id);
+      setItem(updatedItem);
     } catch (error) {
       console.error('Enrich failed:', error);
-      showToast('Enrichment failed', 'error');
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      setLastFailure({ step: 'request', message: msg });
+      setItem((prev) => (prev ? { ...prev, status: 'failed', failed_step: 'request', failed_error: msg } : prev));
+      showToast(`Cleaning failed: ${msg.slice(0, 80)}`, 'error');
     } finally {
       setEnriching(false);
     }
@@ -110,19 +140,40 @@ export default function ItemDetailPage() {
   }
 
   const isRaw = item.status === 'raw';
-  const hasEnrichment = item.status !== 'raw';
+  const isFailed = item.status === 'failed';
+  const isEnriching = item.status === 'enriching';
+
+  // A product counts as enriched ONLY when persisted enrichment data exists.
+  const hasDescriptions = (item.item_descriptions?.length ?? 0) > 0;
+  const hasAttributes = (item.item_attributes?.length ?? 0) > 0;
+  const hasSpecs = item.item_specs != null && item.item_specs.length > 0;
+  const hasTaxonomy = !!item.classpath;
+  const hasEnrichmentData = hasDescriptions || hasAttributes || hasSpecs || hasTaxonomy;
+
   const mainSpec: ItemSpec | undefined = item.item_specs && item.item_specs.length > 0 ? item.item_specs[0] : undefined;
-  
-  let qualityGrade = 'Grade A+ (100% Ready)';
-  let gradeBadgeVariant: 'success' | 'warning' | 'gray' = 'success';
+
+  let qualityGrade = 'Successful enrichment completed';
+  let gradeBadgeVariant: 'success' | 'warning' | 'gray' | 'destructive' = 'success';
   if (isRaw) {
-    qualityGrade = 'Not Cleaned Yet';
+    qualityGrade = 'Not cleaned yet';
     gradeBadgeVariant = 'gray';
-  } else if (item.status === 'review' || (item.confidence_score && item.confidence_score < 60)) {
-    qualityGrade = 'Grade C (Needs Quick Check)';
+  } else if (isEnriching) {
+    qualityGrade = 'Currently cleaning';
+    gradeBadgeVariant = 'gray';
+  } else if (isFailed) {
+    qualityGrade = 'Cleaning failed';
+    gradeBadgeVariant = 'destructive';
+  } else if (item.status === 'review') {
+    qualityGrade = 'Partial enrichment — review required';
     gradeBadgeVariant = 'warning';
-  } else if (item.confidence_score && item.confidence_score < 80) {
-    qualityGrade = 'Grade B (Good Quality)';
+  } else if (!hasEnrichmentData) {
+    qualityGrade = 'No enrichment data available';
+    gradeBadgeVariant = 'gray';
+  } else if (item.confidence_score != null && item.confidence_score < 60) {
+    qualityGrade = 'Low completeness — review recommended';
+    gradeBadgeVariant = 'warning';
+  } else if (item.confidence_score != null && item.confidence_score < 80) {
+    qualityGrade = 'Good quality';
     gradeBadgeVariant = 'success';
   }
 
@@ -138,7 +189,7 @@ export default function ItemDetailPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs font-bold text-indigo-700">MPN: {item.mfg_part_num}</span>
-                <Badge variant={gradeBadgeVariant} className="text-[11px] font-semibold">
+                <Badge variant={gradeBadgeVariant as any} className="text-[11px] font-semibold">
                   {qualityGrade}
                 </Badge>
               </div>
@@ -201,15 +252,38 @@ export default function ItemDetailPage() {
               <div className="text-xs text-slate-700 leading-relaxed space-y-1">
                 <p className="font-semibold text-slate-900">What is this product report?</p>
                 <p>
-                  This report shows how AI cleaned the raw supplier data for model <code className="font-mono text-indigo-700 font-bold">{item.mfg_part_num}</code>. 
-                  {hasEnrichment 
-                    ? ` AI cleaned the manufacturer name to "${item.manufacturer_name || 'Detected'}", inferred brand "${item.brand_name || 'Detected'}", categorized it under standard e-commerce groups, and created 5 ready-to-use customer descriptions.`
-                    : ' This product has not been cleaned yet. Click "Run AI Cleaning" below to generate descriptions, categories, and technical specs.'}
+                  This report shows how AI cleaned the raw supplier data for model <code className="font-mono text-indigo-700 font-bold">{item.mfg_part_num}</code>.
+                  {hasEnrichmentData ? (
+                    <>
+                      {' '}Manufacturer: <b>{item.manufacturer_name ? item.manufacturer_name : 'not determined from the supplier data'}</b>.
+                      {' '}Brand: <b>{item.brand_name ? item.brand_name : 'not determined'}</b>.
+                      {' '}Category: <b>{hasTaxonomy ? item.classpath : 'not determined'}</b>.
+                      {' '}Descriptions generated: <b>{item.item_descriptions?.length ?? 0}</b>.
+                    </>
+                  ) : isEnriching ? (
+                    ' This product is currently being cleaned.'
+                  ) : isFailed ? (
+                    ' The last cleaning attempt did not complete. See the failure details below.'
+                  ) : (
+                    ' This product has not been cleaned yet. Click "Run AI Cleaning" below to generate descriptions, categories, and technical specs.'
+                  )}
                 </p>
+                {isFailed && lastFailure && (
+                  <div className="mt-2 p-2 rounded bg-red-50 border border-red-200">
+                    <p className="font-semibold text-red-900">Cleaning failed at {lastFailure.step}</p>
+                    <p className="text-red-800">{lastFailure.message}</p>
+                  </div>
+                )}
+                {!isFailed && item.failed_step && (
+                  <div className="mt-2 p-2 rounded bg-red-50 border border-red-200">
+                    <p className="font-semibold text-red-900">Previous cleaning failed at {(item.failed_step ?? 'unknown').replace(/_/g, ' ')}</p>
+                    {item.failed_error && <p className="text-red-800">{item.failed_error}</p>}
+                  </div>
+                )}
               </div>
             </div>
 
-            {isRaw && (
+            {(isRaw || isFailed) && !isEnriching && (
               <div className="pt-2">
                 <Button 
                   onClick={handleEnrich} 
@@ -217,15 +291,27 @@ export default function ItemDetailPage() {
                   className="w-full sm:w-auto h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-2"
                 >
                   <Zap className="h-4 w-4 fill-white" />
-                  {enriching ? 'Cleaning Catalog Data...' : 'Run AI Cleaning Pipeline'}
+                  {enriching
+                    ? 'Cleaning Catalog Data...'
+                    : isFailed
+                      ? 'Retry AI Cleaning'
+                      : 'Run AI Cleaning Pipeline'}
                 </Button>
+                {isFailed && (
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    Retry re-runs the full pipeline. Previous partial data stays until replaced.
+                  </p>
+                )}
               </div>
+            )}
+            {isEnriching && !enriching && (
+              <p className="text-xs text-slate-500 italic">A cleaning job was started for this product. Refresh later or reconcile stale jobs.</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Multi-Tab Report Hub */}
-        {hasEnrichment && (
+        {/* Multi-Tab Report Hub — only when persisted enrichment data exists */}
+        {hasEnrichmentData && !isEnriching && (
           <div className="space-y-6">
             <div className="flex border-b border-slate-200 bg-white p-1 rounded-lg border">
               <button
@@ -474,35 +560,57 @@ export default function ItemDetailPage() {
                     </div>
 
                     <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">5-Step AI Enrichment Execution Log</h4>
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Step completion (derived from saved data)</h4>
                       <div className="space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between p-2 bg-white rounded border border-slate-200">
-                          <span className="font-semibold text-slate-800">1. Manufacturer & Brand Cleansing</span>
-                          <Badge variant="success" className="text-[10px]">Completed</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded border border-slate-200">
-                          <span className="font-semibold text-slate-800">2. Category Taxonomy Tree Generation</span>
-                          <Badge variant="success" className="text-[10px]">Completed</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded border border-slate-200">
-                          <span className="font-semibold text-slate-800">3. Technical Attribute Extraction</span>
-                          <Badge variant="success" className="text-[10px]">Completed</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded border border-slate-200">
-                          <span className="font-semibold text-slate-800">4. Customer Description Formats</span>
-                          <Badge variant="success" className="text-[10px]">Completed</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded border border-slate-200">
-                          <span className="font-semibold text-slate-800">5. Specifications & Universal Codes</span>
-                          <Badge variant="success" className="text-[10px]">Completed</Badge>
-                        </div>
+                        {[
+                          { label: '1. Manufacturer & Brand Cleansing', done: !!item.manufacturer_name },
+                          { label: '2. Category Taxonomy Tree Generation', done: hasTaxonomy },
+                          { label: '3. Technical Attribute Extraction', done: hasAttributes },
+                          { label: '4. Customer Description Formats', done: hasDescriptions },
+                          { label: '5. Specifications & Universal Codes', done: hasSpecs },
+                        ].map((stepRow) => (
+                          <div key={stepRow.label} className="flex items-center justify-between p-2 bg-white rounded border border-slate-200">
+                            <span className="font-semibold text-slate-800">{stepRow.label}</span>
+                            <Badge variant={stepRow.done ? 'success' : 'gray'} className="text-[10px]">
+                              {stepRow.done ? 'Saved' : 'Not determined'}
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
+                      <p className="text-[11px] text-slate-500 pt-1">
+                        Completion reflects values actually stored in Supabase for this product.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             )}
           </div>
+        )}
+        {(isFailed || isEnriching || (!hasEnrichmentData && !isRaw)) && (
+          <Card className={cn('clean-card', isFailed && 'border-red-200 bg-red-50/40')}>
+            <CardContent className="p-6 space-y-2">
+              <div className="flex items-center gap-2">
+                {isFailed ? <XCircle className="h-5 w-5 text-red-600" /> : <Clock className="h-5 w-5 text-slate-400" />}
+                <h3 className="text-sm font-bold text-slate-900">
+                  {isFailed ? 'Cleaning failed' : isEnriching ? 'Cleaning in progress' : 'No enrichment data yet'}
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600">
+                {isFailed
+                  ? `The last cleaning run did not complete${item.failed_step ? ` (failed at ${item.failed_step.replace(/_/g, ' ')})` : ''}. Use Retry AI Cleaning above.`
+                  : isEnriching
+                    ? 'This product is currently being cleaned. This page will show results once the job finishes.'
+                    : 'Run AI Cleaning to generate taxonomy, descriptions, attributes and specifications.'}
+              </p>
+              {(item.failed_error) && (
+                <p className="text-[11px] text-red-800 font-mono break-words">{item.failed_error}</p>
+              )}
+              <div className="pt-1 text-[11px] text-slate-500">
+                Status: <b>{item.status}</b> · Completeness: <b>{item.confidence_score ?? 0}%</b>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>

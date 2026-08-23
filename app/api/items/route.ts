@@ -77,8 +77,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message, code: error.code, details: error.details }, { status: 500 });
     }
     
+    // Per-status counts from the DATABASE (BUG 8: never derived from the
+    // current page — these must match reality even when filtered/paginated).
+    let statusCounts: Record<string, number> | undefined;
+    try {
+      const { count: rawC } = await supabase.from('items').select('id', { count: 'exact', head: true }).eq('status', 'raw');
+      const { count: enrC } = await supabase.from('items').select('id', { count: 'exact', head: true }).eq('status', 'enriching');
+      const { count: doneC } = await supabase.from('items').select('id', { count: 'exact', head: true }).eq('status', 'enriched');
+      const { count: revC } = await supabase.from('items').select('id', { count: 'exact', head: true }).eq('status', 'review');
+      const { count: failC } = await supabase.from('items').select('id', { count: 'exact', head: true }).eq('status', 'failed');
+      statusCounts = {
+        raw: rawC ?? 0,
+        enriching: enrC ?? 0,
+        enriched: doneC ?? 0,
+        review: revC ?? 0,
+        failed: failC ?? 0,
+      };
+    } catch {
+      statusCounts = undefined; // unavailable — frontend falls back to page-derived
+    }
+
     return NextResponse.json({
       items: data || [],
+      statusCounts,
       pagination: {
         page,
         limit,

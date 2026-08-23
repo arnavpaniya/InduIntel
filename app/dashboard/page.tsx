@@ -48,8 +48,14 @@ const STATUS_BADGE_CONFIG: Record<Item['status'], { variant: 'success' | 'warnin
   review: {
     variant: 'warning',
     label: 'Needs Quick Check',
-    sublabel: 'Sparse supplier data — review recommended',
+    sublabel: 'Partial enrichment — review recommended',
     icon: AlertTriangle,
+  },
+  failed: {
+    variant: 'destructive' as any,
+    label: 'Cleaning Failed',
+    sublabel: 'Retry available from the product report',
+    icon: XCircle,
   },
 };
 
@@ -195,6 +201,7 @@ export default function DashboardClient() {
   const [batchLoading, setBatchLoading] = useState(false);
   const [quotaStatus, setQuotaStatus] = useState<QuotaStatus>({ available: false, used: null, limit: null, remaining: null, near_limit: false });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [dbStatusCounts, setDbStatusCountsFromDb] = useState<Record<string, number> | null>(null);
   
   // Upload modal state
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -228,6 +235,7 @@ export default function DashboardClient() {
       });
       setItems(data.items);
       setPagination(prev => ({ ...prev, total: data.pagination.total, totalPages: data.pagination.totalPages }));
+      if (data.statusCounts) setDbStatusCountsFromDb(data.statusCounts);
     } catch (error) {
       console.error('Failed to load items:', error);
       showToast(`Failed to load catalog items`, 'error');
@@ -391,13 +399,12 @@ export default function DashboardClient() {
     }
   };
 
-  const getStatusCounts = () => {
-    const counts = { raw: 0, enriching: 0, enriched: 0, review: 0 };
-    items.forEach(item => counts[item.status]++);
+  // Prefer DATABASE totals; fall back to current-page derivation.
+  const statusCounts = dbStatusCounts ?? (() => {
+    const counts = { raw: 0, enriching: 0, enriched: 0, review: 0, failed: 0 };
+    items.forEach(item => counts[item.status] = (counts[item.status] ?? 0) + 1);
     return counts;
-  };
-
-  const statusCounts = getStatusCounts();
+  })();
 
   const [exportLoading, setExportLoading] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('csv');
@@ -579,6 +586,7 @@ export default function DashboardClient() {
                 <SelectItem value="enriched">🟢 Enriched (confidence ≥ 60%)</SelectItem>
                 <SelectItem value="review">🟡 Needs Quick Check</SelectItem>
                 <SelectItem value="raw">⚪ Not Cleaned Yet</SelectItem>
+                <SelectItem value="failed">🔴 Cleaning Failed</SelectItem>
               </SelectContent>
             </Select>
 

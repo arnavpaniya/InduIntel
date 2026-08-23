@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { scoreItem as computeGroundTruthScore } from '@/lib/scoring/compare';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import React from 'react';
 import { renderToStream } from '@react-pdf/renderer';
@@ -263,6 +264,65 @@ const styles = StyleSheet.create({
   },
 });
 
+
+function StatusBanner({ status, failedStep, failedError }: { status: string; failedStep?: string | null; failedError?: string | null }) {
+  const map: Record<string, { bg: string; border: string; title: string; text: string }> = {
+    raw:       { bg: '#f1f5f9', border: '#cbd5e1', title: 'Not cleaned yet',
+                 text: 'This product has not been through the enrichment pipeline yet. Sections below show only the original supplier data.' },
+    enriching: { bg: '#e0f2fe', border: '#7dd3fc', title: 'Currently cleaning',
+                 text: 'An enrichment job is in progress. This snapshot may be incomplete.' },
+    failed:    { bg: '#fee2e2', border: '#fca5a5', title: `Cleaning failed${failedStep ? ` at ${failedStep.replace(/_/g, ' ')}` : ''}`,
+                 text: failedError ?? 'The last enrichment run did not complete. Values below are limited to what was saved before the failure.' },
+    review:    { bg: '#fef3c7', border: '#fcd34d', title: 'Partial enrichment — review required',
+                 text: 'Some details were unclear or missing. A quick human check is recommended before publishing.' },
+    enriched:  { bg: '#dcfce7', border: '#86efac', title: 'Enrichment completed successfully',
+                 text: 'All pipeline steps saved their results for this product.' },
+  };
+  const cfg = map[status] ?? map.raw;
+  return (
+    <View style={[styles.section, { backgroundColor: cfg.bg, borderWidth: 1, borderColor: cfg.border, borderRadius: 4, padding: 12 }]}>
+      <Text style={{ fontSize: 11, fontWeight: 'bold', color: darkGray }}>{cfg.title}</Text>
+      <Text style={{ fontSize: 9, color: midGray, marginTop: 3 }}>{cfg.text}</Text>
+      <Text style={{ fontSize: 8, color: midGray, marginTop: 4 }}>Lifecycle status: {status}</Text>
+    </View>
+  );
+}
+
+function SpecsSection({ spec }: { spec: any | null }) {
+  if (!spec) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Specifications & Identifiers</Text>
+        <Text style={styles.emptyState}>No specifications were extracted.</Text>
+      </View>
+    );
+  }
+  const row = (label: string, value: any, fmt?: (v: any) => string) => (
+    <View key={label} style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailValue}>
+        {value === null || value === undefined || value === '' ? 'Not available' : fmt ? fmt(value) : String(value)}
+      </Text>
+    </View>
+  );
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Specifications & Identifiers</Text>
+      {row('UPC barcode', spec.upc)}
+      {row('EAN', spec.ean)}
+      {row('GTIN', spec.gtin)}
+      {row('UNSPSC', spec.unspsc)}
+      {row('List price', spec.list_price, (v) => `$${v}`)}
+      {row('Dimensions (L×W×H)', [spec.length, spec.width, spec.height].every((v) => v == null)
+        ? null
+        : `${spec.length ?? '—'} × ${spec.width ?? '—'} × ${spec.height ?? '—'} ${spec.length_uom ?? ''}`)}
+      {row('Weight', spec.weight, (v) => `${v} ${spec.weight_uom ?? ''}`.trim())}
+      {row('Country of origin', spec.country_of_origin)}
+      {row('Warranty', spec.warranty)}
+    </View>
+  );
+}
+
 function RawInputSection({ partDesc }: { partDesc: string | null }) {
   return (
     <View style={styles.section}>
@@ -395,6 +455,17 @@ function ConfidenceSection({
           </Text>
         </View>
       </View>
+      {(status === 'failed' || status === 'enriching' || status === 'raw') && (
+        <View style={styles.reviewBox}>
+          <Text style={styles.reviewText}>
+            {status === 'failed'
+              ? 'The last cleaning run FAILED. Scores below reflect only partial data saved before the failure and do not indicate success.'
+              : status === 'enriching'
+                ? 'Cleaning is in progress — scores are incomplete snapshots.'
+                : 'This product has not been cleaned yet — there is nothing to score.'}
+          </Text>
+        </View>
+      )}
       {status === 'review' && (
         <View style={styles.reviewBox}>
           <Text style={styles.reviewText}>
@@ -470,6 +541,8 @@ function ReportDocument({ item, gtResult }: { item: any; gtResult: any | null })
         <Text style={styles.mainTitle}>{item.mfg_part_num}</Text>
         <Text style={styles.mpnSubtitle}>{item.part_desc || 'No description'}</Text>
 
+        <StatusBanner status={item.status} failedStep={item.failed_step} failedError={item.failed_error} />
+
         <RawInputSection partDesc={item.part_desc} />
 
         <IdentitySection 
@@ -487,6 +560,8 @@ function ReportDocument({ item, gtResult }: { item: any; gtResult: any | null })
             charCount: d.char_count,
           }))}
         />
+
+        <SpecsSection spec={Array.isArray(item.item_specs) ? item.item_specs[0] : item.item_specs ?? null} />
 
         <ConfidenceSection 
           confidenceScore={item.confidence_score}
@@ -522,6 +597,8 @@ export async function GET(
         status,
         confidence_score,
         field_confidence,
+        failed_step,
+        failed_error,
         item_descriptions(field_name, value, char_count),
         item_attributes(label, value, uom),
         item_specs(*)
@@ -534,25 +611,21 @@ export async function GET(
     }
 
     let gtResult = null;
-    if (item.status !== 'raw') {
-      const { data: gtItem } = await supabase
-        .from('items')
-        .select('id')
-        .eq('mfg_part_num', item.mfg_part_num)
-        .eq('is_ground_truth', true)
-        .maybeSingle();
+    if (item.status === 'enriched' || item.status === 'review') {
+      // Direct call — never an HTTP self-reference (Vercel-safe).
+      try {
+        const { data: gtItem } = await supabase
+          .from('items')
+          .select('id')
+          .eq('mfg_part_num', item.mfg_part_num)
+          .eq('is_ground_truth', true)
+          .maybeSingle();
 
-      if (gtItem) {
-        const scoreResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/score/item`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ item_id: item.id, ground_truth_id: gtItem.id }),
-        });
-        
-        if (scoreResponse?.ok) {
-          const scoreData = await scoreResponse.json();
-          gtResult = scoreData;
+        if (gtItem) {
+          gtResult = await computeGroundTruthScore(item.id, gtItem.id);
         }
+      } catch (err) {
+        console.error('GT scoring skipped:', err);
       }
     }
 
