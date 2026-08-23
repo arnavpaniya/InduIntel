@@ -308,10 +308,6 @@ export default function LandingPage() {
 
         <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <Badge variant="outline" className="border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-semibold px-3.5 py-1 backdrop-blur-sm shadow-sm">
-              Built for Catalog Managers & Non-Technical Teams
-            </Badge>
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
               Fix Messy Product Data. <br />
               <span className="bg-gradient-to-r from-indigo-300 via-sky-200 to-indigo-100 bg-clip-text text-transparent">
