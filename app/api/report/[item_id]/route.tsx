@@ -268,15 +268,15 @@ const styles = StyleSheet.create({
 function StatusBanner({ status, failedStep, failedError }: { status: string; failedStep?: string | null; failedError?: string | null }) {
   const map: Record<string, { bg: string; border: string; title: string; text: string }> = {
     raw:       { bg: '#f1f5f9', border: '#cbd5e1', title: 'Not cleaned yet',
-                 text: 'This product has not been through the enrichment pipeline yet. Sections below show only the original supplier data.' },
+                 text: 'This product has not been cleaned yet.' },
     enriching: { bg: '#e0f2fe', border: '#7dd3fc', title: 'Currently cleaning',
-                 text: 'An enrichment job is in progress. This snapshot may be incomplete.' },
+                 text: 'AI cleaning is currently in progress.' },
     failed:    { bg: '#fee2e2', border: '#fca5a5', title: `Cleaning failed${failedStep ? ` at ${failedStep.replace(/_/g, ' ')}` : ''}`,
-                 text: failedError ?? 'The last enrichment run did not complete. Values below are limited to what was saved before the failure.' },
+                 text: failedError ?? `AI cleaning failed during ${failedStep ?? 'the pipeline'}. No further enrichment steps were completed after the failure.` },
     review:    { bg: '#fef3c7', border: '#fcd34d', title: 'Partial enrichment — review required',
-                 text: 'Some details were unclear or missing. A quick human check is recommended before publishing.' },
+                 text: 'This product was enriched but requires a human review.' },
     enriched:  { bg: '#dcfce7', border: '#86efac', title: 'Enrichment completed successfully',
-                 text: 'All pipeline steps saved their results for this product.' },
+                 text: 'This product was successfully enriched by the AI pipeline.' },
   };
   const cfg = map[status] ?? map.raw;
   return (

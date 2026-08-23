@@ -550,14 +550,21 @@ export default function DashboardClient() {
             icon={AlertTriangle} 
             tone="review" 
           />
-          <ExecutiveCard 
-            label="Not Cleaned Yet" 
-            value={statusCounts.raw} 
-            description="Raw supplier feed waiting for AI"
-            icon={Clock} 
-            tone="raw" 
-          />
-        </motion.div>
+<ExecutiveCard 
+    label="Not Cleaned Yet" 
+    value={statusCounts.raw} 
+    description="Raw supplier feed waiting for AI"
+    icon={Clock} 
+    tone="raw" 
+  />
+  <ExecutiveCard 
+    label="Cleaning Failed" 
+    value={statusCounts.failed} 
+    description="AI cleaning failed — retry from product report"
+    icon={XCircle} 
+    tone="neutral" 
+  />
+</motion.div>
 
         <motion.div
           variants={panelVariants}

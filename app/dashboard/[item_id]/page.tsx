@@ -48,7 +48,6 @@ export default function ItemDetailPage() {
   
   const [item, setItem] = useState<EnrichedItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const [enriching, setEnriching] = useState(false);
   const [activeTab, setActiveTab] = useState<'story' | 'transform' | 'technical' | 'audit'>('story');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
@@ -87,40 +86,31 @@ export default function ItemDetailPage() {
 
   const handleEnrich = async () => {
     if (!item) return;
-    setEnriching(true);
-    setLastFailure(null);
     try {
       const result = await enrichItem(item.id);
 
-      // Persisted failure state from the backend (handled business failure)
       if (!result.success || result.status === 'failed') {
         const step = result.failed_step ?? 'unknown';
         const label = STEP_LABELS[step] ?? step;
-        const safeMsg =
-          (result as any).failed_error ??
-          (Object.values(result.step_results ?? {}).find((r: any) => r?.safeError)?.safeError as string | undefined) ??
+        const safeMsg = (result as any).failed_error ??
           'Cleaning could not be completed.';
-        setLastFailure({ step: label, message: safeMsg });
-        setItem((prev) =>
-          prev ? { ...prev, status: 'failed', failed_step: step, failed_error: safeMsg } : prev,
-        );
         showToast(`Cleaning failed at ${label}`, 'error');
+        // Fetch fresh detail so the report reflects the persisted Supabase state.
+        const updatedItem = await fetchItemDetail(item.id);
+        setItem(updatedItem);
         return;
       }
 
       showToast(`Cleaning complete! Completeness score: ${result.confidence_score}%`, 'success');
-      // Fetch fresh detail so the report renders the same persisted Supabase
-      // state the dashboard and exports use.
+      // Fetch fresh detail so the report renders the same persisted Supabase state.
       const updatedItem = await fetchItemDetail(item.id);
       setItem(updatedItem);
     } catch (error) {
       console.error('Enrich failed:', error);
-      const msg = error instanceof Error ? error.message : 'Unknown error';
-      setLastFailure({ step: 'request', message: msg });
-      setItem((prev) => (prev ? { ...prev, status: 'failed', failed_step: 'request', failed_error: msg } : prev));
-      showToast(`Cleaning failed: ${msg.slice(0, 80)}`, 'error');
-    } finally {
-      setEnriching(false);
+      // Fetch fresh detail so status reflects the persisted Supabase state.
+      const updatedItem = await fetchItemDetail(item.id);
+      setItem(updatedItem);
+      showToast('Cleaning failed', 'error');
     }
   };
 
@@ -263,7 +253,7 @@ export default function ItemDetailPage() {
                   ) : isEnriching ? (
                     ' This product is currently being cleaned.'
                   ) : isFailed ? (
-                    ' The last cleaning attempt did not complete. See the failure details below.'
+                    ' The last cleaning attempt did not complete. <a href={`/dashboard/${item.id}`} className="underline text-indigo-600 font-medium hover:text-indigo-800">View failure details</a> below.'
                   ) : (
                     ' This product has not been cleaned yet. Click "Run AI Cleaning" below to generate descriptions, categories, and technical specs.'
                   )}
@@ -287,11 +277,11 @@ export default function ItemDetailPage() {
               <div className="pt-2">
                 <Button 
                   onClick={handleEnrich} 
-                  disabled={enriching} 
+                  disabled={isEnriching} 
                   className="w-full sm:w-auto h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-2"
                 >
                   <Zap className="h-4 w-4 fill-white" />
-                  {enriching
+                  {isEnriching
                     ? 'Cleaning Catalog Data...'
                     : isFailed
                       ? 'Retry AI Cleaning'
@@ -304,7 +294,7 @@ export default function ItemDetailPage() {
                 )}
               </div>
             )}
-            {isEnriching && !enriching && (
+            {isEnriching && (
               <p className="text-xs text-slate-500 italic">A cleaning job was started for this product. Refresh later or reconcile stale jobs.</p>
             )}
           </CardContent>
