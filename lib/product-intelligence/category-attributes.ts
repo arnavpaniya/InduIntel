@@ -82,6 +82,10 @@ export function extractAttributes(
   }
 
   const relevant = relevantAttributes(effectivePath);
+  // Unknown/generic categories ('other') use GENERIC attribute handling:
+  // every attribute passes relevance so unknown-category products are never
+  // stripped to zero attributes. Quality controls below still apply.
+  const filterByRelevance = effectivePath !== 'other';
 
   // Collect attributes from product.attributes (label/value pairs)
   const seen = new Set<string>();
@@ -97,8 +101,8 @@ export function extractAttributes(
     if (seen.has(label)) continue;
     seen.add(label);
 
-    // Skip irrelevant attributes for this category
-    if (!isRelevant(label, relevant)) continue;
+    // Skip irrelevant attributes for known categories only
+    if (filterByRelevance && !isRelevant(label, relevant)) continue;
 
     // Skip fake/placeholder values
     if (isFakeValue(attr.value)) continue;

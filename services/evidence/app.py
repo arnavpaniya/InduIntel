@@ -143,12 +143,17 @@ async def root():
 @app.post("/evidence/check", response_model=EvidenceCheckResponse)
 async def evidence_check(request: EvidenceCheckRequest):
     """Full pipeline: discovery -> retrieval -> sanitize -> verify -> extract."""
-    missing = request.missing_fields or []
+    # Whitespace-only inputs must behave exactly like absent inputs so that
+    # blank organizer cells never fabricate search identity.
+    manufacturer = (request.manufacturer or "").strip()
+    brand = (request.brand or "").strip()
+    mpn = (request.mpn or "").strip()
+    description = (request.description or "").strip()
+    category = (request.category or "").strip()
+    missing = [f.strip() for f in (request.missing_fields or []) if f and f.strip()]
 
     # --- 1. Source discovery (skips entirely when identity is too weak) ---
-    candidates, needs_search = discover_sources(
-        request.manufacturer, request.brand, request.mpn, request.description
-    )
+    candidates, needs_search = discover_sources(manufacturer, brand, mpn, description)
     if not candidates:
         needs_gemini, unresolved = determine_gemini_needs(
             missing, {}, evidence_available=False
@@ -198,7 +203,7 @@ async def evidence_check(request: EvidenceCheckRequest):
         product_text = extract_product_text(raw_text)
 
         identity = verify_identity(
-            request.manufacturer, request.mpn, request.brand, product_text
+            manufacturer, mpn, brand, product_text
         )
 
         src_type, tier = classify_source(retrieved["final_url"])

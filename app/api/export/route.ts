@@ -95,9 +95,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // CSV format: use the canonical UniHack headers
-    const csvHeader = UNIHACK_HEADERS.join(',');
-    const csvData = [csvHeader, ...rows.map(r => r.join(','))].join('\n');
+    // CSV format: use the canonical UniHack headers.
+    // Values are RFC4180-escaped so commas, quotes, newlines and carriage
+    // returns inside product data can never produce malformed rows.
+    const escapeCsv = (value: string): string => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+        return '"' + value.replace(/"/g, '""') + '"';
+      }
+      return value;
+    };
+    const csvHeader = UNIHACK_HEADERS.map((h) => escapeCsv(h)).join(',');
+    const csvData = [csvHeader, ...rows.map((r) => r.map(escapeCsv).join(','))].join('\n');
 
     return new NextResponse(csvData, {
       headers: {

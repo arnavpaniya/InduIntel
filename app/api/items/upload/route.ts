@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { debugError } from '@/lib/debug';
+import {
+  normalizeCsvInput,
+  fieldValue,
+  type NormalizedInputRow,
+} from '@/lib/input/input-normalizer';
 
 const REQUIRED_COLUMNS = [
   'Mfg_Part_Num',
@@ -71,45 +76,99 @@ async function handleFileUpload(request: NextRequest) {
 
 async function handleCSVUpload(supabase: any, file: File) {
   const text = await file.text();
-  const lines = text.split('\n').filter(line => line.trim());
-  
-  if (lines.length < 2) {
-    return NextResponse.json({ error: 'CSV must have at least a header row and one data row' }, { status: 400 });
+  return normalizeAndInsertCsv(supabase, text);
+}
+
+/**
+ * Stage 5 input ingestion: accepts ARBITRARY organizer CSV schemas.
+ * - Exact sample-schema columns keep working through the legacy path.
+ * - Any other schema is resolved through the deterministic header-alias
+ *   normalizer (different order/capitalization/naming, extra columns, etc.).
+ * Rows without any resolvable MPN are skipped and reported, never fatal.
+ */
+async function normalizeAndInsertCsv(supabase: any, text: string) {
+  let normalized;
+  try {
+    normalized = normalizeCsvInput(text);
+  } catch (err) {
+    return NextResponse.json(
+      { error: `CSV parse failed: ${err instanceof Error ? err.message : String(err)}` },
+      { status: 400 },
+    );
   }
 
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  
-  const missingColumns = REQUIRED_COLUMNS.filter(col => !headers.includes(col));
-  if (missingColumns.length > 0) {
-    return NextResponse.json({
-      error: `Missing required columns: ${missingColumns.join(', ')}. Expected: ${REQUIRED_COLUMNS.join(', ')}`,
-      expectedColumns: REQUIRED_COLUMNS,
-      foundColumns: headers,
-    }, { status: 400 });
+  const { rows, headers } = normalized;
+  if (rows.length === 0) {
+    return NextResponse.json(
+      { error: 'CSV must have at least a header row and one data row' },
+      { status: 400 },
+    );
   }
 
+  // Legacy exact-schema fast path (sample dataset compatibility).
+  const legacyComplete = REQUIRED_COLUMNS.every((col) =>
+    headers.some((h) => h.trim() === col),
+  );
+
+  interface PreparedRow {
+    mfg_part_num: string;
+    part_desc: string | null;
+    e1_brand: string | null;
+    unilog_brand: string | null;
+    dib_brand: string | null;
+    part_manuf: string | null;
+    manufacturer_name: string | null;
+    brand_name: string | null;
+    status: string;
+    is_ground_truth: boolean;
+    batch_id: string;
+  }
+
+  const itemsToInsert: PreparedRow[] = [];
   const batchId = crypto.randomUUID();
-  const itemsToInsert: any[] = [];
+  let skippedRows = 0;
+  const rowIssues: Array<{ rowIndex: number; issues: string[] }> = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
-    if (values.length !== headers.length) continue;
+  for (const row of rows) {
+    if (legacyComplete) {
+      const mfgPartNum = cleanValue(row.raw['Mfg_Part_Num']);
+      if (!mfgPartNum) {
+        skippedRows++;
+        continue;
+      }
+      itemsToInsert.push({
+        mfg_part_num: mfgPartNum,
+        part_desc: cleanValue(row.raw['Part_Desc']),
+        e1_brand: cleanValue(row.raw['E1_Brand']),
+        unilog_brand: cleanValue(row.raw['Unilog_Brand']),
+        dib_brand: cleanValue(row.raw['DIB_Brand']),
+        part_manuf: cleanValue(row.raw['Part_Manuf']),
+        manufacturer_name: null,
+        brand_name: null,
+        status: 'raw',
+        is_ground_truth: false,
+        batch_id: batchId,
+      });
+      continue;
+    }
 
-    const row: Record<string, string> = {};
-    headers.forEach((header, idx) => {
-      row[header] = values[idx] || '';
-    });
-
-    const mfgPartNum = cleanValue(row.Mfg_Part_Num);
-    if (!mfgPartNum) continue;
+    // Alias-resolved path for arbitrary schemas.
+    const mfgPartNum = fieldValue(row, 'mfg_part_num');
+    if (!mfgPartNum) {
+      skippedRows++; // no identity anchor in this row — cannot store safely
+      continue;
+    }
+    if (row.issues.length > 0) rowIssues.push({ rowIndex: row.rowIndex, issues: row.issues });
 
     itemsToInsert.push({
       mfg_part_num: mfgPartNum,
-      part_desc: cleanValue(row.Part_Desc),
-      e1_brand: cleanValue(row.E1_Brand),
-      unilog_brand: cleanValue(row.Unilog_Brand),
-      dib_brand: cleanValue(row.DIB_Brand),
-      part_manuf: cleanValue(row.Part_Manuf),
+      part_desc: pickFirst(row, ['part_desc', 'invoice_desc', 'short_desc']),
+      e1_brand: null,
+      unilog_brand: null,
+      dib_brand: null,
+      part_manuf: null,
+      manufacturer_name: fieldValue(row, 'manufacturer_name'),
+      brand_name: fieldValue(row, 'brand_name') ?? fieldValue(row, 'trade_name'),
       status: 'raw',
       is_ground_truth: false,
       batch_id: batchId,
@@ -117,12 +176,24 @@ async function handleCSVUpload(supabase: any, file: File) {
   }
 
   if (itemsToInsert.length === 0) {
-    return NextResponse.json({ error: 'No valid rows found in CSV' }, { status: 400 });
+    return NextResponse.json({
+      error: 'No rows with a resolvable part number were found',
+      foundColumns: headers,
+      skippedRows,
+    }, { status: 400 });
   }
+
+  // Exact duplicates within the file collapse to the first occurrence.
+  const seenMpn = new Set<string>();
+  const uniqueItems = itemsToInsert.filter((it) => {
+    if (seenMpn.has(it.mfg_part_num)) return false;
+    seenMpn.add(it.mfg_part_num);
+    return true;
+  });
 
   const { data: insertedItems, error } = await supabase
     .from('items')
-    .upsert(itemsToInsert, { onConflict: 'mfg_part_num' })
+    .upsert(uniqueItems, { onConflict: 'mfg_part_num' })
     .select('id, mfg_part_num, created_at');
 
   if (error) {
@@ -135,8 +206,20 @@ async function handleCSVUpload(supabase: any, file: File) {
     message: `Uploaded ${insertedItems?.length || 0} items`,
     count: insertedItems?.length || 0,
     batchId,
+    skippedRows,
+    duplicateRowsInFile: itemsToInsert.length - uniqueItems.length,
+    unmappedColumns: [...new Set(rows.flatMap((r: NormalizedInputRow) => r.unmappedColumns.map((u) => u.column)))],
+    rowIssues,
     items: insertedItems || [],
   });
+}
+
+function pickFirst(row: NormalizedInputRow, fields: Parameters<typeof fieldValue>[1][]): string | null {
+  for (const f of fields) {
+    const v = fieldValue(row, f);
+    if (v != null) return v;
+  }
+  return null;
 }
 
 async function handlePDFUpload(supabase: any, file: File) {
@@ -222,33 +305,6 @@ async function handleManualEntry(request: NextRequest) {
     batchId: item.batch_id,
     items: [insertedItem],
   });
-}
-
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  
-  result.push(current);
-  return result.map(v => v.trim().replace(/^"|"$/g, ''));
 }
 
 function parsePDFText(text: string): any[] {

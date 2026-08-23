@@ -4,19 +4,31 @@ import re
 import ipaddress
 from urllib.parse import urlparse
 
-BLOCKED_HOSTNAMES = {"localhost", "127.0.0.1", "::1", "metadata.google.internal"}
+BLOCKED_HOSTNAMES = {
+    "localhost", "127.0.0.1", "::1",
+    "metadata.google.internal",
+    "metadata.oraclecloud.com",
+    "metadata",
+    "instance-data",
+}
 BLOCKED_IP_PATTERNS = [
     re.compile(r"^10\."),
     re.compile(r"^192\.168\."),
     re.compile(r"^172\.(1[6-9]|2[0-9]|3[0-1])\."),
     re.compile(r"^169\.254\."),
     re.compile(r"^0\."),
+    # Alibaba Cloud metadata endpoint (publicly-routed but instance-only)
+    re.compile(r"^100\.100\.100\."),
 ]
 
 
 def is_blocked_host(hostname):
     """Return True if hostname is blocked (localhost/private/metadata)."""
     host = (hostname or "").lower().strip()
+    if not host:
+        return True
+    # Defense-in-depth: bracketed IPv6 literals and zone indices
+    host = host.strip("[]").split("%", 1)[0]
     if not host:
         return True
     if host in BLOCKED_HOSTNAMES:

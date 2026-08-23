@@ -11,6 +11,19 @@ def normalize_mpn(mpn: Optional[str]) -> str:
     return re.sub(r"[\s\-_/\.]", "", mpn).upper()
 
 
+def loose_mpn_form(text: str) -> str:
+    """Uppercase text with separator runs collapsed to single spaces.
+
+    Unlike full fusion, this preserves token boundaries so whole-word
+    presence checks work even when neighbouring words exist
+    ("MPN: MÜ-1 Gewicht" keeps "MÜ 1" delimited instead of fusing into
+    "MÜ1GEWICHT").
+    """
+    if not text:
+        return ""
+    return re.sub(r"[\s\-_/\\.]+", " ", text).upper()
+
+
 def normalize_name(name: Optional[str]) -> str:
     """Normalize a manufacturer/brand name for comparison."""
     if not name:
@@ -41,12 +54,20 @@ def verify_identity(
 
     # --- 1. MPN check (strongest signal) ---
     if norm_target_mpn:
-        # Find candidate MPNs on the page
+        # Find candidate MPNs on the page.
+        # Character class [^\W_] = unicode letters + digits (no underscore),
+        # so non-ASCII part numbers ("MÜ-1") are captured too.
         candidates = set()
-        for m in re.finditer(r"(?:MPN|Part\s*Number|Manufacturer\s*Part\s*Number|Model)\s*[:#]?\s*([A-Za-z0-9][A-Za-z0-9\-/_\.]{2,30})", text_lower, re.IGNORECASE):
+        for m in re.finditer(r"(?:MPN|Part\s*Number|Manufacturer\s*Part\s*Number|Model)\s*[:#]?\s*([^\W_][\w\-/_\.]{2,30})", text_lower, re.IGNORECASE):
             candidates.add(normalize_mpn(m.group(1)))
-        # Also look for bare occurrences of the normalized MPN as a whole word
-        bare_present = bool(re.search(r"(?<![A-Za-z0-9])" + re.escape(norm_target_mpn) + r"(?![A-Za-z0-9])", normalize_mpn(page_text)))
+        # Whole-word presence of the normalized MPN, checked against the
+        # boundary-preserving loose form (fused text would glue the MPN to
+        # neighbouring words and break the lookahead).
+        loose_page = loose_mpn_form(page_text)
+        bare_present = bool(re.search(
+            r"(?<![A-Za-z0-9])" + re.escape(norm_target_mpn) + r"(?![A-Za-z0-9])",
+            loose_page,
+        ))
 
         if candidates or bare_present:
             if norm_target_mpn in candidates or bare_present:

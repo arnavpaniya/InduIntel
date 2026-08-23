@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-08-23T07:10:55.282Z",
+  "evidence_service_mode": "real",
+  "dataset_scenarios": 29,
+  "totalProducts": 54,
+  "processed": 52,
+  "failed": 0,
+  "duplicatesMerged": 2,
+  "skippedNoIdentity": 7,
+  "productsWithExternalEvidence": 9,
+  "externalSearches": 43,
+  "externalRetrievals": 9,
+  "deterministicFields": 53,
+  "geminiCalls": 3,
+  "geminiCallsAvoided": 6,
+  "cacheHits": 4,
+  "cacheMisses": 43,
+  "conflicts": 1,
+  "unresolvedFields": 2042,
+  "invalidFields": 2,
+  "timing": {
+    "totalMs": 1211,
+    "avgPerProductMs": 22,
+    "externalRetrievalMs": 2265,
+    "geminiMs": 0
+  },
+  "outputColumns": 252,
+  "performance": {
+    "totalMs": 1211,
+    "avgPerProductMs": 22,
+    "externalRetrievalMs": 2265,
+    "geminiMs": 0,
+    "cache_hit_rate": 0.085,
+    "avg_ms_per_product": 22
+  },
+  "output_columns": 252
+}
