@@ -144,6 +144,12 @@ RFC4180, Unicode, static headers unchanged).
 ## 26. Final evaluation checklist
 
 1. `npm run validate:unihack` → exit 0
+
+## 27. Contributors
+
+- [Arnav Paniya](https://github.com/arnavpaniya) - arnavpaniya
+- [Deepak Kumar](https://github.com/dkumar8264) - dkumar8264
+- [Nandan T](https://github.com/nandan452) - nandan452
 2. `reports/unihack-final-validation.json`: `fabricated_values: 0`,
    `output_columns: 252`, `csv_valid: true`, `xlsx_valid: true`
 3. Both output files pass the validator
