@@ -31,6 +31,14 @@ export interface StepResult<T = any> {
 // Shared helpers
 // ---------------------------------------------------------------------------
 
+function getSafeError(backendError: string | null, defaultSafeMessage: string): string {
+  if (!backendError) return defaultSafeMessage;
+  if (backendError.includes('429')) return 'AI service rate limit reached.';
+  if (backendError.includes('401') || backendError.includes('403')) return 'AI service authentication error.';
+  if (backendError.includes('timeout') || backendError.includes('network') || backendError.includes('ECONNREFUSED')) return 'AI service network timeout.';
+  return defaultSafeMessage;
+}
+
 function hashInput(input: any): string {
   return createHash('sha256').update(JSON.stringify(input)).digest('hex').slice(0, 16);
 }
@@ -59,11 +67,29 @@ async function logEnrichment(
   durationMs: number,
   inputHash?: string,
 ) {
+  let finalError = error;
+  if (error && status === 'error') {
+    const attempts = output?.attempts ?? 1;
+    let code = 'UNKNOWN';
+    const match = error.match(/status (\d{3})/);
+    if (match) code = match[1];
+    else if (error.includes('429')) code = '429';
+    else if (error.includes('500')) code = '500';
+    else if (error.includes('502')) code = '502';
+    else if (error.includes('503')) code = '503';
+    else if (error.includes('504')) code = '504';
+    else if (error.includes('network') || error.includes('ECONNREFUSED')) code = 'NETWORK';
+    else if (error.includes('timeout')) code = 'TIMEOUT';
+    else if (error.includes('JSON parse error')) code = 'JSON_PARSE';
+
+    finalError = `[${code}] Error after ${attempts} attempt(s): ${error}`;
+  }
+
   const payload: any = {
     item_id: itemId,
     step,
     status,
-    error,
+    error: finalError,
     input_json: inputHash ? { ...input, _hash: inputHash } : input,
     output_json: output,
     duration_ms: durationMs,
@@ -95,9 +121,8 @@ async function recordGeminiCall(): Promise<void> {
 
 /** callLLMWithRetry + honest usage accounting. */
 async function callLLMCounted<T>(prompt: string, options: Parameters<typeof callLLMWithRetry<T>>[1]): Promise<ReturnType<typeof callLLMWithRetry<T>>> {
-  const result = await callLLMWithRetry<T>(prompt, options);
-  await recordGeminiCall();
-  return result;
+  // Pass recordGeminiCall as onAttempt so it's tracked for every try
+  return await callLLMWithRetry<T>(prompt, options, 2, recordGeminiCall);
 }
 
 async function fetchItem(itemId: string, columns: string): Promise<{ item: any; error: string | null }> {
@@ -193,12 +218,23 @@ Item data:
 
 Return JSON only.`;
 
+    if (item.mfg_part_num === 'XTP235') {
+      debugLog('[DIAGNOSTIC XTP235] About to call Gemini with context:', {
+        mfg_part_num: item.mfg_part_num,
+        part_desc: item.part_desc,
+        part_manuf: item.part_manuf,
+        e1_brand: item.e1_brand,
+        unilog_brand: item.unilog_brand,
+        dib_brand: item.dib_brand,
+      });
+    }
+
     const result = await callLLMCounted<any>(prompt, { temperature: 0.1, responseSchema: MANUFACTURER_SCHEMA });
     const duration = Date.now() - startTime;
 
     if (!result.data || result.error) {
       await logEnrichment(itemId, 'manufacturer', 'error', result.error || 'No data', inputData, result, duration, inputHash);
-      return { success: false, error: result.error || 'Failed to parse manufacturer', safeError: 'The AI could not read the manufacturer information for this product.' };
+      return { success: false, error: result.error || 'Failed to parse manufacturer', safeError: getSafeError(result.error, 'The AI could not read the manufacturer information for this product.') };
     }
     if (typeof result.data.confidence !== 'number' || isNaN(result.data.confidence)) {
       result.data.confidence = 0.8;
@@ -310,7 +346,7 @@ Return JSON only.`;
 
     if (!result.data || result.error) {
       await logEnrichment(itemId, 'classify', 'error', result.error || 'No data', inputData, result, duration, inputHash);
-      return { success: false, error: result.error || 'Failed to parse classification', safeError: 'The AI could not classify this product.' };
+      return { success: false, error: result.error || 'Failed to parse classification', safeError: getSafeError(result.error, 'The AI could not classify this product.') };
     }
     if (typeof result.data.confidence !== 'number' || isNaN(result.data.confidence)) {
       result.data.confidence = 0.8;
@@ -482,7 +518,7 @@ Return JSON only.`;
 
     if (!result.data || result.error) {
       await logEnrichment(itemId, 'attributes', 'error', result.error || 'No data', inputData, result, duration, inputHash);
-      return { success: false, error: result.error || 'Failed to parse attributes', safeError: 'Attribute extraction failed for this product.' };
+      return { success: false, error: result.error || 'Failed to parse attributes', safeError: getSafeError(result.error, 'Attribute extraction failed for this product.') };
     }
     if (typeof result.data.confidence !== 'number' || isNaN(result.data.confidence)) {
       result.data.confidence = 0.8;
@@ -642,7 +678,7 @@ Return JSON only.`;
 
     if (!result.data || result.error) {
       await logEnrichment(itemId, 'descriptions', 'error', result.error || 'No data', inputData, result, duration, inputHash);
-      return { success: false, error: result.error || 'Failed to parse descriptions', safeError: 'Description generation failed for this product.' };
+      return { success: false, error: result.error || 'Failed to parse descriptions', safeError: getSafeError(result.error, 'Description generation failed for this product.') };
     }
     if (typeof result.data.confidence !== 'number' || isNaN(result.data.confidence)) {
       result.data.confidence = 0.8;
@@ -798,7 +834,7 @@ Return JSON only.`;
 
     if (!result.data || result.error) {
       await logEnrichment(itemId, 'specs', 'error', result.error || 'No data', inputData, result, duration, inputHash);
-      return { success: false, error: result.error || 'Failed to parse specs', safeError: 'Specification extraction failed for this product.' };
+      return { success: false, error: result.error || 'Failed to parse specs', safeError: getSafeError(result.error, 'Specification extraction failed for this product.') };
     }
     if (typeof result.data.confidence !== 'number' || isNaN(result.data.confidence)) {
       result.data.confidence = 0.8;

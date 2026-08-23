@@ -18,6 +18,7 @@ export interface LLMResponse<T = unknown> {
   data: T | null;
   raw: string;
   error: string | null;
+  attempts?: number;
 }
 
 function stripMarkdownFences(text: string): string {
@@ -99,30 +100,52 @@ export async function callLLM<T = unknown>(
 export async function callLLMWithRetry<T = unknown>(
   prompt: string,
   options: LLMOptions = {},
-  maxRetries = 1
+  maxRetries = 2,
+  onAttempt?: () => Promise<void>,
+  _callFn: typeof callLLM = callLLM
 ): Promise<LLMResponse<T>> {
+  let currentPrompt = prompt;
+  let lastError = 'Max retries exceeded';
+  let lastRaw = '';
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const result = await callLLM<T>(prompt, options);
-
-    const isTransient = result.error?.includes('429') ||
-      result.error?.includes('network') ||
-      result.error?.includes('timeout') ||
-      result.error?.includes('ECONNREFUSED');
-
-    if (isTransient && attempt < maxRetries) {
-      debugLog('[GEMINI] Transient error, waiting 3s before retry:', result.error);
-      await new Promise(r => setTimeout(r, 3000));
-      continue;
+    if (onAttempt) {
+      await onAttempt();
     }
+    const result = await _callFn<T>(currentPrompt, options);
 
     if (result.data !== null) {
-      return result;
+      return { ...result, attempts: attempt + 1 };
     }
 
+    lastError = result.error || 'Unknown error';
+    lastRaw = result.raw;
+
+    const isTransient = lastError.includes('429') ||
+      lastError.includes('500') ||
+      lastError.includes('502') ||
+      lastError.includes('503') ||
+      lastError.includes('504') ||
+      lastError.includes('network') ||
+      lastError.includes('timeout') ||
+      lastError.includes('ECONNREFUSED');
+
     if (attempt < maxRetries) {
-      const retryPrompt = `${prompt}\n\nIMPORTANT: Your previous response was not valid JSON. Output ONLY valid JSON with no extra text, no markdown, no explanation.`;
-      await new Promise(r => setTimeout(r, 1000));
+      if (isTransient) {
+        const delay = 1000 * Math.pow(2, attempt);
+        debugLog(`[GEMINI] Transient error, waiting ${delay}ms before retry:`, lastError);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      } else if (lastError.includes('JSON parse error')) {
+        currentPrompt = `${prompt}\n\nIMPORTANT: Your previous response was not valid JSON. Output ONLY valid JSON with no extra text, no markdown, no explanation.\n\nPrevious invalid response:\n${lastRaw}`;
+        debugLog(`[GEMINI] JSON error, retrying immediately.`);
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      } else {
+        // Fatal error, don't retry (e.g. 401, 403, 400)
+        break;
+      }
     }
   }
-  return { data: null, raw: '', error: 'Max retries exceeded - see logs for underlying errors' };
+  return { data: null, raw: lastRaw, error: lastError, attempts: maxRetries + 1 };
 }

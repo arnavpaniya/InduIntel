@@ -18,6 +18,8 @@ async function main(): Promise<void> {
   await import('./unit/orchestrator.test');
   await drained();
   await import('./unit/failure-recovery.test');
+  await drained();
+  await import('./unit/gemini.test');
   const code = await runAll();
   process.exitCode = code;
 }
