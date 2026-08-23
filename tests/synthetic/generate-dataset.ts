@@ -113,13 +113,22 @@ export function renderRows(rows: ScenarioRow[]): { records: Array<Record<string,
       for (const [col, val] of Object.entries(row.rawColumns)) record[col] = val;
     }
     // Shuffle key order per-row so even column ORDER varies (Part 1).
+    // Deterministic hash-based permutation: ALWAYS a full ordering (no key
+    // can ever be dropped), but the order differs from row to row.
     const ordered: Record<string, string> = {};
-    const keys = Object.keys(record);
-    for (let i = 0; i < keys.length; i++) {
-      // deterministic pseudo-shuffle by index arithmetic
-      const k = keys[(i * 7 + 3) % keys.length];
-      if (!(k in ordered)) ordered[k] = record[k];
-    }
+    const seed = records.length;
+    const hashKey = (k: string): number => {
+      let h = (seed * 2654435761) >>> 0;
+      for (let i = 0; i < k.length; i++) {
+        h = ((h ^ k.charCodeAt(i)) * 16777619) >>> 0;
+      }
+      return h;
+    };
+    const shuffledKeys = Object.keys(record)
+      .map((k) => ({ k, h: hashKey(k) }))
+      .sort((a, b) => a.h - b.h || (a.k < b.k ? -1 : 1))
+      .map((o) => o.k);
+    for (const k of shuffledKeys) ordered[k] = record[k];
     records.push(ordered);
   }
 

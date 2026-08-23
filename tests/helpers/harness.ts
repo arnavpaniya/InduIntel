@@ -3,41 +3,46 @@
  *
  * Zero-dependency runner compatible with `npx tsx tests/run-unit.ts`.
  *
- * Semantics: test bodies are chained onto an internal tail promise and
- * EXECUTE INLINE as they are registered — so fixture servers created around
- * a describe block stay alive while its tests actually run. describe()
- * awaits its own children before returning.
+ * Semantics:
+ * - Tests execute SERIALLY in registration order via a single flat chain.
+ * - describe() only contributes the name prefix (synchronous push/pop) and,
+ *   when awaited, waits until every test registered inside it has settled.
+ * - Runners MUST `await drained()` between suite imports so prefixes and
+ *   fixture lifecycles stay correct (see tests/run-unit.ts).
  */
 
 let passed = 0;
 let failed = 0;
+let chain: Promise<void> = Promise.resolve();
+let pendingAtDrainCheck = 0;
 const failures: Array<{ name: string; error: string }> = [];
+const prefixStack: string[] = [];
 
-/** Serial execution chain for the CURRENTLY OPEN describe scope. */
-let tail: Promise<void> = Promise.resolve();
-/** Name path of the currently OPEN describe scope (captured per scope). */
-let currentPrefix: string[] = [];
+/** True while any describe scope is open. */
+let scopeDepth = 0;
 
 export function describe(name: string, fn: () => void | Promise<void>): Promise<void> {
-  const previousTail = tail;
-  const savedPrefix = currentPrefix;
-  const childPrefix = [...savedPrefix, name];
-  tail = Promise.resolve();
-  const scope = (async () => {
+  prefixStack.push(name);
+  scopeDepth++;
+  const result = (async () => {
     try {
       await fn();
-      await tail;
+      // Drain until no NEW tests appear (handles late registrations).
+      for (;;) {
+        const before = chain;
+        await before;
+        if (chain === before) break; // no new tests chained during the wait
+      }
     } finally {
-      currentPrefix = savedPrefix;
+      scopeDepth--;
+      prefixStack.pop();
     }
   })();
-  // Restore the outer chain so sibling scopes serialize too.
-  tail = previousTail.then(() => scope, () => scope);
-  return scope;
+  return result;
 }
 
 export function test(name: string, fn: () => void | Promise<void>): void {
-  const fullName = [...currentPrefix, name].join(' > ');
+  const fullName = [...prefixStack, name].join(' > ');
   const run = async (): Promise<void> => {
     try {
       await fn();
@@ -50,16 +55,27 @@ export function test(name: string, fn: () => void | Promise<void>): void {
       process.stdout.write(`  FAIL ${fullName}\n       ${message}\n`);
     }
   };
-  // Chain onto the open scope regardless of whether the caller awaits us.
-  tail = tail.then(run, run);
+  const prev = chain;
+  chain = prev.then(run, run);
 }
 
 /**
- * Barrier kept for runner compatibility: by the time imports settle, the
- * tail chains have already executed. Returns process exit code.
+ * Resolves once every test registered SO FAR has finished executing.
+ * Call between suite imports so prefixes/lifecycle stay ordered.
  */
+export async function drained(): Promise<void> {
+  for (;;) {
+    const before = chain;
+    await before;
+    if (chain === before && !scopeDepth) break;
+    if (chain === before) break; // chain stable even if a scope is technically open
+  }
+  void pendingAtDrainCheck;
+}
+
+/** Print the summary. Returns process exit code. */
 export async function runAll(): Promise<number> {
-  await tail.catch(() => undefined);
+  await drained();
   process.stdout.write(`\n=== ${passed} passed, ${failed} failed ===\n`);
   if (failed > 0) {
     process.stdout.write('\nFailed:\n');

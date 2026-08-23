@@ -133,8 +133,8 @@ export function buildMockServers(): Promise<MockServers> {
       results.push({ url: `${webRoot}/amb/${encodeURIComponent(mpn)}`, title: `Nordwind ${mpn}` });
     } else if (q.includes('WRONG-')) {
       results.push({ url: `${webRoot}/wrong/not-the-product`, title: 'Cascadia catalog entry' });
-    } else if (q.includes('CONF-')) {
-      const mpn = q.split(/\s+/).find((t) => t.startsWith('CONF-')) ?? 'CONF-X';
+    } else if (/CONF\d*-/.test(q)) {
+      const mpn = q.split(/\s+/).find((t) => /^CONF\d*-/.test(t)) ?? 'CONF-X';
       results.push({ url: `${webRoot}/conf/${encodeURIComponent(mpn)}`, title: `Listing ${mpn}` });
     } else if (q.includes('BADURL-')) {
       results.push({ url: 'http://localhost:9/admin', title: 'internal panel' });
@@ -281,7 +281,7 @@ export async function startEvidenceService(searchUrl: string, webRoot = ''): Pro
   }
 
   // ---- Fallback: contract-compatible in-process mock ----
-  const mockServer: Server = createServer((req, res) => {
+  const mockServer: ClosableServer = createServer((req, res) => {
     if (req.method !== 'POST' || !req.url?.includes('/evidence/check')) {
       res.writeHead(404).end();
       return;
@@ -322,7 +322,7 @@ export async function startEvidenceService(searchUrl: string, webRoot = ''): Pro
             reject_reason: null,
           };
         }
-        if (mpn.startsWith('CONF-')) {
+        if (/^CONF\d*-/.test(mpn)) {
           return {
             identity_match: true,
             deterministic_fields: {

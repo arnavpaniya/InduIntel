@@ -64,6 +64,7 @@ const HEADER_ALIASES: Array<{ field: InternalInputField; aliases: string[] }> = 
     'mfgpartnum', 'mfgrpartnum', 'manufacturerpartnumber', 'manufacturerpartno',
     'manufacturerpartnum', 'manufpartnum', 'mpn', 'partnumber', 'partno', 'pn',
     'partnum', 'mfrpartnumber', 'mfgpartno', 'catalognumber', 'itemnumber',
+    'skupart',
   ]},
   // --- Manufacturer family ---
   { field: 'manufacturer_name', aliases: [

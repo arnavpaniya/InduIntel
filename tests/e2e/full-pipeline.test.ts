@@ -46,7 +46,7 @@ async function main(): Promise<void> {
 
   let geminiPromptLog: string[] = [];
   const mockGemini: GeminiCaller = async (prompt) => {
-    geminiPromptLog.push(prompt.slice(0, 120));
+    geminiPromptLog.push(prompt.slice(0, 800));
     return { values: {}, confidence: 0.7 }; // resolves nothing; call still counted
   };
 
@@ -131,8 +131,13 @@ async function main(): Promise<void> {
         );
         assertGreaterThan(ambOutcomes.length, 0, 'AMB rows must exist');
         assertEqual(run.metrics.geminiCalls, geminiPromptLog.length, 'call accounting');
-        // Every primary AMB row (not duplicates) may fire at most one batched call.
-        assert(run.metrics.geminiCalls <= ambOutcomes.length,
+        // Each AMB product fires EXACTLY one batched call covering all its
+        // ambiguous fields — never one call per field.
+        const ambPrompts = geminiPromptLog.filter((p) => p.includes('AMB-')).length;
+        assertEqual(ambPrompts, ambOutcomes.length,
+          `each AMB product must batch into one call (prompts=${ambPrompts})`);
+        // Total calls bounded: AMB rows + at most the partially-covered CONF row.
+        assert(run.metrics.geminiCalls <= ambOutcomes.length + 2,
           `geminiCalls=${run.metrics.geminiCalls} ambRows=${ambOutcomes.length}`);
         if (geminiPromptLog.length > 0) {
           assert(geminiPromptLog.some((p) => p.includes('Fields to resolve')), 'batched prompt shape');
@@ -141,7 +146,7 @@ async function main(): Promise<void> {
 
       test('conflicting external vs input values are preserved, not discarded (Part 5)', () => {
         const confRow = run.outcomes.find(
-          (o) => meta.get(o.rowIndex) === 'conflicting_external',
+          (o) => meta.get(o.rowIndex) === 'conflicting_external_sources',
         );
         assert(confRow, 'conflicting_external row found');
         assert(confRow.product, 'product present');
@@ -173,7 +178,7 @@ async function main(): Promise<void> {
       });
 
       test('missing values remain unresolved — never inferred/fabricated', () => {
-        const sparse = run.outcomes.find((o) => meta.get(o.rowIndex) === 'completely_sparse');
+        const sparse = run.outcomes.find((o) => meta.get(o.rowIndex) === 'sparse_empty');
         assert(sparse, `sparse row found at index (rowIndex map size=${meta.size})`);
         assert(sparse.product, 'sparse product seeded');
         for (const f of ['upc', 'gtin', 'manufacturer_name', 'warranty']) {
@@ -186,7 +191,7 @@ async function main(): Promise<void> {
 
       test('wrong external product rejected by identity verification (Part 23)', () => {
         const wrong = run.outcomes.find(
-          (o) => meta.get(o.rowIndex) === 'wrong_external',
+          (o) => meta.get(o.rowIndex) === 'wrong_external_product',
         );
         assert(wrong, 'wrong_external row found');
         assert(wrong.product, 'product present');
