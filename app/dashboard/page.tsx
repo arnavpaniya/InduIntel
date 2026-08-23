@@ -465,40 +465,15 @@ export default function DashboardClient() {
             <h1 className="text-xs font-semibold text-slate-600">Product Catalog Workspace</h1>
           </div>
           
+          <div className="flex items-center gap-3">
+            <Link href="/" className="font-brand text-xl tracking-tight text-slate-900 hover:opacity-80 transition-opacity">
+              InduIntel
+            </Link>
+            <span className="text-slate-300">|</span>
+            <h1 className="text-xs font-semibold text-slate-600">Product Catalog Workspace</h1>
+          </div>
+          
           <div className="flex items-center gap-4">
-            {quotaStatus.available && quotaStatus.used !== null ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-slate-300 bg-white text-xs font-semibold text-slate-700 cursor-help" data-testid="gemini-usage">
-                      <Zap className="h-3.5 w-3.5 text-amber-500" />
-                      <span>Gemini today: {quotaStatus.used}{quotaStatus.limit != null ? ` / ${quotaStatus.limit}` : ''}</span>
-                      {quotaStatus.gemini_calls_avoided != null && (
-                        <span className="text-emerald-600">· {quotaStatus.gemini_calls_avoided} avoided</span>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs bg-slate-900 text-slate-100">
-                    Live Gemini usage from gemini_usage_log (server-side).
-                    {quotaStatus.remaining != null ? ` ${quotaStatus.remaining} requests remaining today.` : ' No daily limit configured.'}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 cursor-help">
-                      <Zap className="h-3.5 w-3.5" />
-                      <span>Gemini usage unavailable</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs bg-slate-900 text-slate-100">
-                    Usage could not be read from the backend right now.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
             <Link href="/dashboard/insights">
               <Button variant="outline" size="sm" className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 gap-1.5 text-xs font-semibold">
                 <BarChart2 className="h-3.5 w-3.5 text-indigo-600" />
