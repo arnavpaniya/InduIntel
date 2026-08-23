@@ -95,9 +95,8 @@ export async function scoreBatch(limit: number = 10): Promise<BatchScoreResponse
 }
 
 export async function fetchQuotaStatus(): Promise<QuotaStatus> {
-  // This would ideally be an API endpoint, but we can derive from gemini_usage_log
-  // For now, return a mock - in real app, call an endpoint
-  return { used: 0, limit: 18, remaining: 18, near_limit: false };
+  // Real usage from GET /api/usage (gemini_usage_log + configured limit).
+  return fetchJson<QuotaStatus>(`${API_BASE}/api/usage`);
 }
 
 export async function uploadItems(file: File, source: 'csv' | 'pdf' = 'csv'): Promise<UploadResponse> {

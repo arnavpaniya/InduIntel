@@ -29,15 +29,15 @@ import { spawn } from 'child_process';
 import { parse as csvParse } from 'csv-parse/sync';
 import { createClient } from '@supabase/supabase-js';
 
-import { normalizeCsvInput, fieldValue, stripVendorCode } from '../lib/input/input-normalizer';
-import { runPipeline } from '../lib/pipeline/orchestrator';
-import { productToRow } from '../lib/unihack/output-mapper';
+import { normalizeCsvInput, fieldValue, stripVendorCode } from '../../lib/input/input-normalizer';
+import { runPipeline } from '../../lib/pipeline/orchestrator';
+import { productToRow } from '../../lib/unihack/output-mapper';
 import {
   UNIHACK_HEADERS,
   HEADER_TO_INTERNAL,
-} from '../lib/unihack/output-schema';
-import { computeIdentity } from '../lib/product-intelligence/identity';
-import type { ProductOutcome } from '../lib/pipeline/orchestrator';
+} from '../../lib/unihack/output-schema';
+import { computeIdentity } from '../../lib/product-intelligence/identity';
+import type { ProductOutcome } from '../../lib/pipeline/orchestrator';
 
 const INPUT_CSV = 'Unihack_ Sample Dataset - Input.csv';
 const OUT_DIR = 'reports';
@@ -250,10 +250,14 @@ function auditIdentity(outcomes: ProductOutcome[], rawRows: Array<Record<string,
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
+  // Credit safety: external evidence is OFF by default so regenerating the
+  // 1000-row artifacts never consumes search/API credits. Pass --live-evidence
+  // to opt in to real discovery for this run.
+  const liveEvidence = process.argv.includes('--live-evidence');
   console.log('\n=== STAGE 6 · PRODUCTION RUN OVER ORGANIZER SAMPLE INPUT ===\n');
 
   const geminiConfigured = Boolean(process.env.GEMINI_API_KEY);
-  const searchConfigured = Boolean(process.env.EVIDENCE_SEARCH_URL);
+  const searchConfigured = Boolean(process.env.EVIDENCE_SEARCH_URL) && liveEvidence;
   console.log(`Gemini:            ${geminiConfigured ? 'CONFIGURED' : 'NOT CONFIGURED (LLM-derived fields stay unresolved)'}`);
   console.log(`Search provider:   ${searchConfigured ? 'CONFIGURED' : 'SEARCH PROVIDER NOT CONFIGURED (external evidence unavailable)'}`);
 
@@ -291,8 +295,11 @@ async function main(): Promise<void> {
 
     // ---- Run the production pipeline ------------------------------------
     const t0 = Date.now();
+    if (!liveEvidence) {
+      console.log('External evidence:   DISABLED (default). Re-run with --live-evidence to use real search.');
+    }
     const run = await runPipeline(normalized.rows.map((r) => r), {
-      evidenceServiceUrl: svc.baseUrl,
+      evidenceServiceUrl: liveEvidence ? svc.baseUrl : null,
       concurrency: 4,
       // Gemini caller: only wired when key present; otherwise never called.
       gemini: process.env.GEMINI_API_KEY ? undefined : async () => ({ values: null, error: 'GEMINI_NOT_CONFIGURED' }),

@@ -24,7 +24,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { callLLMWithRetry } = await import('../lib/ai/gemini');
+  const { callLLMWithRetry } = await import('../../lib/ai/gemini');
 
   // ONE call: deterministic-evidence style prompt identical to production shape.
   const prompt =

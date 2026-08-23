@@ -21,9 +21,9 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 
 import { createClient } from '@supabase/supabase-js';
-import { evidenceCacheKey, SupabaseEnrichmentLogsCache } from '../lib/pipeline/orchestrator';
-import { computeIdentity } from '../lib/product-intelligence/identity';
-import type { EvidenceServiceResponse } from '../lib/evidence/client';
+import { evidenceCacheKey, SupabaseEnrichmentLogsCache } from '../../lib/pipeline/orchestrator';
+import { computeIdentity } from '../../lib/product-intelligence/identity';
+import type { EvidenceServiceResponse } from '../../lib/evidence/client';
 
 const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';

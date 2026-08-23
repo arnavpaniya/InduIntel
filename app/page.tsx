@@ -15,7 +15,9 @@ import {
 import { cn } from '@/lib/utils';
 import { scoreBatch } from '@/lib/api';
 
-// Sample demo datasets for the interactive landing page simulator
+// ILLUSTRATIVE ONLY: hand-written marketing examples for the landing-page
+// simulator. These are NOT live pipeline outputs and are isolated from the
+// production enrichment path (which never reads this file).
 const DEMO_TRANSFORMATIONS = [
   {
     id: 'tool-1',
@@ -374,7 +376,7 @@ export default function LandingPage() {
             {/* Control Bar */}
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sample Product:</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Illustrative Example <span className="normal-case font-medium text-slate-400">(not live output)</span>:</span>
                 <div className="flex items-center gap-2">
                   {DEMO_TRANSFORMATIONS.map((demo, idx) => (
                     <button

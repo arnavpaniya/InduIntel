@@ -1,283 +1,151 @@
-# InduIntel — AI Product Intelligence Enrichment Pipeline
+# InduIntel — UniHack Product Intelligence Pipeline
 
-Transform messy industrial/MRO catalog data into clean, structured, commerce-ready product records using AI. InduIntel automates a 5-step enrichment pipeline with schema-enforced LLM outputs, ground-truth validation, and calibrated confidence scoring at every stage.
-
-**Live Demo**: [Dashboard](http://localhost:3000/dashboard) | [Insights](http://localhost:3000/dashboard/insights)
-
----
-
-## Highlights
-
-- **5-Step Pipeline**: Manufacturer → Classification → Attributes → Descriptions → Specs
-- **Schema-Enforced Outputs**: Gemini `responseSchema` forces structured JSON with required `confidence` field
-- **Ground-Truth Scoring**: Separate answer-key tables, field-level match types, group accuracy, confidence calibration
-- **Quota-Aware Batching**: Daily limit guard (18 req/day free tier), per-item check, dashboard indicator
-- **Observability**: Structured logs, `enrichment_logs` audit table, error toasts with status/body
-- **Type-Safe**: Strict TypeScript, zero build errors, shared types across client/server
+Production-ready enrichment pipeline that transforms raw industrial product
+feeds into catalog-ready records and exports them in the **exact UniHack
+252-column delivery format**.
 
 ---
 
-## Quick Start
+## 1. Project overview
+
+InduIntel takes an arbitrary supplier CSV, understands its schema dynamically,
+identifies each product, enriches it from authoritative external evidence
+(with Gemini used only where genuinely necessary), tracks the provenance and
+quality status of every value, and exports a submission-ready CSV/XLSX whose
+headers are byte-identical to the organizer's contract.
+
+## 2. UniHack problem statement
+
+Given a raw distributor feed (`Mfg_Part_Num`, `Part_Desc`, three placeholder
+brand columns, `Part_Manuf` with embedded vendor codes) produce a complete,
+clean catalog record per product — taxonomy, descriptions, attributes,
+specifications, identifiers — in a fixed 252-column schema.
+
+## 3. What the system does
+
+1. **Dynamic input normalization** — any column order/naming resolves through
+   alias tables (`MPN`, `Part Number`, `Mfg_Part_Num`, … are one field);
+   placeholders (`-- Unbranded --`) become null; conflicting source columns
+   preserve both values as `conflicting`.
+2. **Product identity** — `manufacturer + MPN` primary key (fallbacks defined),
+   Unicode/case/separator-safe.
+3. **Duplicate detection** — same identity ⇒ reuse enrichment, never re-query.
+4. **Missing-field analysis** — deterministic decision on which fields justify
+   external lookup.
+5. **External evidence** — Python microservice discovers candidates via
+   **Tavily**, retrieves them SSRF-safely, sanitizes HTML, **verifies identity**
+   (wrong MPN ⇒ reject), extracts fields with pure regex.
+6. **Gemini only when required** — at most ONE batched call per product, fed
+   sanitized evidence lines only (never raw HTML); unsupported ⇒ null.
+7. **Canonical model + provenance** — every field carries a status:
+   `verified | inferred | unresolved | conflicting | invalid`.
+8. **252-column export** — CSV/XLSX byte-stable headers, RFC4180 escaping.
+
+## 4. Key guarantees
+
+| Guarantee | Mechanism |
+|---|---|
+| Dynamic arbitrary input schemas | `lib/input/input-normalizer.ts` alias resolution + conflict preservation |
+| No sample hardcoding | No organizer values in any pipeline code (verified by sweep) |
+| No fabricated values | Status/provenance system; missing stays unresolved; live-model anti-fabrication test |
+| Exact 252-column output | `lib/unihack/output-schema.ts` frozen contract + validator |
+
+## 5–15. Architecture (see [ARCHITECTURE.md](./ARCHITECTURE.md))
+
+Full diagrams, layer responsibilities, evidence service internals, Tavily
+integration details, Gemini budget strategy, Supabase persistence, cache,
+provenance storage, and export mechanics are documented there.
+
+## 16. Local setup
 
 ```bash
-# 1. Clone & install
-git clone <repo-url>
-cd InduIntel
+git clone <repo> && cd InduIntel
 npm install
-
-# 2. Configure environment
-cp .env.example .env.local
-# Edit .env.local with your credentials:
-# - NEXT_PUBLIC_SUPABASE_URL
-# - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-# - SUPABASE_SERVICE_ROLE_KEY
-# - GEMINI_API_KEY
-# - GEMINI_MODEL=gemini-2.5-flash  (updated from 2.0-flash)
-
-# 3. Set up database
-# Run migrations in Supabase Dashboard → SQL Editor, or via CLI:
-# supabase db push
-
-# 4. Seed sample data (optional)
-npm run seed
-
-# 5. Start dev server
-npm run dev
+cp .env.example .env.local        # fill real values (never commit)
+cd services/evidence && pip install -r requirements.txt
 ```
 
-Open:
-- **Landing**: http://localhost:3000
-- **Dashboard**: http://localhost:3000/dashboard
-- **Insights**: http://localhost:3000/dashboard/insights
+## 17. Environment variables
 
----
+Check presence (values never printed):
 
-## Core Workflow
-
-```
-┌─────────────┐     ┌──────────────────────┐     ┌─────────────┐     ┌──────────────┐
-│   Upload    │────▶│  5-Step Enrichment   │────▶│   Review    │────▶│    Score     │
-│  CSV/PDF/   │     │  (Manufacturer,      │     │  Dashboard  │     │  vs Ground   │
-│  Manual     │     │   Classify, Attrs,   │     │  (status,   │     │   Truth      │
-└─────────────┘     │   Descriptions,      │     │  confidence)│     │  (accuracy,  │
-                    │   Specs)             │     └─────────────┘     │  calibration)│
-                    └──────────────────────┘                         └──────────────┘
+```bash
+npx tsx scripts/validation/check-production-env.ts
 ```
 
-### 1. Upload Data
-- **CSV**: Required columns — `Mfg_Part_Num`, `Part_Desc`, `E1_Brand`, `Unilog_Brand`, `DIB_Brand`, `Part_Manuf`
-- **PDF**: Regex extraction of same fields
-- **Manual**: Single-item form
-- Deduplicates by `mfg_part_num` (upsert), cleans placeholders (`-- Unbranded --` → `null`), assigns `batch_id`
+See [.env.example](./.env.example) for the full list and
+[DEPLOYMENT.md](./DEPLOYMENT.md) for setup walkthroughs.
 
-### 2. Enrich (5 Steps)
-| Step | Endpoint | Output | Key Fields |
-|------|----------|--------|------------|
-| 1. Manufacturer | `/api/enrich/manufacturer` | `items` | `manufacturer_name`, `brand_name` |
-| 2. Classify | `/api/enrich/classify` | `items` | `dept`, `class`, `fine`, `classpath` |
-| 3. Attributes | `/api/enrich/attributes` | `item_attributes` | `label`, `value`, `uom` (×50 max) |
-| 4. Descriptions | `/api/enrich/descriptions` | `item_descriptions` | 5 variants with char limits |
-| 5. Specs | `/api/enrich/specs` | `item_specs` | UPC/EAN/GTIN, dims, weight, price, warranty |
+## 18. Running frontend
 
-Each step:
-1. Hashes input → checks `enrichment_logs` cache
-2. Calls Gemini with `responseSchema` (required `confidence`)
-3. Writes to target table(s)
-4. Logs input/output/duration
-
-### 3. Orchestrate & Score
-- **Single**: `POST /api/enrich/run` → runs all 5 steps, computes `confidence_score` (coverage 0-100) + `field_confidence` (mean LLM confidence 0-1), sets status (`enriched`/`review`)
-- **Batch**: `POST /api/enrich/batch` → quota-aware, processes up to 3 raw items
-- **Score**: `POST /api/score/item` → compares enriched vs ground truth, returns field/group scores + calibration note
-
----
-
-## Dashboard Features
-
-| Feature | Description |
-|---------|-------------|
-| **Items Table** | Paginated, sortable, filterable (status, search, batch filter) |
-| **Summary Cards** | Total, Raw, Enriched, Need Review counts |
-| **Confidence Badge** | Color-coded: ≥80% green, 60-79% amber, <60% red |
-| **Per-Item Enrich** | Quota-aware button, shows status in tooltip |
-| **Batch Enrich** | Runs 3 items, respects daily quota |
-| **Upload Modal** | CSV / Manual / PDF tabs, post-upload redirect to `?batch=<id>` |
-| **Quota Indicator** | Shows used/limit, warns at ≥15/18 |
-| **Error Toasts** | Detailed: `Failed to load items (status 500) - {body}` |
-| **Item Detail** | `/dashboard/[id]` — full enriched view with all relations |
-| **Insights** | `/dashboard/insights` — accuracy charts, confidence correlation |
-
----
-
-## Architecture
-
-```
-Next.js 14 (App Router) + TypeScript
-├── app/
-│   ├── api/
-│   │   ├── items/              # GET list, GET [id], POST upload
-│   │   ├── enrich/
-│   │   │   ├── run/            # Orchestrator (5 steps)
-│   │   │   ├── batch/          # Quota-aware batch
-│   │   │   ├── manufacturer/   # Step 1
-│   │   │   ├── classify/       # Step 2
-│   │   │   ├── attributes/     # Step 3
-│   │   │   ├── descriptions/   # Step 4
-│   │   │   └── specs/          # Step 5
-│   │   └── score/              # Ground-truth validation
-│   └── dashboard/              # Client components (React)
-├── lib/
-│   ├── ai/
-│   │   ├── gemini.ts           # callLLM, callLLMWithRetry, schemas
-│   │   └── attributes.ts       # Measurement parsing (24-1/4 → 24.25)
-│   ├── scoring/compare.ts      # Levenshtein, numeric diff, group scoring
-│   ├── supabase/               # SSR (cookies) + Admin (service role)
-│   ├── api.ts                  # Client fetch with enriched errors
-│   ├── types.ts                # All interfaces
-│   └── debug.ts                # Structured logging
-└── components/ui/              # shadcn/ui + Radix primitives
+```bash
+npm run dev        # http://localhost:3000/dashboard
 ```
 
-**External**: Google Gemini 2.5 Flash (`responseSchema` enforced), Supabase/PostgreSQL
+## 19. Running evidence service
 
----
-
-## Data Model (Key Tables)
-
-```sql
-items (id, mfg_part_num, part_desc, e1_brand, unilog_brand, dib_brand, part_manuf,
-       manufacturer_name, brand_name, dept, class, fine, classpath,
-       status, confidence_score, field_confidence, is_ground_truth, batch_id)
-
-item_descriptions (item_id, field_name, value, char_count)      -- 5 variants
-item_attributes (item_id, seq, label, value, uom)               -- structured attrs
-item_specs (item_id, upc, ean, gtin, unspsc, list_price,
-            length, width, height, weight, uoms, country, warranty)
-
-enrichment_logs (item_id, step, status, error, input_json, output_json, duration_ms)
-gemini_usage_log (request_date, request_count)                  -- quota tracking
-
--- Ground truth (answer keys — separate from items)
-ground_truth_items, ground_truth_descriptions, ground_truth_attributes, ground_truth_specs
+```bash
+cd services/evidence
+python -m uvicorn app:app --port 8000
+curl http://127.0.0.1:8000/       # -> {"search_provider":"TavilySearchProvider",...}
 ```
 
----
+## 20. Running validation
 
-## Confidence & Scoring
-
-### Two Metrics
-
-| Metric | Range | Source | Meaning |
-|--------|-------|--------|---------|
-| `confidence_score` | 0–100 | Orchestrator | % of expected fields populated (coverage) |
-| `field_confidence` | 0–1 | LLM self-report | Mean of 5 step confidences (calibration) |
-
-### Status Logic
-```typescript
-hasCritical = manufacturer_name && brand_name && classpath
-status = !hasCritical ? 'review'
-       : confidence_score < 60 ? 'review'
-       : 'enriched'
+```bash
+npm run validate:unihack          # full gate (8 steps)
+npm run test:unit                 # TypeScript suites
+python -m pytest services/evidence/tests -q
 ```
 
-### Scoring (vs Ground Truth)
-- **Match types**: `exact_match`, `close_match` (Levenshtein ≥85%), `mismatch`, `missing_in_output`, `extra_in_output`
-- **Groups**: Identity, Taxonomy, Descriptions, Attributes, Specs
-- **Calibration**: 4-quadrant note (e.g., "Overconfident — confidence overestimates accuracy")
+## 21. Running organizer sample
 
----
-
-## Quota Management
-
-| Limit | Value |
-|-------|-------|
-| Daily requests | 18 (safety margin under 20) |
-| Per item | 5 requests (one per step) |
-| Batch default | 3 items (15 requests) |
-| Check | Per-item before each step |
-| Fail-open | On quota check error |
-
-Dashboard shows real-time `used/limit` with near-limit warning.
-
----
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | — | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ✅ | — | Anon key (client) |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | — | Service role (server writes) |
-| `GEMINI_API_KEY` | ✅ | — | Google AI Studio key |
-| `GEMINI_MODEL` | No | `gemini-2.5-flash` | Model name |
-| `DAILY_QUOTA_LIMIT` | No | `18` | Daily request cap |
-| `NEXT_PUBLIC_APP_URL` | No | `http://localhost:3000` | Base URL for internal fetches |
-| `DEBUG` | No | — | Enable structured logs |
-
----
-
-## Scripts
-
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build (typecheck + compile) |
-| `npm run start` | Start production server |
-| `npm run lint` | ESLint |
-| `npm run seed` | Load sample CSV into `items` |
-| `npx tsc --noEmit` | TypeScript check only |
-
----
-
-## Project Structure
-
-```
-InduIntel/
-├── app/
-│   ├── api/
-│   │   ├── enrich/          # 5 steps + run + batch
-│   │   ├── score/           # item, batch
-│   │   └── items/           # list, detail, upload
-│   ├── dashboard/
-│   │   ├── page.tsx         # Main dashboard
-│   │   ├── [item_id]/       # Item detail
-│   │   └── insights/        # Analytics
-│   └── layout.tsx, page.tsx
-├── lib/
-│   ├── ai/                  # Gemini client, schemas
-│   ├── scoring/             # Comparison logic
-│   ├── supabase/            # Server + admin clients
-│   ├── api.ts               # Client fetch wrapper
-│   ├── types.ts             # Shared interfaces
-│   ├── utils.ts             # cn(), helpers
-│   └── debug.ts             # Logging
-├── components/ui/           # shadcn/ui components
-├── scripts/                 # Seed, migrations, utilities
-├── supabase/migrations/     # SQL migrations
-├── PRD.md                   # Product Requirements
-└── ARCHITECTURE.md          # Technical Architecture
+```bash
+npx tsx scripts/production/run-unihack-pipeline.ts
+# -> reports/unihack-final-sample.csv/.xlsx + validation/audit JSONs
+npx tsx scripts/inspection  # see scripts/validation/inspect-organizer-files.ts
 ```
 
----
+## 22. Output validation
 
-## Known Limitations
+```bash
+npx tsx scripts/validation/validate-unihack-output.ts reports/unihack-final-sample.csv
+npx tsx scripts/validation/validate-unihack-output.ts reports/unihack-final-sample.xlsx
+```
 
-- **Free-tier quota**: ~3 items/day (18 req/day ÷ 5 req/item). Production needs paid tier or async queue.
-- **Baseline accuracy**: ~34% on sparse retail input. Root cause: text-only extraction from minimal descriptions (e.g., "Display Only"), distributor names instead of manufacturers.
-- **Strong areas**: Taxonomy classification (50-100%), description char-limit compliance (100%), specs present in source text.
-- **Weak areas**: Manufacturer identity (0% when input has distributor), attribute LOV compliance (12%), UPC/GTIN/dimensions (0% — not in source).
+Exit 0 = submission-valid (9 checks: header count/order/equality, row widths,
+RFC4180, Unicode, static headers unchanged).
 
----
+## 23. Security model
 
-## Documentation
+- SSRF blocklist (loopback/private/link-local/metadata IPs), per-hop redirect
+  validation, streamed response-size cap, bounded timeouts/retries.
+- Identity verification gates ALL external enrichment.
+- Raw HTML never reaches Gemini.
+- Secrets live only in `.env.local` (git-ignored); `.env.example` has
+  placeholders; keys never logged.
 
-| Document | Description |
-|----------|-------------|
-| `PRD.md` | Product Requirements — features, API contracts, acceptance criteria |
-| `ARCHITECTURE.md` | Technical Architecture — data flows, schema, LLM integration, security |
+## 24. Gemini budget strategy
 
----
+- Deterministic evidence ⇒ **zero** calls (counted as avoided).
+- Ambiguous-but-evidenced ⇒ exactly **one batched** call per product.
+- Daily quota via `gemini_usage_log` + `DAILY_QUOTA_LIMIT`; frontend reads
+  real usage from `GET /api/usage`.
 
-## License
+## 25. Troubleshooting
 
-MIT — feel free to use, modify, and distribute.
+| Symptom | Fix |
+|---|---|
+| `401 Invalid API key` (Supabase) | rotate service-role key |
+| `SEARCH PROVIDER NOT CONFIGURED` | set Tavily env vars (DEPLOYMENT.md §4) |
+| Cache writes warn `step_check` | apply `supabase/migrations/010_external_evidence_step.sql` |
+| Everything unresolved | evidence service down / no search key |
+
+## 26. Final evaluation checklist
+
+1. `npm run validate:unihack` → exit 0
+2. `reports/unihack-final-validation.json`: `fabricated_values: 0`,
+   `output_columns: 252`, `csv_valid: true`, `xlsx_valid: true`
+3. Both output files pass the validator
+4. Evidence service reports Tavily provider
+5. Persistent cache round trip PASS (`scripts/validation/supabase-production-check.ts`)

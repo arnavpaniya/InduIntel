@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchItems, enrichItem, enrichBatch, fetchQuotaStatus, uploadItems, addManualItem } from '@/lib/api';
-import { Item } from '@/lib/types';
+import { Item, QuotaStatus } from '@/lib/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const STATUS_BADGE_CONFIG: Record<Item['status'], { variant: 'success' | 'warning' | 'info' | 'gray'; label: string; sublabel: string; icon: any }> = {
@@ -41,8 +41,8 @@ const STATUS_BADGE_CONFIG: Record<Item['status'], { variant: 'success' | 'warnin
   },
   enriched: {
     variant: 'success',
-    label: '100% Ready to Sell',
-    sublabel: 'High confidence, complete catalog record',
+    label: 'Enriched',
+    sublabel: 'Confidence ≥ 60% — completeness shown by score',
     icon: CheckCircle2,
   },
   review: {
@@ -193,7 +193,7 @@ export default function DashboardClient() {
   const [loading, setLoading] = useState(true);
   const [enrichingIds, setEnrichingIds] = useState<Set<string>>(new Set());
   const [batchLoading, setBatchLoading] = useState(false);
-  const [quotaStatus, setQuotaStatus] = useState<{ used: number; limit: number; remaining: number; near_limit: boolean }>({ used: 0, limit: 18, remaining: 18, near_limit: false });
+  const [quotaStatus, setQuotaStatus] = useState<QuotaStatus>({ available: false, used: null, limit: null, remaining: null, near_limit: false });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   
   // Upload modal state
@@ -242,6 +242,7 @@ export default function DashboardClient() {
       setQuotaStatus(status);
     } catch (error) {
       console.error('Failed to load quota:', error);
+      setQuotaStatus({ available: false, used: null, limit: null, remaining: null, near_limit: false });
     }
   }, []);
 
@@ -458,6 +459,39 @@ export default function DashboardClient() {
           </div>
           
           <div className="flex items-center gap-4">
+            {quotaStatus.available && quotaStatus.used !== null ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-slate-300 bg-white text-xs font-semibold text-slate-700 cursor-help" data-testid="gemini-usage">
+                      <Zap className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Gemini today: {quotaStatus.used}{quotaStatus.limit != null ? ` / ${quotaStatus.limit}` : ''}</span>
+                      {quotaStatus.gemini_calls_avoided != null && (
+                        <span className="text-emerald-600">· {quotaStatus.gemini_calls_avoided} avoided</span>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs bg-slate-900 text-slate-100">
+                    Live Gemini usage from gemini_usage_log (server-side).
+                    {quotaStatus.remaining != null ? ` ${quotaStatus.remaining} requests remaining today.` : ' No daily limit configured.'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 cursor-help">
+                      <Zap className="h-3.5 w-3.5" />
+                      <span>Gemini usage unavailable</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs bg-slate-900 text-slate-100">
+                    Usage could not be read from the backend right now.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <Link href="/dashboard/insights">
               <Button variant="outline" size="sm" className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 gap-1.5 text-xs font-semibold">
                 <BarChart2 className="h-3.5 w-3.5 text-indigo-600" />
@@ -496,7 +530,7 @@ export default function DashboardClient() {
             tone="neutral" 
           />
           <ExecutiveCard 
-            label="100% Ready to Sell" 
+            label="Enriched (confidence ≥ 60%)" 
             value={statusCounts.enriched} 
             description="Cleaned, categorized, & validated"
             icon={CheckCircle2} 
@@ -542,7 +576,7 @@ export default function DashboardClient() {
               </SelectTrigger>
               <SelectContent className="bg-white border-slate-200 text-slate-800">
                 <SelectItem value="all">All Products</SelectItem>
-                <SelectItem value="enriched">🟢 Ready to Sell (100%)</SelectItem>
+                <SelectItem value="enriched">🟢 Enriched (confidence ≥ 60%)</SelectItem>
                 <SelectItem value="review">🟡 Needs Quick Check</SelectItem>
                 <SelectItem value="raw">⚪ Not Cleaned Yet</SelectItem>
               </SelectContent>

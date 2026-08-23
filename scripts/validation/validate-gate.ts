@@ -9,8 +9,8 @@
  *   3. Build                   npm run build
  *   4. Python compile          python -m compileall services/evidence
  *   5. Python tests            python -m pytest services/evidence/tests
- *   6. Output validator        scripts/validate-unihack-output.ts (CSV + XLSX)
- *   7. Environment check       scripts/check-production-env.ts
+ *   6. Output validator        scripts/validation/validate-unihack-output.ts (CSV + XLSX)
+ *   7. Environment check       scripts/validation/check-production-env.ts
  *
  * Every step runs even if an earlier one fails; the final exit code is
  * non-zero when ANY step fails. Never prints secret values.
@@ -62,23 +62,23 @@ async function main(): Promise<void> {
 
   // 6: Submission outputs (regenerate if missing)
   if (!existsSync('reports/unihack-final-sample.csv')) {
-    run('Regenerate outputs', ['npx', 'tsx', 'scripts/run-unihack-pipeline.ts']);
+    run('Regenerate outputs', ['npx', 'tsx', 'scripts/production/run-unihack-pipeline.ts']);
   }
   if (existsSync('reports/unihack-final-sample.csv')) {
-    run('Validate CSV output', ['npx', 'tsx', 'scripts/validate-unihack-output.ts', 'reports/unihack-final-sample.csv']);
+    run('Validate CSV output', ['npx', 'tsx', 'scripts/validation/validate-unihack-output.ts', 'reports/unihack-final-sample.csv']);
   } else {
     results.push({ name: 'Validate CSV output', ok: false, detail: 'reports/unihack-final-sample.csv not found' });
     console.log('\n✗ Validate CSV output: file missing');
   }
   if (existsSync('reports/unihack-final-sample.xlsx')) {
-    run('Validate XLSX output', ['npx', 'tsx', 'scripts/validate-unihack-output.ts', 'reports/unihack-final-sample.xlsx']);
+    run('Validate XLSX output', ['npx', 'tsx', 'scripts/validation/validate-unihack-output.ts', 'reports/unihack-final-sample.xlsx']);
   } else {
     results.push({ name: 'Validate XLSX output', ok: false, detail: 'reports/unihack-final-sample.xlsx not found' });
     console.log('\n✗ Validate XLSX output: file missing');
   }
 
   // 7: Environment presence
-  const env = spawnSync('npx', ['tsx', 'scripts/check-production-env.ts'], { encoding: 'utf-8' });
+  const env = spawnSync('npx', ['tsx', 'scripts/validation/check-production-env.ts'], { encoding: 'utf-8' });
   results.push({
     name: 'Environment check',
     ok: env.status === 0,

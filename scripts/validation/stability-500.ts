@@ -17,8 +17,8 @@ config({ path: '.env.local' });
 
 import { writeFileSync, mkdirSync } from 'fs';
 import { spawn } from 'child_process';
-import { runPipeline } from '../lib/pipeline/orchestrator';
-import { normalizeCsvInput } from '../lib/input/input-normalizer';
+import { runPipeline } from '../../lib/pipeline/orchestrator';
+import { normalizeCsvInput } from '../../lib/input/input-normalizer';
 
 // --- deterministic synthetic generation ------------------------------------
 

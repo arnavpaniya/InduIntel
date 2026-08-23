@@ -7,11 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "tsx scripts/seed.ts",
-    "reset": "tsx scripts/reset.ts",
+    "seed": "tsx scripts/development/seed.ts",
+    "reset": "tsx scripts/development/reset.ts",
     "test:unit": "tsx tests/run-unit.ts",
     "test:evidence": "python3 -m pytest services/evidence/tests -q",
-    "validate:unihack": "tsx scripts/validate-gate.ts"
+    "validate:unihack": "tsx scripts/validation/validate-gate.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -50,7 +50,6 @@
     "autoprefixer": "^10.5.4",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.0",
-    "playwright": "^1.62.1",
     "postcss": "^8.5.26",
     "tailwindcss": "^3.4.19",
     "tsx": "^4.23.12",

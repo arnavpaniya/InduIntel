@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T09:38:24.017Z",
+  "generated_at": "2026-08-23T10:56:18.966Z",
   "source_input": "Unihack_ Sample Dataset - Input.csv",
   "input_rows": 1000,
   "processed_rows": 1000,
@@ -58,10 +58,10 @@
     "static_empty": 43000
   },
   "timing": {
-    "totalMs": 210,
+    "totalMs": 171,
     "avgPerProductMs": 0,
-    "externalRetrievalMs": 787,
+    "externalRetrievalMs": 609,
     "geminiMs": 0,
-    "totalWallMs": 211
+    "totalWallMs": 172
   }
 }

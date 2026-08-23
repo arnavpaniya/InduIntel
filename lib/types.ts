@@ -155,10 +155,15 @@ export interface BatchScoreResponse {
 }
 
 export interface QuotaStatus {
-  used: number;
-  limit: number;
-  remaining: number;
+  /** false when real usage cannot be determined — frontend must show unavailable state */
+  available: boolean;
+  used: number | null;
+  /** null when no configured limit exists */
+  limit: number | null;
+  remaining: number | null;
   near_limit: boolean;
+  /** deterministic completions that required zero Gemini calls (may be null) */
+  gemini_calls_avoided?: number | null;
 }
 
 export interface UploadResponse {

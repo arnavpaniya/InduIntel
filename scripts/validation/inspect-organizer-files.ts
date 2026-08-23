@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'fs';
 import { parse as csvParse } from 'csv-parse/sync';
-import { UNIHACK_HEADERS } from '../lib/unihack/output-schema';
+import { UNIHACK_HEADERS } from '../../lib/unihack/output-schema';
 
 const INPUT_CSV = 'Unihack_ Sample Dataset - Input.csv';
 const OUTPUT_CSV = 'Unihack_ Expected Output - Delivery Format.csv';

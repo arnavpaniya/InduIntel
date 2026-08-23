@@ -19,7 +19,7 @@
 
 import { readFileSync } from 'fs';
 import { parse as csvParse } from 'csv-parse/sync';
-import { UNIHACK_HEADERS as CANONICAL, TOTAL_HEADERS } from '../lib/unihack/output-schema';
+import { UNIHACK_HEADERS as CANONICAL, TOTAL_HEADERS } from '../../lib/unihack/output-schema';
 
 // Single source of truth: the frozen 252-column contract.
 const UNIHACK_HEADERS: readonly string[] = CANONICAL;

@@ -45,3 +45,11 @@ __pycache__/
 .venv/
 venv/
 services/evidence/.venv/
+
+# dev artifacts
+*.log
+*.bak
+supabase/.temp/
+.commandcode/
+.vscode/
+skills/

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { debugError } from '@/lib/debug';
 import {
   normalizeCsvInput,
@@ -63,7 +63,7 @@ async function handleFileUpload(request: NextRequest) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = supabaseAdmin; // server-side write path (token-protected route)
 
   if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
     return handleCSVUpload(supabase, file);
@@ -268,7 +268,7 @@ async function handlePDFUpload(supabase: any, file: File) {
 
 async function handleManualEntry(request: NextRequest) {
   const body = await request.json();
-  const supabase = await createServerSupabaseClient();
+  const supabase = supabaseAdmin; // server-side write path (token-protected route)
 
   const mfgPartNum = cleanValue(body.mfg_part_num);
   if (!mfgPartNum) {

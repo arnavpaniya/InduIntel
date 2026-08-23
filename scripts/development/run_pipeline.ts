@@ -17,8 +17,8 @@ let supabaseAdmin: any;
 
 async function loadModules() {
   const [geminiMod, adminMod] = await Promise.all([
-    import('../lib/ai/gemini'),
-    import('../lib/supabase/admin'),
+    import('../../lib/ai/gemini'),
+    import('../../lib/supabase/admin'),
   ]);
   callLLMWithRetry = geminiMod.callLLMWithRetry;
   supabaseAdmin = adminMod.supabaseAdmin;
@@ -805,7 +805,7 @@ async function scoreItem(enrichedItemId: string, groundTruthItemId: string) {
   };
 
   // Import scoring logic
-  const { scoreItem: score } = await import('../lib/scoring/compare');
+  const { scoreItem: score } = await import('../../lib/scoring/compare');
   return score(enrichedItemId, groundTruthItemId);
 }
 
