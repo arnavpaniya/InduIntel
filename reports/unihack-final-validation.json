@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-08-23T09:19:45.712Z",
+  "source_input": "Unihack_ Sample Dataset - Input.csv",
+  "input_rows": 1000,
+  "processed_rows": 1000,
+  "failed_rows": 0,
+  "duplicates": 2,
+  "output_columns": 252,
+  "csv_valid": true,
+  "xlsx_valid": true,
+  "csv_xlsx_parity_checked_cells": 15120,
+  "csv_xlsx_parity_mismatches": 0,
+  "fabricated_values": 0,
+  "verified_fields": 5959,
+  "inferred_fields": 0,
+  "unresolved_fields": 203041,
+  "conflicting_fields": 0,
+  "invalid_fields": 0,
+  "external_evidence_fields": 0,
+  "deterministic_fields": 0,
+  "gemini_calls": 0,
+  "gemini_calls_avoided": 0,
+  "cache_hits": 1,
+  "cache_misses": 958,
+  "production_status": {
+    "gemini": "NOT CONFIGURED",
+    "search_provider": "SEARCH PROVIDER NOT CONFIGURED",
+    "evidence_service": "real",
+    "supabase": "configured"
+  },
+  "identity_audit": {
+    "strong": 959,
+    "medium": 0,
+    "none": 41,
+    "duplicated_input_mpns": [
+      {
+        "mpn": "AVM6EV",
+        "count": 2
+      }
+    ],
+    "suspicious_issues": [
+      {
+        "rowIndex": 783,
+        "mpn": "AVM6EV",
+        "manufacturer": "Malco Prod",
+        "kind": "duplicate_mpn",
+        "detail": "MPN already seen at row 782"
+      }
+    ],
+    "suspicious_issue_count": 1
+  },
+  "field_status_totals": {
+    "verified": 5959,
+    "inferred": 0,
+    "unresolved": 203041,
+    "conflicting": 0,
+    "invalid": 0,
+    "static_empty": 43000
+  },
+  "timing": {
+    "totalMs": 201,
+    "avgPerProductMs": 0,
+    "externalRetrievalMs": 752,
+    "geminiMs": 0,
+    "totalWallMs": 202
+  }
+}

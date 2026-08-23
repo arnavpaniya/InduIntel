@@ -70,6 +70,7 @@ const HEADER_ALIASES: Array<{ field: InternalInputField; aliases: string[] }> = 
   { field: 'manufacturer_name', aliases: [
     'manufacturer', 'manufacturermfr', 'mfr', 'mfg', 'mfrname', 'mfgname',
     'manufacturername', 'manufname', 'vendormanufacturer', 'maker',
+    'partmanuf',
   ]},
   // --- Brand family ---
   { field: 'brand_name', aliases: ['brand', 'brandname'] },
@@ -383,6 +384,17 @@ function mergeContributions(
   return base;
 }
 
+/**
+ * Strip a trailing short vendor-code parenthetical from manufacturer names:
+ *   "Freud Inc (2435)" -> "Freud Inc"
+ * Only strips SHORT upper/alnum tokens ("(2435)", "(APPDE)") — real
+ * parenthetical qualifiers like "(Canada)" are longer/mixed and kept.
+ * The raw value is preserved on contributions regardless.
+ */
+export function stripVendorCode(name: string): string {
+  return name.replace(/\s*\(([A-Z0-9]{1,6})\)\s*$/, '').trim();
+}
+
 /** Normalize a single CSV record (header->value map) into a NormalizedInputRow. */
 export function normalizeInputRecord(
   record: Record<string, unknown>,
@@ -425,6 +437,17 @@ export function normalizeInputRecord(
 
     if (!buckets.has(target)) buckets.set(target, []);
     buckets.get(target)!.push({ value, uom, column, raw: String(rawVal ?? '') });
+  }
+
+  // Manufacturer family: deterministic vendor-code strip on the VALUE while
+  // contributions keep the raw string (organizer format "Name (CODE)").
+  for (const mfrField of ['manufacturer_name', 'brand_name'] as const) {
+    const bucket = buckets.get(mfrField);
+    if (bucket) {
+      for (const c of bucket) {
+        if (c.value != null) c.value = stripVendorCode(c.value) || c.value;
+      }
+    }
   }
 
   const fields: NormalizedInputRow['fields'] = {};

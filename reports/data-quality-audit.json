@@ -1,0 +1,632 @@
+{
+  "totals": {
+    "verified": 5959,
+    "inferred": 0,
+    "unresolved": 203041,
+    "conflicting": 0,
+    "invalid": 0,
+    "static_empty": 43000
+  },
+  "per_field": {
+    "mfg_part_num": {
+      "verified": 4000
+    },
+    "dept": {
+      "unresolved": 1000
+    },
+    "class": {
+      "unresolved": 1000
+    },
+    "fine": {
+      "unresolved": 1000
+    },
+    "part_desc": {
+      "verified": 1000
+    },
+    "e1_brand": {
+      "unresolved": 1000
+    },
+    "unilog_brand": {
+      "unresolved": 1000
+    },
+    "dib_brand": {
+      "unresolved": 1000
+    },
+    "part_manuf": {
+      "unresolved": 1000
+    },
+    "manufacturer_name": {
+      "verified": 959,
+      "unresolved": 41
+    },
+    "brand_name": {
+      "unresolved": 1000
+    },
+    "trade_name": {
+      "unresolved": 1000
+    },
+    "alternate_part_number": {
+      "unresolved": 1000
+    },
+    "classpath": {
+      "unresolved": 1000
+    },
+    "mobile_desc": {
+      "unresolved": 1000
+    },
+    "invoice_desc": {
+      "unresolved": 1000
+    },
+    "short_desc": {
+      "unresolved": 1000
+    },
+    "long_desc1": {
+      "unresolved": 1000
+    },
+    "retail_desc": {
+      "unresolved": 1000
+    },
+    "marketing_description": {
+      "unresolved": 1000
+    },
+    "item_features_1": {
+      "unresolved": 1000
+    },
+    "item_features_2": {
+      "unresolved": 1000
+    },
+    "item_features_3": {
+      "unresolved": 1000
+    },
+    "item_features_4": {
+      "unresolved": 1000
+    },
+    "item_features_5": {
+      "unresolved": 1000
+    },
+    "item_features_6": {
+      "unresolved": 1000
+    },
+    "item_features_7": {
+      "unresolved": 1000
+    },
+    "item_features_8": {
+      "unresolved": 1000
+    },
+    "item_features_9": {
+      "unresolved": 1000
+    },
+    "item_features_10": {
+      "unresolved": 1000
+    },
+    "item_features_11": {
+      "unresolved": 1000
+    },
+    "item_features_12": {
+      "unresolved": 1000
+    },
+    "item_features_13": {
+      "unresolved": 1000
+    },
+    "item_features_14": {
+      "unresolved": 1000
+    },
+    "item_features_15": {
+      "unresolved": 1000
+    },
+    "item_features_16": {
+      "unresolved": 1000
+    },
+    "item_features_17": {
+      "unresolved": 1000
+    },
+    "item_features_18": {
+      "unresolved": 1000
+    },
+    "item_features_19": {
+      "unresolved": 1000
+    },
+    "item_features_20": {
+      "unresolved": 1000
+    },
+    "attribute_label_1": {
+      "unresolved": 1000
+    },
+    "attribute_value_1": {
+      "unresolved": 1000
+    },
+    "attribute_uom_1": {
+      "unresolved": 1000
+    },
+    "attribute_label_2": {
+      "unresolved": 1000
+    },
+    "attribute_value_2": {
+      "unresolved": 1000
+    },
+    "attribute_uom_2": {
+      "unresolved": 1000
+    },
+    "attribute_label_3": {
+      "unresolved": 1000
+    },
+    "attribute_value_3": {
+      "unresolved": 1000
+    },
+    "attribute_uom_3": {
+      "unresolved": 1000
+    },
+    "attribute_label_4": {
+      "unresolved": 1000
+    },
+    "attribute_value_4": {
+      "unresolved": 1000
+    },
+    "attribute_uom_4": {
+      "unresolved": 1000
+    },
+    "attribute_label_5": {
+      "unresolved": 1000
+    },
+    "attribute_value_5": {
+      "unresolved": 1000
+    },
+    "attribute_uom_5": {
+      "unresolved": 1000
+    },
+    "attribute_label_6": {
+      "unresolved": 1000
+    },
+    "attribute_value_6": {
+      "unresolved": 1000
+    },
+    "attribute_uom_6": {
+      "unresolved": 1000
+    },
+    "attribute_label_7": {
+      "unresolved": 1000
+    },
+    "attribute_value_7": {
+      "unresolved": 1000
+    },
+    "attribute_uom_7": {
+      "unresolved": 1000
+    },
+    "attribute_label_8": {
+      "unresolved": 1000
+    },
+    "attribute_value_8": {
+      "unresolved": 1000
+    },
+    "attribute_uom_8": {
+      "unresolved": 1000
+    },
+    "attribute_label_9": {
+      "unresolved": 1000
+    },
+    "attribute_value_9": {
+      "unresolved": 1000
+    },
+    "attribute_uom_9": {
+      "unresolved": 1000
+    },
+    "attribute_label_10": {
+      "unresolved": 1000
+    },
+    "attribute_value_10": {
+      "unresolved": 1000
+    },
+    "attribute_uom_10": {
+      "unresolved": 1000
+    },
+    "attribute_label_11": {
+      "unresolved": 1000
+    },
+    "attribute_value_11": {
+      "unresolved": 1000
+    },
+    "attribute_uom_11": {
+      "unresolved": 1000
+    },
+    "attribute_label_12": {
+      "unresolved": 1000
+    },
+    "attribute_value_12": {
+      "unresolved": 1000
+    },
+    "attribute_uom_12": {
+      "unresolved": 1000
+    },
+    "attribute_label_13": {
+      "unresolved": 1000
+    },
+    "attribute_value_13": {
+      "unresolved": 1000
+    },
+    "attribute_uom_13": {
+      "unresolved": 1000
+    },
+    "attribute_label_14": {
+      "unresolved": 1000
+    },
+    "attribute_value_14": {
+      "unresolved": 1000
+    },
+    "attribute_uom_14": {
+      "unresolved": 1000
+    },
+    "attribute_label_15": {
+      "unresolved": 1000
+    },
+    "attribute_value_15": {
+      "unresolved": 1000
+    },
+    "attribute_uom_15": {
+      "unresolved": 1000
+    },
+    "attribute_label_16": {
+      "unresolved": 1000
+    },
+    "attribute_value_16": {
+      "unresolved": 1000
+    },
+    "attribute_uom_16": {
+      "unresolved": 1000
+    },
+    "attribute_label_17": {
+      "unresolved": 1000
+    },
+    "attribute_value_17": {
+      "unresolved": 1000
+    },
+    "attribute_uom_17": {
+      "unresolved": 1000
+    },
+    "attribute_label_18": {
+      "unresolved": 1000
+    },
+    "attribute_value_18": {
+      "unresolved": 1000
+    },
+    "attribute_uom_18": {
+      "unresolved": 1000
+    },
+    "attribute_label_19": {
+      "unresolved": 1000
+    },
+    "attribute_value_19": {
+      "unresolved": 1000
+    },
+    "attribute_uom_19": {
+      "unresolved": 1000
+    },
+    "attribute_label_20": {
+      "unresolved": 1000
+    },
+    "attribute_value_20": {
+      "unresolved": 1000
+    },
+    "attribute_uom_20": {
+      "unresolved": 1000
+    },
+    "attribute_label_21": {
+      "unresolved": 1000
+    },
+    "attribute_value_21": {
+      "unresolved": 1000
+    },
+    "attribute_uom_21": {
+      "unresolved": 1000
+    },
+    "attribute_label_22": {
+      "unresolved": 1000
+    },
+    "attribute_value_22": {
+      "unresolved": 1000
+    },
+    "attribute_uom_22": {
+      "unresolved": 1000
+    },
+    "attribute_label_23": {
+      "unresolved": 1000
+    },
+    "attribute_value_23": {
+      "unresolved": 1000
+    },
+    "attribute_uom_23": {
+      "unresolved": 1000
+    },
+    "attribute_label_24": {
+      "unresolved": 1000
+    },
+    "attribute_value_24": {
+      "unresolved": 1000
+    },
+    "attribute_uom_24": {
+      "unresolved": 1000
+    },
+    "attribute_label_25": {
+      "unresolved": 1000
+    },
+    "attribute_value_25": {
+      "unresolved": 1000
+    },
+    "attribute_uom_25": {
+      "unresolved": 1000
+    },
+    "attribute_label_26": {
+      "unresolved": 1000
+    },
+    "attribute_value_26": {
+      "unresolved": 1000
+    },
+    "attribute_uom_26": {
+      "unresolved": 1000
+    },
+    "attribute_label_27": {
+      "unresolved": 1000
+    },
+    "attribute_value_27": {
+      "unresolved": 1000
+    },
+    "attribute_uom_27": {
+      "unresolved": 1000
+    },
+    "attribute_label_28": {
+      "unresolved": 1000
+    },
+    "attribute_value_28": {
+      "unresolved": 1000
+    },
+    "attribute_uom_28": {
+      "unresolved": 1000
+    },
+    "attribute_label_29": {
+      "unresolved": 1000
+    },
+    "attribute_value_29": {
+      "unresolved": 1000
+    },
+    "attribute_uom_29": {
+      "unresolved": 1000
+    },
+    "attribute_label_30": {
+      "unresolved": 1000
+    },
+    "attribute_value_30": {
+      "unresolved": 1000
+    },
+    "attribute_uom_30": {
+      "unresolved": 1000
+    },
+    "attribute_label_31": {
+      "unresolved": 1000
+    },
+    "attribute_value_31": {
+      "unresolved": 1000
+    },
+    "attribute_uom_31": {
+      "unresolved": 1000
+    },
+    "attribute_label_32": {
+      "unresolved": 1000
+    },
+    "attribute_value_32": {
+      "unresolved": 1000
+    },
+    "attribute_uom_32": {
+      "unresolved": 1000
+    },
+    "attribute_label_33": {
+      "unresolved": 1000
+    },
+    "attribute_value_33": {
+      "unresolved": 1000
+    },
+    "attribute_uom_33": {
+      "unresolved": 1000
+    },
+    "attribute_label_34": {
+      "unresolved": 1000
+    },
+    "attribute_value_34": {
+      "unresolved": 1000
+    },
+    "attribute_uom_34": {
+      "unresolved": 1000
+    },
+    "attribute_label_35": {
+      "unresolved": 1000
+    },
+    "attribute_value_35": {
+      "unresolved": 1000
+    },
+    "attribute_uom_35": {
+      "unresolved": 1000
+    },
+    "attribute_label_36": {
+      "unresolved": 1000
+    },
+    "attribute_value_36": {
+      "unresolved": 1000
+    },
+    "attribute_uom_36": {
+      "unresolved": 1000
+    },
+    "attribute_label_37": {
+      "unresolved": 1000
+    },
+    "attribute_value_37": {
+      "unresolved": 1000
+    },
+    "attribute_uom_37": {
+      "unresolved": 1000
+    },
+    "attribute_label_38": {
+      "unresolved": 1000
+    },
+    "attribute_value_38": {
+      "unresolved": 1000
+    },
+    "attribute_uom_38": {
+      "unresolved": 1000
+    },
+    "attribute_label_39": {
+      "unresolved": 1000
+    },
+    "attribute_value_39": {
+      "unresolved": 1000
+    },
+    "attribute_uom_39": {
+      "unresolved": 1000
+    },
+    "attribute_label_40": {
+      "unresolved": 1000
+    },
+    "attribute_value_40": {
+      "unresolved": 1000
+    },
+    "attribute_uom_40": {
+      "unresolved": 1000
+    },
+    "attribute_label_41": {
+      "unresolved": 1000
+    },
+    "attribute_value_41": {
+      "unresolved": 1000
+    },
+    "attribute_uom_41": {
+      "unresolved": 1000
+    },
+    "attribute_label_42": {
+      "unresolved": 1000
+    },
+    "attribute_value_42": {
+      "unresolved": 1000
+    },
+    "attribute_uom_42": {
+      "unresolved": 1000
+    },
+    "attribute_label_43": {
+      "unresolved": 1000
+    },
+    "attribute_value_43": {
+      "unresolved": 1000
+    },
+    "attribute_uom_43": {
+      "unresolved": 1000
+    },
+    "attribute_label_44": {
+      "unresolved": 1000
+    },
+    "attribute_value_44": {
+      "unresolved": 1000
+    },
+    "attribute_uom_44": {
+      "unresolved": 1000
+    },
+    "attribute_label_45": {
+      "unresolved": 1000
+    },
+    "attribute_value_45": {
+      "unresolved": 1000
+    },
+    "attribute_uom_45": {
+      "unresolved": 1000
+    },
+    "attribute_label_46": {
+      "unresolved": 1000
+    },
+    "attribute_value_46": {
+      "unresolved": 1000
+    },
+    "attribute_uom_46": {
+      "unresolved": 1000
+    },
+    "attribute_label_47": {
+      "unresolved": 1000
+    },
+    "attribute_value_47": {
+      "unresolved": 1000
+    },
+    "attribute_uom_47": {
+      "unresolved": 1000
+    },
+    "attribute_label_48": {
+      "unresolved": 1000
+    },
+    "attribute_value_48": {
+      "unresolved": 1000
+    },
+    "attribute_uom_48": {
+      "unresolved": 1000
+    },
+    "attribute_label_49": {
+      "unresolved": 1000
+    },
+    "attribute_value_49": {
+      "unresolved": 1000
+    },
+    "attribute_uom_49": {
+      "unresolved": 1000
+    },
+    "attribute_label_50": {
+      "unresolved": 1000
+    },
+    "attribute_value_50": {
+      "unresolved": 1000
+    },
+    "attribute_uom_50": {
+      "unresolved": 1000
+    },
+    "upc": {
+      "unresolved": 1000
+    },
+    "ean": {
+      "unresolved": 1000
+    },
+    "gtin": {
+      "unresolved": 1000
+    },
+    "unspsc": {
+      "unresolved": 1000
+    },
+    "warranty": {
+      "unresolved": 1000
+    },
+    "list_price": {
+      "unresolved": 1000
+    },
+    "length": {
+      "unresolved": 1000
+    },
+    "length_uom": {
+      "unresolved": 1000
+    },
+    "height": {
+      "unresolved": 1000
+    },
+    "height_uom": {
+      "unresolved": 1000
+    },
+    "width": {
+      "unresolved": 1000
+    },
+    "width_uom": {
+      "unresolved": 1000
+    },
+    "weight": {
+      "unresolved": 1000
+    },
+    "weight_uom": {
+      "unresolved": 1000
+    },
+    "country_of_origin": {
+      "unresolved": 1000
+    },
+    "actual_image_flag": {
+      "unresolved": 1000
+    }
+  },
+  "fabricated_values": 0
+}

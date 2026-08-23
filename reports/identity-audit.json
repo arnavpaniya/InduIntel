@@ -1,0 +1,22 @@
+{
+  "strength": {
+    "strong": 959,
+    "medium": 0,
+    "none": 41
+  },
+  "duplicated_input_mpns": [
+    [
+      "AVM6EV",
+      2
+    ]
+  ],
+  "issues": [
+    {
+      "rowIndex": 783,
+      "mpn": "AVM6EV",
+      "manufacturer": "Malco Prod",
+      "kind": "duplicate_mpn",
+      "detail": "MPN already seen at row 782"
+    }
+  ]
+}

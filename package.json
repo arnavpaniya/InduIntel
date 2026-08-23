@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
-    "reset": "tsx scripts/reset.ts"
+    "reset": "tsx scripts/reset.ts",
+    "test:unit": "tsx tests/run-unit.ts",
+    "test:evidence": "python3 -m pytest services/evidence/tests -q",
+    "validate:unihack": "tsx scripts/validate-gate.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

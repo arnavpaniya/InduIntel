@@ -1,0 +1,23 @@
+{
+  "products": 500,
+  "totalMs": 279,
+  "avgMsPerProduct": 0.56,
+  "maxConcurrency": 4,
+  "processed": 480,
+  "duplicatesMerged": 20,
+  "failed": 0,
+  "uniqueIdentities": 480,
+  "externalSearches": 480,
+  "externalRetrievals": 0,
+  "deterministicFields": 0,
+  "geminiCalls": 0,
+  "cacheHits": 20,
+  "cacheMisses": 480,
+  "cacheHitRate": 0.04,
+  "unresolvedFields": 19520,
+  "heapUsedBeforeMb": 11.4,
+  "heapUsedAfterMb": 27.3,
+  "heapGrowthMb": 15.9,
+  "rssMb": 125.3,
+  "evidenceMode": "real-local"
+}
