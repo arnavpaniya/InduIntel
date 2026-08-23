@@ -20,7 +20,7 @@ Required tables: `items`, `item_descriptions`, `item_attributes`,
 Verify anytime:
 
 ```bash
-npx tsx scripts/supabase-production-check.ts
+npx tsx scripts/validation/supabase-production-check.ts
 ```
 
 ## 2. Gemini setup
@@ -81,7 +81,7 @@ Optional tuning: `EVIDENCE_SEARCH_TIMEOUT` (s, default 10),
 Smoke test exactly one real search:
 
 ```bash
-npx tsx scripts/search-provider-smoke.ts
+npx tsx scripts/validation/search-provider-smoke.ts
 ```
 
 Verify the running service reports Tavily:
@@ -95,7 +95,7 @@ curl http://127.0.0.1:8000/   # -> {"search_provider": "TavilySearchProvider", .
 Check presence (never prints values):
 
 ```bash
-npx tsx scripts/check-production-env.ts
+npx tsx scripts/validation/check-production-env.ts
 ```
 
 | Variable | Required | Purpose |
@@ -174,14 +174,14 @@ Always emits exactly the organizer's 252 headers in exact order.
 ## 11. Output validation
 
 ```bash
-npx tsx scripts/validate-unihack-output.ts reports/unihack-final-sample.csv
-npx tsx scripts/validate-unihack-output.ts reports/unihack-final-sample.xlsx
+npx tsx scripts/validation/validate-unihack-output.ts reports/unihack-final-sample.csv
+npx tsx scripts/validation/validate-unihack-output.ts reports/unihack-final-sample.xlsx
 ```
 
 Exit 0 = submission-valid. Regenerate both from the organizer sample with:
 
 ```bash
-npx tsx scripts/run-unihack-pipeline.ts
+npx tsx scripts/production/run-unihack-pipeline.ts
 ```
 
 ## 12. Troubleshooting
